@@ -2,39 +2,18 @@ import numpy as np
 import pandas as pd
 import random
 
-location = []
-individual = []
-spending = []
-time = []
-
-
-for i in range(5):
-    loc = []
-    t = []
-    loc = np.random.choice(range(20), 10, replace=False)
-    for items in loc:
-        location.append(items)
-    t = np.random.choice(range(15), 10, replace=False)
-    for items in t:
-        time.append(items)
-    for j in range(10):
-        spending.append(np.random.randint(5,100))
-        individual.append(i)
-
-#
-# df = pd.DataFrame({'location':location, 'invidual':individual, 'time':time, 'spending':spending})
-# print(df)
-# df.to_csv('fakedata.csv',index = False)
 
 a = []
 matrix = []
 
-for j in range(5):
+locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
+
+for j in range(len(locList)):
     prob = 1
     a = []
-    for i in range(5):
-        if i != 4:
-            num = 0.5 * np.random.rand()
+    for i in range(len(locList)):
+        if i != len(locList)-1:
+            num = 0.16 * (i+1) *  np.random.rand()
             indprob = num * prob
             a.append(indprob)
             prob = prob - indprob
@@ -42,4 +21,24 @@ for j in range(5):
             a.append(prob)
     matrix.append(a)
 
-print(matrix)
+# print(matrix)
+probMatrix = pd.DataFrame(matrix, columns = locList, index = locList)
+print(probMatrix)
+# print(probMatrix.loc[station].to_list())
+
+allRoute = []
+routeLenth = 7
+for j in range(3):
+    for location in locList:
+        station = location
+        route = []
+        route.append(station)
+        for i in range(routeLenth-1):
+            # print(station)
+            probList = probMatrix.loc[station].to_list()
+            station = np.random.choice(locList, 1, p=probList)[0]
+            route.append(station)
+        allRoute.append(route)
+
+route = pd.DataFrame(allRoute)
+print(route)
