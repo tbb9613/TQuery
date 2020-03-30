@@ -127,20 +127,21 @@ function drawGraph() {
 
     graphExist = true;
 
-    d3.csv("graph1.csv").then(function (graph) {
+    d3.csv("sequencedata11.csv").then(function (graph) {
 
         console.log(graph.filter(d => d.sequence == 1).length);
 
+        //Draw links
         let link = workSpace.append("g")
             .attr("class", "link")
             .selectAll("line")
             .data(graph)
             .enter().append("line")
-            .attr("x1", d => workSpaceWidth / 2)
+            .attr("x1", d => workSpaceWidth / 2 )
             .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
             .attr("x2", d => workSpaceWidth / 2 + d.sequence * 100)
-            .attr("y2", d => (d.id != 0) ?
-                topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 2) :
+            .attr("y2", d => (d.sequence != 0) ?
+                topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
                 topSpaceHeight + workSpaceHeight / 2);
 
         let node = workSpace.append("g")
@@ -150,8 +151,8 @@ function drawGraph() {
             .enter().append("circle")
             .attr("r", 20)
             .attr("cx", d => workSpaceWidth / 2 + d.sequence * 100)
-            .attr("cy", d => (d.id != 0) ?
-                topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 2) :
+            .attr("cy", d => (d.sequence != 0) ?
+                topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
                 topSpaceHeight + workSpaceHeight / 2)
             .call(d3.drag().on("drag", dragged))
             .on("click", clicked);
@@ -165,14 +166,15 @@ function drawGraph() {
             link.filter(function (l) {
                 return l.source === d.target;
             }).attr("x1", d.x).attr("y1", d.y);
+            console.log(d.source, d.target);
             link.filter(function (l) {
                 return l.target === d.target;
             }).attr("x2", d.x).attr("y2", d.y);
-            text.text('place ' + d.place + ' spending ' + d.spending)
+            text.text('place ' + d.target.slice(1) + ' spending ' + d.spending)
         }
 
         function clicked(d) {
-            text.text('place ' + d.place + ' spending ' + d.spending)
+            text.text('place ' + d.target.slice(1) + ' spending ' + d.spending)
             workSpace.selectAll("circle").attr("stroke", "#fff")
             d3.select(this).attr("stroke", "#18569C")
         }

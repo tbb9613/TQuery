@@ -1,0 +1,7 @@
+,sequence,source,target,count,id
+6,-1,0Cinema,-1Restaurant,1,0
+7,-1,0Cinema,-1Surpermarket,1,1
+8,-1,0Cinema,-1Pharmacy,1,2
+9,0,0Cinema,0Cinema,1,0
+10,1,0Cinema,1Pharmacy,2,0
+11,1,0Cinema,1Surpermarket,1,1
