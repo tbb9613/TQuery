@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Graph Demo</title>
+  <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+  <style>
+    .node {
+      stroke: #fff;
+      stroke-width: 2px;
+      fill: slategray;
+    }
+
+    .link {
+      stroke: #999;
+    }
+
+    body{
+    margin: 0px;
+    overflow: hidden;
+    }
+
+
+  </style>
+
+</head>
+
+<body>
+
+
+  <svg id="space">
+
+  </svg>
+<script>
+  var graph = {{ data|safe }}
+</script>
+
+<script src="{{ url_for('static',filename='js/Graph1.js') }}">
+</script>
+</body>

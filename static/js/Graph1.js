@@ -1,3 +1,7 @@
+//receive from Flask
+// var graph = "{{ data|safe }}";
+console.log(graph)
+
 var width = document.documentElement.clientWidth;
 var height = document.documentElement.clientHeight;
 
@@ -15,8 +19,8 @@ var workSpaceWidth = 0.7 * width;
 var graphExist = false;
 
 var text = svg.append("text")
-    .attr("x", workSpaceWidth+50)
-    .attr("y", topSpaceHeight+100)
+    .attr("x", workSpaceWidth + 50)
+    .attr("y", topSpaceHeight + 100)
 
 var topSpace = svg.append("g")
     .attr("id", "top");
@@ -69,12 +73,12 @@ function drawTopNodes() {
     // .transition().duration(1000)
     // .attr('r', 0)
     // .remove();
-    function createQuery(){
+    function createQuery() {
         setTimeout(() => {
             drawGraph();
             topSpace.selectAll("circle").remove();
             drawTopNodes()
-            }, 500);
+        }, 500);
     }
 
     function dragged(d) {
@@ -100,16 +104,12 @@ function drawTopNodes() {
             console.log(nodeList)
             if (graphExist == false) {
                 createQuery();
-            }
-            else
-            {
-                workSpace.selectAll(["circle","line"]).remove();
+            } else {
+                workSpace.selectAll(["circle", "line"]).remove();
                 createQuery();
             }
-            
-        } 
-        else
-        {
+
+        } else {
             // d3.select(this).attr("cx", d => d * 50 + 60).attr("cy", topSpaceHeight / 2)
             topSpace.selectAll("circle").remove();
             drawTopNodes()
@@ -127,56 +127,56 @@ function drawGraph() {
 
     graphExist = true;
 
-    d3.json("sequenceData1.json").then(function (graph) {
+    // d3.json(data1).then(function (graph) {
 
-        console.log(graph.filter(d => d.sequence == 1).length);
+    console.log(graph.filter(d => d.sequence == 1).length);
 
-        //Draw links
-        let link = workSpace.append("g")
-            .attr("class", "link")
-            .selectAll("line")
-            .data(graph)
-            .enter().append("line")
-            .attr("x1", d => workSpaceWidth / 2 )
-            .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
-            .attr("x2", d => workSpaceWidth / 2 + d.sequence * 100)
-            .attr("y2", d => (d.sequence != 0) ?
-                topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
-                topSpaceHeight + workSpaceHeight / 2);
+    //Draw links
+    let link = workSpace.append("g")
+        .attr("class", "link")
+        .selectAll("line")
+        .data(graph)
+        .enter().append("line")
+        .attr("x1", d => workSpaceWidth / 2)
+        .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
+        .attr("x2", d => workSpaceWidth / 2 + d.sequence * 100)
+        .attr("y2", d => (d.sequence != 0) ?
+            topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
+            topSpaceHeight + workSpaceHeight / 2);
 
-        let node = workSpace.append("g")
-            .attr("class", "node")
-            .selectAll("circle")
-            .data(graph)
-            .enter().append("circle")
-            .attr("r", 20)
-            .attr("cx", d => workSpaceWidth / 2 + d.sequence * 100)
-            .attr("cy", d => (d.sequence != 0) ?
-                topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
-                topSpaceHeight + workSpaceHeight / 2)
-            .call(d3.drag().on("drag", dragged))
-            .on("click", clicked);
+    let node = workSpace.append("g")
+        .attr("class", "node")
+        .selectAll("circle")
+        .data(graph)
+        .enter().append("circle")
+        .attr("r", 20)
+        .attr("cx", d => workSpaceWidth / 2 + d.sequence * 100)
+        .attr("cy", d => (d.sequence != 0) ?
+            topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
+            topSpaceHeight + workSpaceHeight / 2)
+        .call(d3.drag().on("drag", dragged))
+        .on("click", clicked);
 
-        function dragged(d) {
-            workSpace.selectAll("circle").attr("stroke", "#fff") // reset the style
-            d.x = d3.event.x, d.y = d3.event.y;
-            d3.select(this).attr("cx", d.x).attr("cy", d.y)
-            .attr("stroke", "#18569C");    
-            console.log(d.id);
-            link.filter(function (l) {
-                return l.source === d.target;
-            }).attr("x1", d.x).attr("y1", d.y);
-            console.log(d.source, d.target);
-            link.filter(function (l) {
-                return l.target === d.target;
-            }).attr("x2", d.x).attr("y2", d.y);
-            text.text('place ' + d.target.slice(1) + ' spending ' + d.spending)
-        }
+    function dragged(d) {
+        workSpace.selectAll("circle").attr("stroke", "#fff") // reset the style
+        d.x = d3.event.x, d.y = d3.event.y;
+        d3.select(this).attr("cx", d.x).attr("cy", d.y)
+            .attr("stroke", "#18569C");
+        console.log(d.id);
+        link.filter(function (l) {
+            return l.source === d.target;
+        }).attr("x1", d.x).attr("y1", d.y);
+        console.log(d.source, d.target);
+        link.filter(function (l) {
+            return l.target === d.target;
+        }).attr("x2", d.x).attr("y2", d.y);
+        text.text('place ' + d.target.slice(1) + ' spending ' + d.spending)
+    }
 
-        function clicked(d) {
-            text.text('place ' + d.target.slice(1) + ' spending ' + d.spending)
-            workSpace.selectAll("circle").attr("stroke", "#fff")
-            d3.select(this).attr("stroke", "#18569C")
-        }
-    });
+    function clicked(d) {
+        text.text('place ' + d.target.slice(1) + ' spending ' + d.spending)
+        workSpace.selectAll("circle").attr("stroke", "#fff")
+        d3.select(this).attr("stroke", "#18569C")
+    }
+    // });
 }

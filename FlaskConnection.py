@@ -1,49 +1,14 @@
+import pandas as pd
+from flask import Flask, render_template, request
+import json
+
 import numpy as np
 import pandas as pd
 import random
 
-
-a = []
-matrix = []
-
 locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
-
-for j in range(len(locList)):
-    prob = 1
-    a = []
-    for i in range(len(locList)):
-        if i != len(locList)-1:
-            num = 0.16 * (i+1) *  np.random.rand()
-            indprob = num * prob
-            a.append(indprob)
-            prob = prob - indprob
-        else:
-            a.append(prob)
-    matrix.append(a)
-
-# print(matrix)
-probMatrix = pd.DataFrame(matrix, columns = locList, index = locList)
-# print(probMatrix)
-# print(probMatrix.loc[station].to_list())
-
-allRoute = []
-routeLenth = 7
-for j in range(3):
-    for location in locList:
-        station = location
-        route = []
-        route.append(station)
-        for i in range(routeLenth-1):
-            # print(station)
-            probList = probMatrix.loc[station].to_list()
-            station = np.random.choice(locList, 1, p=probList)[0]
-            route.append(station)
-        allRoute.append(route)
-
-route = pd.DataFrame(allRoute)
-route.to_csv("route.csv")
-# print(route.head())
-
+route = pd.read_csv("route.csv",index_col=0)
+print(route.head())
 # Choose time
 timePoint = 3
 
@@ -106,4 +71,14 @@ newNodeMap = pd.DataFrame(linkList, columns=["sequence", "source","target", "cou
 print(newNodeMap)
 
 newNodeMap.to_csv("sequenceData1.csv")
-newNodeMap[newNodeMap["sequence"].isin([0,1,-1])].to_json(orient = "records")
+QueryNodeMap = newNodeMap[newNodeMap["sequence"].isin([0,1,-1])].to_json(orient = "records")
+
+
+app = Flask(__name__)
+@app.route("/")
+
+def datapost():
+    return render_template("GraphDemo1.html", data=QueryNodeMap)
+
+if __name__ == '__main__': #固定写法 程序入口
+    app.run(debug = True) #启动一个flask项目
