@@ -6,20 +6,24 @@ import numpy as np
 import pandas as pd
 import random
 
+app = Flask(__name__)
+
 locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
 route = pd.read_csv("route.csv",index_col=0)
-print(route.head())
+# print(route.head())
 # Choose time
 timePoint = 3
 
 nodeList = route.iloc[:,timePoint].value_counts().index.to_list()
-print(nodeList) #Node List
+# print(nodeList) #Node List
 
-typeMCC = "Cinema" #Choose Node
+    # print("type: ", typeMCC1)
+
+typeMCC = "Cafe" #Choose Node
 
 MCCQueryRoute = route[route.iloc[:,timePoint] == typeMCC] #Query
-print(MCCQueryRoute)
-print("lenth: ", len(MCCQueryRoute))
+# print(MCCQueryRoute)
+# print("lenth: ", len(MCCQueryRoute))
 
 #Generate primary source-target dataframe
 source = []
@@ -52,8 +56,8 @@ nodeData = {"links":zip(source, target), "sequence":sequence}
 # print(len(source-target), len(sequence), len(ids))
 nodeMap = pd.DataFrame(data=nodeData)
 # nodeMap["size"] = 1
-print(nodeMap.head())
-print("***********")
+# print(nodeMap.head())
+# print("***********")
 #Reduce dumplication and calculate size
 
 linkList = []
@@ -68,17 +72,21 @@ for seq in nodeMap["sequence"].unique():
         
 
 newNodeMap = pd.DataFrame(linkList, columns=["sequence", "source","target", "count", "id"])
-print(newNodeMap)
+# print(newNodeMap)
 
 newNodeMap.to_csv("sequenceData1.csv")
 QueryNodeMap = newNodeMap[newNodeMap["sequence"].isin([0,1,-1])].to_json(orient = "records")
 
-
-app = Flask(__name__)
 @app.route("/")
 
 def datapost():
     return render_template("GraphDemo1.html", data=QueryNodeMap)
 
-if __name__ == '__main__': #固定写法 程序入口
-    app.run(debug = True) #启动一个flask项目
+
+app.route('/receivedata', methods=['POST'])
+
+def receive_data():
+    print(request.form['myData'])
+
+if __name__ == '__main__': 
+    app.run(debug = True) 

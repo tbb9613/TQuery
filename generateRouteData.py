@@ -24,6 +24,7 @@ for j in range(len(locList)):
 # print(matrix)
 probMatrix = pd.DataFrame(matrix, columns = locList, index = locList)
 # print(probMatrix)
+probMatrix.to_csv("probMatrix.csv")
 # print(probMatrix.loc[station].to_list())
 
 allRoute = []

@@ -1,8 +1,0 @@
-,sequence,source,target,count,id
-8,-1,0Cinema,-1Theatre,2,0
-9,-1,0Cinema,-1Cafe,1,1
-10,-1,0Cinema,-1Cinema,1,2
-11,0,0Cinema,0Cinema,1,0
-12,1,0Cinema,1School,2,0
-13,1,0Cinema,1Cafe,1,1
-14,1,0Cinema,1Theatre,1,2
