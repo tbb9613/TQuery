@@ -1,5 +1,6 @@
-//receive from Flask
-// var graph = "{{ data|safe }}";
+  // var nodeList = {{ nodeList|safe }}
+  //receive from Flask
+var graph
 console.log(graph)
 
 var width = document.documentElement.clientWidth;
@@ -11,7 +12,6 @@ var svg = d3.select("#space")
     .attr("viewBox", [0, 0, width, height])
 
 console.log(width, height)
-
 
 var topSpaceHeight = 0.3 * height;
 var workSpaceHeight = 0.7 * height;
@@ -51,9 +51,7 @@ workSpace
 function drawTopNodes() {
 
     console.log(nodeList)
-
     const xPosition = (d, i) => i * 50 + 60;
-
 
     const node = topSpace.append("g")
         .selectAll("circle")
@@ -69,13 +67,29 @@ function drawTopNodes() {
         .attr("r", 20)
         .call(d3.drag().on("drag", dragged).on("end", dragended));
 
-    function postQuery(){
-        var queryNode = "Restaurant"
-        $.post("/receivedata",{"myData": queryNode})
+    function postQuery(d){
+        // d3.select(this);
+        var queryNode = d; 
+        console.log(d);
+        $.ajax({
+            type: "POST",
+            url: 'http://127.0.0.1:5000/receivedata',
+            dataType: 'json',
+            data: JSON.stringify({
+                name: queryNode
+            }),
+            success: function(data){
+                graph = data
+            }
+
+        })
+        // $.post("/",{"myData": queryNode});
+        // graph = {{ data|safe }};
+        console.log(graph);
     }
 
     function createQuery(d) {
-        postQuery()
+        postQuery(d);
         setTimeout(() => {
             drawGraph();
             topSpace.selectAll("circle").remove();
@@ -106,10 +120,12 @@ function drawTopNodes() {
             nodeList = nodeList.filter((d, i) => d !== thisNode) //filter this node id
             console.log(nodeList)
             if (graphExist == false) {
-                createQuery();
+
+                createQuery(d);
             } else {
                 workSpace.selectAll(["circle", "line"]).remove();
-                createQuery();
+
+                createQuery(d);
             }
 
         } else {
@@ -122,7 +138,7 @@ function drawTopNodes() {
         console.log(endYPos, nodeList, "end");
     }
 
-}
+};
 
 // drawGraph();
 
