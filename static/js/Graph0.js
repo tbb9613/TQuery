@@ -1,5 +1,3 @@
-  // var nodeList = {{ nodeList|safe }}
-  //receive from Flask
 var graph
 console.log(graph)
 
@@ -7,8 +5,6 @@ var width = document.documentElement.clientWidth;
 var height = document.documentElement.clientHeight;
 
 var svg = d3.select("#space")
-    // .attr("width", width)
-    // .attr("height", height)
     .attr("viewBox", [0, 0, width, height])
 
 console.log(width, height)
@@ -38,6 +34,7 @@ drawTopNodes();
 
 var workSpace = svg.append("g");
 
+//Draw background
 workSpace
     .append("rect")
     .attr("id", "workSpace")
@@ -47,11 +44,23 @@ workSpace
     .attr("height", workSpaceHeight)
     .attr("y", topSpaceHeight); //make the workspace under topspace
 
+workSpace
+    .append('g')
+    .append("rect")
+    .attr("id", "conditionBox")
+    .attr("fill", "black")
+    .attr("opacity", .20)
+    .attr("width", workSpaceWidth / 5)
+    .attr("height", workSpaceHeight / 4)
+    .attr("y", topSpaceHeight + workSpaceHeight * 0.7)
+    .attr("x", workSpaceWidth * (3/4) )
+
 
 function drawTopNodes() {
 
     console.log(nodeList)
     const xPosition = (d, i) => i * 50 + 60;
+    // console.log(d);
 
     const node = topSpace.append("g")
         .selectAll("circle")
@@ -67,24 +76,28 @@ function drawTopNodes() {
         .attr("r", 20)
         .call(d3.drag().on("drag", dragged).on("end", dragended));
 
+    node.append("title").text("Node Name To Display")
+
+    node.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", ".3em").text("Node Name To Display")
+
+//Data exchange
     function postQuery(d){
-        // d3.select(this);
         var queryNode = d; 
         console.log(d);
         $.ajax({
             type: "POST",
-            url: 'http://127.0.0.1:5000/receivedata',
+            url: 'http://127.0.0.1:5000/receivedata', //send data by route
             dataType: 'json',
             data: JSON.stringify({
-                name: queryNode
+                name : queryNode
             }),
-            success: function(data){
+            // data : JSON(queryNode),
+            success: function(data){ // if success then update data
                 graph = data
             }
-
         })
-        // $.post("/",{"myData": queryNode});
-        // graph = {{ data|safe }};
         console.log(graph);
     }
 
@@ -117,7 +130,7 @@ function drawTopNodes() {
                 .attr("opacity", 0.1);
 
             let thisNode = d;
-            nodeList = nodeList.filter((d, i) => d !== thisNode) //filter this node id
+            nodeList = nodeList.filter((d, i) => d !== thisNode) // filter this node id, remove from top nodes
             console.log(nodeList)
             if (graphExist == false) {
 
@@ -133,9 +146,7 @@ function drawTopNodes() {
             topSpace.selectAll("circle").remove();
             drawTopNodes()
         }
-
-
-        console.log(endYPos, nodeList, "end");
+        console.log("end");
     }
 
 };

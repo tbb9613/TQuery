@@ -95,12 +95,12 @@ def index():
         return render_template("GraphDemo1.html", data=queryNode("Restaurant"))
 
 @app.route('/receivedata/', methods=['GET','POST'])
-def receive_data():
+def receive_query_data():
     datagetjson = request.get_json(force=True)
     dataget = datagetjson['name']
     print(dataget)
     QueryNodeMapOut = queryNode(dataget)
-    print(QueryNodeMapOut)
+    # print(QueryNodeMapOut)
     return QueryNodeMapOut
 
 
