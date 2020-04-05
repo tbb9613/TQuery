@@ -28,6 +28,13 @@ topSpace.append("rect")
     .attr("width", width)
     .attr("height", topSpaceHeight);
 
+topSpace.append("rect")
+    .attr("id", "heatmap")
+    .attr("fill", "#CCC")
+    .attr("width", width - workSpaceWidth)
+    .attr("height", topSpaceHeight)
+    .attr("x", workSpaceWidth)
+
 var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 // nodeList = d3.range(5)
 drawTopNodes();
@@ -67,17 +74,17 @@ function drawTopNodes() {
         .enter()
         .append("g")
         .attr("class","topnodes")
+        .attr("x", xPosition)
+        .attr("y", topSpaceHeight / 2)
+        .call(d3.drag().on("drag", dragged).on("end", dragended))
+
         
     node
         .append("circle")
         .attr("cx", xPosition)
         .attr("cy", topSpaceHeight / 2)
-        .attr("r", 0)
-        .merge(node)
-        .attr("cx", xPosition)
-        // .transition().duration(1000) 
         .attr("r", 20)
-        .call(d3.drag().on("drag", dragged).on("end", dragended));
+;
 
     node
         .append('text')
@@ -85,10 +92,18 @@ function drawTopNodes() {
         .attr('alignment-baseline', 'middle')
         .attr("x", xPosition)
         .attr("y", topSpaceHeight / 2)
-        .style('font-size', d => d.radius * 0.4 + 'px')
-        // .attr('fill-opacity', 0)
+        .style('font-size', '13px')
         .attr('fill', 'white')
-        .text("T")
+        .text(d => d.slice(0,3))
+    
+    //draw transparent node on text
+    node
+        .append("circle")
+        .attr("cx", xPosition)
+        .attr("cy", topSpaceHeight / 2)
+        .attr("r", 20)
+        .attr("opacity", 0)
+
 
 //Data exchange
     function postQuery(d){
@@ -106,7 +121,7 @@ function drawTopNodes() {
                 graph = data
             }
         })
-        console.log(graph);
+        // console.log(graph);
     }
 
     function createQuery(d) {
@@ -119,7 +134,8 @@ function drawTopNodes() {
     }
 
     function dragged(d) {
-        d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+        d3.select(this).select("text").attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
+        d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
         console.log(d, d3.event.x)
     }; //???????
     //drag top nodes
@@ -129,6 +145,7 @@ function drawTopNodes() {
             endYPos = d3.event.y;
         if (endYPos > topSpaceHeight) {   //judge height space
             d3.select(this)
+                .select("circle")
                 .transition().duration(200)
                 .attr("cx", workSpaceWidth / 2)
                 .attr("cy", topSpaceHeight + workSpaceHeight / 2)
@@ -144,7 +161,8 @@ function drawTopNodes() {
 
                 createQuery(d);
             } else {
-                workSpace.selectAll(["circle", "line"]).remove();
+
+                workSpace.selectAll(["circle", "line","path"]).remove();
                 createQuery(d);
             }
 
@@ -168,6 +186,88 @@ function drawGraph() {
     // d3.json(data1).then(function (graph) {
 
     console.log(graph.filter(d => d.sequence == 1).length);
+
+    //draw pie
+    let pieColorScale = d3.schemeCategory10;
+
+    let arc = d3.arc()
+        .innerRadius(20)
+        .outerRadius(50);
+
+    let rightdraw = d3.pie()
+        .value(d => d.count)
+        .sort(null)
+        .startAngle(20 * (Math.PI / 180))
+        .endAngle(150 * (Math.PI / 180))
+        .padAngle(0.01);
+
+    let leftdraw = d3.pie()
+        .value(d => d.count)
+        .sort(null)
+        .startAngle(-20 * (Math.PI / 180))
+        .endAngle(-150 * (Math.PI / 180))
+        .padAngle(0.01);
+
+    let pieright = workSpace.append("g");
+    let pierightDiv = d3.select("body").append("div")
+        .attr("class", "tooltip-donut")
+        .style("opacity", 0);
+    pieright.selectAll("path")
+        .data(rightdraw(graph.filter(d => d.sequence == 1)))
+        .enter()
+        .append("path")
+        .attr('transform', 'translate(' + workSpaceWidth / 2 + ',' + (topSpaceHeight + workSpaceHeight / 2) + ')')
+        .attr("fill", (d,i) => pieColorScale[i])
+        .attr("d", arc)
+        .on('mouseover', function (d, i) {  //show the frequency sta when hover on pie segment
+            d3.select(this).transition()
+                .duration('50')
+                .attr('opacity', '.85')
+            pierightDiv.transition()
+                .duration(50)
+                .style("opacity", 1);
+            pierightDiv.html("Frequency: "+d.id)
+                .style("left", (d3.event.pageX + 10) + "px")
+                .style("top", (d3.event.pageY - 15) + "px");
+        })
+        .on('mouseout', function (d, i) {
+            d3.select(this).transition()
+                .duration('50')
+                .attr('opacity', '1')
+            pierightDiv.transition()
+                .duration('50')
+                .style("opacity", 0);
+        });
+
+    let pieleft = workSpace.append("g");
+
+    pieleft.selectAll("path")
+        .data(leftdraw(graph.filter(d => d.sequence == -1)))
+        .enter()
+        .append("path")
+        .attr('transform', 'translate(' + workSpaceWidth / 2 + ',' + (topSpaceHeight + workSpaceHeight / 2) + ')')
+        .attr("fill", (d,i) => pieColorScale[i])
+        .attr("d", arc)
+        .on('mouseover', function (d, i) { //show the frequency sta when hover on pie
+            d3.select(this).transition()
+                .duration('50')
+                .attr('opacity', '.85')
+            pierightDiv.transition()
+                .duration(50)
+                .style("opacity", 1);
+            pierightDiv.html("Frequency: "+d.id)
+                .style("left", (d3.event.pageX + 10) + "px")
+                .style("top", (d3.event.pageY - 15) + "px");
+        })
+        .on('mouseout', function (d, i) {
+            d3.select(this).transition()
+                .duration('50')
+                .attr('opacity', '1')
+            pierightDiv.transition()
+                .duration('50')
+                .style("opacity", 0);
+        });
+
 
     //Draw links
     let link = workSpace.append("g")
@@ -194,6 +294,9 @@ function drawGraph() {
             topSpaceHeight + workSpaceHeight / 2)
         .call(d3.drag().on("drag", dragged))
         .on("click", clicked);
+
+
+    
 
     function dragged(d) {
         workSpace.selectAll("circle").attr("stroke", "#fff") // reset the style

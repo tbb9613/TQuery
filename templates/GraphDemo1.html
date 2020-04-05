@@ -21,6 +21,23 @@
     body{
     margin: 0px;
     overflow: hidden;
+    -moz-user-select:none;
+    -webkit-user-select:none;
+    -ms-user-select:none;
+    -khtml-user-select:none;
+    user-select:none;
+    }
+
+    div.tooltip-donut {
+    position: absolute;
+    text-align: center;
+    padding: .5rem;
+    background: #FFFFFF;
+    color: #313639;
+    border: 1px solid #313639;
+    border-radius: 2px;
+    pointer-events: none;
+    font-size: 1rem;
     }
 
 
