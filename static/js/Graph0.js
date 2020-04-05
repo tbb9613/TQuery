@@ -62,11 +62,14 @@ function drawTopNodes() {
     const xPosition = (d, i) => i * 50 + 60;
     // console.log(d);
 
-    const node = topSpace.append("g")
-        .selectAll("circle")
-        .data(nodeList);
+    let node = topSpace.selectAll(".topnodes")
+        .data(nodeList)
+        .enter()
+        .append("g")
+        .attr("class","topnodes")
+        
     node
-        .enter().append("circle")
+        .append("circle")
         .attr("cx", xPosition)
         .attr("cy", topSpaceHeight / 2)
         .attr("r", 0)
@@ -76,11 +79,16 @@ function drawTopNodes() {
         .attr("r", 20)
         .call(d3.drag().on("drag", dragged).on("end", dragended));
 
-    node.append("title").text("Node Name To Display")
-
-    node.append("text")
-        .attr("text-anchor", "middle")
-        .attr("dy", ".3em").text("Node Name To Display")
+    node
+        .append('text')
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .attr("x", xPosition)
+        .attr("y", topSpaceHeight / 2)
+        .style('font-size', d => d.radius * 0.4 + 'px')
+        // .attr('fill-opacity', 0)
+        .attr('fill', 'white')
+        .text("T")
 
 //Data exchange
     function postQuery(d){
@@ -105,7 +113,7 @@ function drawTopNodes() {
         postQuery(d);
         setTimeout(() => {
             drawGraph();
-            topSpace.selectAll("circle").remove();
+            topSpace.selectAll(".topnodes").remove();
             drawTopNodes()
         }, 500);
     }
@@ -137,13 +145,13 @@ function drawTopNodes() {
                 createQuery(d);
             } else {
                 workSpace.selectAll(["circle", "line"]).remove();
-
                 createQuery(d);
             }
 
         } else {
             // d3.select(this).attr("cx", d => d * 50 + 60).attr("cy", topSpaceHeight / 2)
-            topSpace.selectAll("circle").remove();
+            // topSpace.selectAll("circle").remove();
+            topSpace.selectAll(".topnodes").remove();
             drawTopNodes()
         }
         console.log("end");
@@ -173,7 +181,7 @@ function drawGraph() {
         .attr("y2", d => (d.sequence != 0) ?
             topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
             topSpaceHeight + workSpaceHeight / 2);
-
+    //drawn nodes
     let node = workSpace.append("g")
         .attr("class", "node")
         .selectAll("circle")
