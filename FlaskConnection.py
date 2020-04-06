@@ -13,13 +13,13 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds = 1)
 
 def queryNode(typeMCC):
-    locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
+    # locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
     route = pd.read_csv("route.csv",index_col=0)
     # print(route.head())
     # Choose time
     timePoint = 3
 
-    nodeList = route.iloc[:,timePoint].value_counts().index.to_list()
+    # nodeList = route.iloc[:,timePoint].value_counts().index.to_list()
     # print(nodeList) #Node List
 
         # print("type: ", typeMCC1)
