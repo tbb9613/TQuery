@@ -14,10 +14,6 @@ var workSpaceHeight = 0.7 * height;
 var workSpaceWidth = 0.7 * width;
 var graphExist = false;
 
-var text = svg.append("text")
-    .attr("x", workSpaceWidth + 50)
-    .attr("y", topSpaceHeight + 100)
-
 var topSpace = svg.append("g")
     .attr("id", "top");
 
@@ -39,12 +35,13 @@ var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "The
 // nodeList = d3.range(5)
 drawTopNodes();
 
-var workSpace = svg.append("g");
+var workSpace = svg.append("g")
+    .attr("id", "work");
 
 //Draw background
 workSpace
     .append("rect")
-    .attr("id", "workSpace")
+    
     .attr("fill", "blue")
     .attr("opacity", .15)
     .attr("width", workSpaceWidth)
@@ -55,13 +52,23 @@ workSpace
     .append('g')
     .append("rect")
     .attr("id", "conditionBox")
-    .attr("fill", "black")
-    .attr("opacity", .20)
+    // .attr("fill", "black")
+    // .attr("opacity", .20)
     .attr("width", workSpaceWidth / 5)
     .attr("height", workSpaceHeight / 4)
     .attr("y", topSpaceHeight + workSpaceHeight * 0.7)
     .attr("x", workSpaceWidth * (3/4) )
 
+var staSpace = svg.append("g")
+    .attr("id", "sta")
+
+var text = staSpace.append("text")
+    .attr("x", workSpaceWidth + 50)
+    .attr("y", topSpaceHeight + 100)
+
+var titletext = workSpace.append("text")
+    .attr("y", topSpaceHeight + 50)
+    .attr("x", 100)
 
 function drawTopNodes() {
 
@@ -120,7 +127,9 @@ function drawTopNodes() {
             success: function(data){ // if success then update data
                 graph = data
             }
+        
         })
+        titletext.text("Routes of people who go to " + queryNode);
         // console.log(graph);
     }
 
@@ -158,10 +167,8 @@ function drawTopNodes() {
             nodeList = nodeList.filter((d, i) => d !== thisNode) // filter this node id, remove from top nodes
             console.log(nodeList)
             if (graphExist == false) {
-
                 createQuery(d);
             } else {
-
                 workSpace.selectAll(["circle", "line","path"]).remove();
                 createQuery(d);
             }
@@ -186,6 +193,19 @@ function drawGraph() {
     // d3.json(data1).then(function (graph) {
 
     console.log(graph.filter(d => d.sequence == 1).length);
+
+    //Draw links
+    let link = workSpace.append("g")
+    .attr("class", "link")
+    .selectAll("line")
+    .data(graph)
+    .enter().append("line")
+    .attr("x1", d => workSpaceWidth / 2)
+    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
+    .attr("x2", d => workSpaceWidth / 2 + d.sequence * 100)
+    .attr("y2", d => (d.sequence != 0) ?
+        topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
+        topSpaceHeight + workSpaceHeight / 2);
 
     //draw pie
     let pieColorScale = d3.schemeCategory10;
@@ -268,20 +288,7 @@ function drawGraph() {
                 .style("opacity", 0);
         });
 
-
-    //Draw links
-    let link = workSpace.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph)
-        .enter().append("line")
-        .attr("x1", d => workSpaceWidth / 2)
-        .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
-        .attr("x2", d => workSpaceWidth / 2 + d.sequence * 100)
-        .attr("y2", d => (d.sequence != 0) ?
-            topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
-            topSpaceHeight + workSpaceHeight / 2);
-    //drawn nodes
+    //draw nodes
     let node = workSpace.append("g")
         .attr("class", "node")
         .selectAll("circle")
@@ -294,9 +301,6 @@ function drawGraph() {
             topSpaceHeight + workSpaceHeight / 2)
         .call(d3.drag().on("drag", dragged))
         .on("click", clicked);
-
-
-    
 
     function dragged(d) {
         workSpace.selectAll("circle").attr("stroke", "#fff") // reset the style
@@ -311,13 +315,53 @@ function drawGraph() {
         link.filter(function (l) {
             return l.target === d.target;
         }).attr("x2", d.x).attr("y2", d.y);
-        text.text('Place ' + d.target.slice(1) + ' Frequency ' + d.count)
+        drawsamplepie();
+        text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
     }
 
     function clicked(d) {
-        text.text('Place ' + d.target.slice(1) + ' Frequency ' + d.count)
+        staSpace.selectAll("path").remove();
+        drawsamplepie();
+        text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
         workSpace.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
+    }
+
+    function drawsamplepie(){
+        let fakeData = [{"label":"one", "value":20}, 
+        {"label":"two", "value":50}, 
+        {"label":"three", "value":30}];
+
+        let samplePieColorScale = d3.schemeCategory20c;
+
+        let samplePie = staSpace.append("g")
+        
+        let arcSample = d3.arc()
+            .outerRadius(90)
+            .innerRadius(0)
+        
+        let spConverter = d3.pie().value(d => d.value)
+
+        samplePie.selectAll("path")
+        .data(spConverter(fakeData))
+        .enter()
+        .append("path")
+        .attr('transform', 'translate(' + (workSpaceWidth + 150) + ',' + (topSpaceHeight + workSpaceHeight * 0.7) + ')')
+        .attr("fill", (d,i) => pieColorScale[i])
+        .attr("d", arcSample)
+        .call(d3.drag().on("drag", dragged).on("end", dragended))
+
+        function dragged(d) {
+            d.x = d3.event.x, d.y = d3.event.y;
+            d3.select(this)
+            .attr('transform', 'translate(' + d.x + ',' + d.y + ')');
+        }
+        function dragended(d) {
+            let endXPos = d3.event.x,
+                endYPos = d3.event.y;
+            staSpace.selectAll("path").remove();
+            drawsamplepie();
+        }
     }
     // });
 }
