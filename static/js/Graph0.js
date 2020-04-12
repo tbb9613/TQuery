@@ -224,8 +224,61 @@ function drawGraph() {
     let lpieData = leftdraw(leftNodePieData);
     let cpieData = rightdraw(centerNodePieData); // format the central node
     
+    function y1PosCalculator(xPosOffset, startRadian, endRadian){
+        //convert radian to degree
+        let startDegree = startRadian * 180 / Math.PI;
+        let endDegree = endRadian * 180 / Math.PI;
+        let degreeDiff = endDegree - startDegree;
+        //
+        let yPosOffset = 0;
+        if (endDegree <= 90){
+            yPosOffset = - xPosOffset * Math.sin(Math.PI / 180 * (degreeDiff/2 + (90 - endDegree)));
+        }
+        else if (endDegree > 90 && startDegree <= 90){
+            if ((90 - startDegree - degreeDiff/2) > 0) 
+            {
+                yPosOffset = - xPosOffset * Math.sin(Math.PI / 180 * (90 - startDegree - degreeDiff/2));
+            }
+            else if ((90 - startDegree - degreeDiff/2) < 0){
+                yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (-(90 - startDegree - degreeDiff/2)));
+            } 
+        } 
+        else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
+        }
+        console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
+        return yPosOffset;
+        
+    }
 
-    function yPosCalculator(xPosOffset, startRadian, endRadian){
+    function x1PosCalculator(xPosOffset, startRadian, endRadian){
+        //convert radian to degree
+        let startDegree = startRadian * 180 / Math.PI;
+        let endDegree = endRadian * 180 / Math.PI;
+        let degreeDiff = endDegree - startDegree;
+        //
+        let yPosOffset = 0;
+        if (endDegree <= 90){
+            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (degreeDiff/2 + (90 - endDegree)));
+        }
+        else if (endDegree > 90 && startDegree <= 90){
+            if ((90 - startDegree - degreeDiff/2) > 0) 
+            {
+                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (90 - startDegree - degreeDiff/2));
+            }
+            else if ((90 - startDegree - degreeDiff/2) < 0){
+                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (-(90 - startDegree - degreeDiff/2)));
+            } 
+        } 
+        else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
+        }
+        // console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
+        return yPosOffset;
+        
+    }
+
+    function y2PosCalculator(xPosOffset, startRadian, endRadian){
         //convert radian to degree
         let startDegree = startRadian * 180 / Math.PI;
         let endDegree = endRadian * 180 / Math.PI;
@@ -247,7 +300,7 @@ function drawGraph() {
         else if (startDegree > 90) {
             yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
         }
-        console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
+        // console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
         return yPosOffset;
         
     }
@@ -261,10 +314,10 @@ function drawGraph() {
     .selectAll("line")
     .data(rpieData)
     .enter().append("line")
-    .attr("x1", d => workSpaceWidth / 2)
-    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
+    .attr("x1", d => workSpaceWidth / 2 + x1PosCalculator(50, d.startAngle, d.endAngle))
+    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2 + y1PosCalculator(50, d.startAngle, d.endAngle)) 
     .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
+    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
     
     let leftlink = link.append("g")
     .attr("class", "link")
@@ -274,7 +327,7 @@ function drawGraph() {
     .attr("x1", d => workSpaceWidth / 2)
     .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
     .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
+    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
 
     let pieNode = workSpace.append("g")
         .attr("id","pieNode")
@@ -350,7 +403,7 @@ function drawGraph() {
         .enter().append("circle")
         .attr("r", 20)
         .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
-        .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle))
+        .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle))
         .call(d3.drag().on("drag", dragged))
         .on("click", clicked);
     
@@ -361,7 +414,7 @@ function drawGraph() {
     .enter().append("circle")
     .attr("r", 20)
     .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
+    .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
     .call(d3.drag().on("drag", dragged))
     .on("click", clicked);
 
@@ -371,7 +424,7 @@ function drawGraph() {
     .selectAll("circle")
     .data(cpieData)
     .enter().append("circle")
-    .attr("r", 25)
+    .attr("r", 30)
     .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
     .attr("cy", topSpaceHeight + workSpaceHeight / 2)
     .call(d3.drag().on("drag", dragged))
