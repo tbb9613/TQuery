@@ -191,24 +191,16 @@ function drawGraph() {
     graphExist = true;
 
     // d3.json(data1).then(function (graph) {
-
-    console.log(graph.filter(d => d.sequence == 1).length);
-
-    //Draw links
-    let link = workSpace.append("g")
-    .attr("class", "link")
-    .selectAll("line")
-    .data(graph)
-    .enter().append("line")
-    .attr("x1", d => workSpaceWidth / 2)
-    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
-    .attr("x2", d => workSpaceWidth / 2 + d.sequence * 100)
-    .attr("y2", d => (d.sequence != 0) ?
-        topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
-        topSpaceHeight + workSpaceHeight / 2);
-
-    //draw pie
-    let pieColorScale = d3.schemeCategory10;
+    //Calculate pie chart data
+    let rightNodePieData = graph.filter(d => d.sequence == 1);
+    let leftNodePieData = graph.filter(d => d.sequence == -1);
+    let centerNodePieData = graph.filter(d => d.sequence == 0)
+    let nodePieStartAngle = 20;
+    let nodePieEndAngle = 160;
+    let rightCountSum = d3.sum(rightNodePieData, d => d.count);
+    let leftCountSum = d3.sum(leftNodePieData, d => d.count);
+    //define pie around node
+    let pieColorScale = d3.schemeCategory10; //define color scale
 
     let arc = d3.arc()
         .innerRadius(20)
@@ -217,26 +209,85 @@ function drawGraph() {
     let rightdraw = d3.pie()
         .value(d => d.count)
         .sort(null)
-        .startAngle(20 * (Math.PI / 180))
-        .endAngle(150 * (Math.PI / 180))
+        .startAngle(nodePieStartAngle * (Math.PI / 180))
+        .endAngle(nodePieEndAngle * (Math.PI / 180))
         .padAngle(0.01);
 
     let leftdraw = d3.pie()
         .value(d => d.count)
         .sort(null)
-        .startAngle(-20 * (Math.PI / 180))
-        .endAngle(-150 * (Math.PI / 180))
+        .startAngle(-nodePieStartAngle * (Math.PI / 180))
+        .endAngle(-nodePieEndAngle * (Math.PI / 180))
         .padAngle(0.01);
+    
+    let rpieData = rightdraw(rightNodePieData);
+    let lpieData = leftdraw(leftNodePieData);
+    let cpieData = rightdraw(centerNodePieData); // format the central node
+    
 
-    let pieright = workSpace.append("g");
+    function yPosCalculator(xPosOffset, startRadian, endRadian){
+        //convert radian to degree
+        let startDegree = startRadian * 180 / Math.PI;
+        let endDegree = endRadian * 180 / Math.PI;
+        let degreeDiff = endDegree - startDegree;
+        //
+        let yPosOffset = 0;
+        if (endDegree <= 90){
+            yPosOffset = - xPosOffset * Math.tan(Math.PI / 180 * (degreeDiff/2 + (90 - endDegree)));
+        }
+        else if (endDegree > 90 && startDegree <= 90){
+            if ((90 - startDegree - degreeDiff/2) > 0) 
+            {
+                yPosOffset = - xPosOffset * Math.tan(Math.PI / 180 * (90 - startDegree - degreeDiff/2));
+            }
+            else if ((90 - startDegree - degreeDiff/2) < 0){
+                yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (-(90 - startDegree - degreeDiff/2)));
+            } 
+        } 
+        else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
+        }
+        console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
+        return yPosOffset;
+        
+    }
+
+    //Draw links
+    let link = workSpace.append('g')
+        .attr("id","link")
+
+    let rightlink = link.append("g")
+    .attr("class", "link")
+    .selectAll("line")
+    .data(rpieData)
+    .enter().append("line")
+    .attr("x1", d => workSpaceWidth / 2)
+    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
+    .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
+    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
+    
+    let leftlink = link.append("g")
+    .attr("class", "link")
+    .selectAll("line")
+    .data(lpieData)
+    .enter().append("line")
+    .attr("x1", d => workSpaceWidth / 2)
+    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2)
+    .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
+    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
+
+    let pieNode = workSpace.append("g")
+        .attr("id","pieNode")
+        .attr('transform', 'translate(' + workSpaceWidth / 2 + ',' + (topSpaceHeight + workSpaceHeight / 2) + ')');
+
+    let pieright = pieNode.append("g");
     let pierightDiv = d3.select("body").append("div")
         .attr("class", "tooltip-donut")
         .style("opacity", 0);
     pieright.selectAll("path")
-        .data(rightdraw(graph.filter(d => d.sequence == 1)))
+        .data(rightdraw(rightNodePieData))
         .enter()
         .append("path")
-        .attr('transform', 'translate(' + workSpaceWidth / 2 + ',' + (topSpaceHeight + workSpaceHeight / 2) + ')')
         .attr("fill", (d,i) => pieColorScale[i])
         .attr("d", arc)
         .on('mouseover', function (d, i) {  //show the frequency sta when hover on pie segment
@@ -246,7 +297,7 @@ function drawGraph() {
             pierightDiv.transition()
                 .duration(50)
                 .style("opacity", 1);
-            pierightDiv.html("Proportion: "+d.id)
+            pierightDiv.html("Proportion: "+d.data.count / rightCountSum)
                 .style("left", (d3.event.pageX + 10) + "px")
                 .style("top", (d3.event.pageY - 15) + "px");
         })
@@ -259,13 +310,12 @@ function drawGraph() {
                 .style("opacity", 0);
         });
 
-    let pieleft = workSpace.append("g");
+    let pieleft = pieNode.append("g") // draw left half of the piechart
 
     pieleft.selectAll("path")
-        .data(leftdraw(graph.filter(d => d.sequence == -1)))
+        .data(leftdraw(leftNodePieData))
         .enter()
         .append("path")
-        .attr('transform', 'translate(' + workSpaceWidth / 2 + ',' + (topSpaceHeight + workSpaceHeight / 2) + ')')
         .attr("fill", (d,i) => pieColorScale[i])
         .attr("d", arc)
         .on('mouseover', function (d, i) { //show the frequency sta when hover on pie
@@ -275,9 +325,10 @@ function drawGraph() {
             pierightDiv.transition()
                 .duration(50)
                 .style("opacity", 1);
-            pierightDiv.html("Proportion: "+d.id)
+            pierightDiv.html("Proportion: "+ d.data.count / leftCountSum)
                 .style("left", (d3.event.pageX + 10) + "px")
                 .style("top", (d3.event.pageY - 15) + "px");
+
         })
         .on('mouseout', function (d, i) {
             d3.select(this).transition()
@@ -288,45 +339,85 @@ function drawGraph() {
                 .style("opacity", 0);
         });
 
-    //draw nodes
+    //Draw nodes
     let node = workSpace.append("g")
+        .attr("id", "nodes")
+    
+    let rightnode = node.append("g")
         .attr("class", "node")
         .selectAll("circle")
-        .data(graph)
+        .data(rpieData)
         .enter().append("circle")
         .attr("r", 20)
-        .attr("cx", d => workSpaceWidth / 2 + d.sequence * 100)
-        .attr("cy", d => (d.sequence != 0) ?
-            topSpaceHeight + workSpaceHeight / 2 + 70 * (d.id - 1) :
-            topSpaceHeight + workSpaceHeight / 2)
+        .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
+        .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle))
         .call(d3.drag().on("drag", dragged))
         .on("click", clicked);
+    
+    let leftnode = node.append("g")
+    .attr("class", "node")
+    .selectAll("circle")
+    .data(lpieData)
+    .enter().append("circle")
+    .attr("r", 20)
+    .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
+    .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + yPosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
+    .call(d3.drag().on("drag", dragged))
+    .on("click", clicked);
 
+    let centernode = node.append("g")
+    .attr("class", "node")
+    .attr("id", "queryNode")
+    .selectAll("circle")
+    .data(cpieData)
+    .enter().append("circle")
+    .attr("r", 25)
+    .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
+    .attr("cy", topSpaceHeight + workSpaceHeight / 2)
+    .call(d3.drag().on("drag", dragged))
+    .on("click", clicked);
+    
+
+    //Drag node event
     function dragged(d) {
+        console.log(d);
         workSpace.selectAll("circle").attr("stroke", "#fff") // reset the style
         d.x = d3.event.x, d.y = d3.event.y;
         d3.select(this).attr("cx", d.x).attr("cy", d.y)
             .attr("stroke", "#18569C");
-        console.log(d.id);
-        link.filter(function (l) {
-            return l.source === d.target;
+        if (d.data.sequence == 0){
+            pieNode
+            .attr('transform', 'translate(' + d.x + ',' + d.y + ')');
+        }
+        // console.log(d.id);
+        console.log(d.data.sequence);
+        rightlink.filter(function (l) {
+            return l.data.source === d.data.target;
         }).attr("x1", d.x).attr("y1", d.y);
-        console.log(d.source, d.target);
-        link.filter(function (l) {
-            return l.target === d.target;
+        rightlink.filter(function (l) {
+            return l.data.target === d.data.target;
         }).attr("x2", d.x).attr("y2", d.y);
-        drawsamplepie();
-        text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
-    }
+        leftlink.filter(function (l) {
+            return l.data.source === d.data.target;
+        }).attr("x1", d.x).attr("y1", d.y);
+        leftlink.filter(function (l) {
+            return l.data.target === d.data.target;
+        }).attr("x2", d.x).attr("y2", d.y);
 
+        drawsamplepie();
+        text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.count)
+    }
+    //Click node event
     function clicked(d) {
         staSpace.selectAll("path").remove();
         drawsamplepie();
-        text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+        text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.count)
         workSpace.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
     }
 
+
+    //draw sample pie chart
     function drawsamplepie(){
         let fakeData = [{"label":"one", "value":20}, 
         {"label":"two", "value":50}, 
