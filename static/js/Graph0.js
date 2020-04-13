@@ -449,49 +449,29 @@ function drawGraph() {
     .attr("cy", topSpaceHeight + workSpaceHeight / 2 )
     // .call(d3.drag().on("drag", clicked))
     .on("click", clicked);
-    
-
-    //Drag node event
-    // function dragstarted(d){
-    //     if (d.data.sequence == 0){
-
-    //     }
-    // }
 
     function dragged(d) {
         // console.log(d);
         graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
         d.x = d3.event.x, d.y = d3.event.y;
         d3.select(this).attr("stroke", "#18569C");
-        if (d.data.sequence == 0){
-            console.log(d.x, d.y);
-            // let self = this;
-            let tsf = d3.zoomTransform(graphContainer.node());
-            console.log(tsf.x, tsf.y);
-            graphContainer.attr("transform", "translate("+(d.x - workSpaceWidth/2)+","+(d.y - workSpaceHeight/2 - topSpaceHeight)+(")"));
-            // console.log(d3.transform())
-            // node.selectAll("circle")
-            //     .attr("cx", d => d.x += d3.event.dx)
-            //     .attr("cy", d => d.y += d3.event.dy);
-        } else
-        {
-            d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            console.log(d.data.sequence);
-            rightlink.filter(
-                l => l.data.source === d.data.target
-            ).attr("x1", d.x).attr("y1", d.y);
-            rightlink.filter(
-                l => l.data.target === d.data.target
-            ).attr("x2", d.x).attr("y2", d.y);
-            leftlink.filter(
-                l => l.data.source === d.data.target
-            ).attr("x1", d.x).attr("y1", d.y);
-            leftlink.filter(
-                l => l.data.target === d.data.target
-            ).attr("x2", d.x).attr("y2", d.y);
-            console.log(this.getBoundingClientRect().x);
-            console.log(d.x, d.y);
-        }
+        d3.select(this).attr("cx", d.x).attr("cy", d.y);
+        console.log(d.data.sequence);
+        rightlink.filter(
+            l => l.data.source === d.data.target
+        ).attr("x1", d.x).attr("y1", d.y);
+        rightlink.filter(
+            l => l.data.target === d.data.target
+        ).attr("x2", d.x).attr("y2", d.y);
+        leftlink.filter(
+            l => l.data.source === d.data.target
+        ).attr("x1", d.x).attr("y1", d.y);
+        leftlink.filter(
+            l => l.data.target === d.data.target
+        ).attr("x2", d.x).attr("y2", d.y);
+        console.log(this.getBoundingClientRect().x);
+        console.log(d.x, d.y);
+
         // console.log(d.id);
 
 
