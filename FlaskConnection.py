@@ -65,7 +65,7 @@ def queryNode(typeMCC):
     #Reduce dumplication and calculate size
     linkList = []
 
-    for seq in nodeMap["sequence"].unique():    
+    for seq in nodeMap["sequence"].unique():        
         linkCount = nodeMap[nodeMap["sequence"] == seq]["links"].value_counts()
         # idcounter = 0
         for link, count in linkCount.items():        

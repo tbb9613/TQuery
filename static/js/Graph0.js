@@ -2,52 +2,54 @@ var graph // define data
 console.log(graph)
 
 
+var  mainContainer = document.getElementById("mainContainer");
+// var width = document.documentElement.clientWidth;
+// var height = document.documentElement.clientHeight;
+var width = mainContainer.clientWidth;
+var height = mainContainer.clientHeight;
+console.log(width, height);
 
-var width = document.documentElement.clientWidth;
-var height = document.documentElement.clientHeight;
-
-var svg = d3.select("#space")
-    .attr("viewBox", [0, 0, width, height])
-
-console.log(width, height)
+    // .attr("viewBox", [0, 0, width, height])
+    // .attr("preserveAspectRatio", "none");
 
 var topSpaceHeight = 0.3 * height;
 var workSpaceHeight = 0.7 * height;
 var workSpaceWidth = 0.7 * width;
+var staSpaceWidth = 0.3 * width
 var graphExist = false;
 var graphRightPlusExist = false;
 var graphLeftPlusExist = false;
 
-var topSpace = svg.append("g")
+var leftContainer = d3.select("#leftContainer")
+
+var rightContainer = d3.select("#rightContainer")
+
+var leftSvg = leftContainer
+    .append("svg")
+    .attr("id", "leftSpace")
+    .attr("viewBox", [0, 0, workSpaceWidth, height])
+    // .attr()
+// var rightSvg = rightContainer
+//     .append("svg")
+//     .attr("id", "rightSpace")
+//     .attr("viewBox", [0, 0, staSpaceWidth, height])
+
+var topSpace = leftSvg.append("g")
     .attr("id", "top");
 
 topSpace.append("rect")
     .attr("id", "topSpace")
     .attr("fill", "#CCC")
-    .attr("opacity", .4)
-    .attr("width", width)
+    .attr("opacity", .1)
+    .attr("width", workSpaceWidth)
     .attr("height", topSpaceHeight);
-
-topSpace.append("rect")
-    .attr("id", "heatmap")
-    .attr("fill", "#CCC")
-    .attr("width", width - workSpaceWidth)
-    .attr("height", topSpaceHeight)
-    .attr("x", workSpaceWidth)
-
-
-
-var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
-// nodeList = d3.range(5)
-drawTopNodes();
-
-var workSpace = svg.append("g")
+var workSpace = leftSvg.append("g")
     .attr("id", "work");
 
 //Draw background
 workSpace
     .append("rect")
-    .attr("fill", "blue")
+    .attr("fill", "#CCC")
     .attr("opacity", .15)
     .attr("width", workSpaceWidth)
     .attr("height", workSpaceHeight)
@@ -64,16 +66,54 @@ workSpace
     .attr("y", topSpaceHeight + workSpaceHeight * 0.7)
     .attr("x", workSpaceWidth * (3 / 4))
 
-var staSpace = svg.append("g")
-    .attr("id", "sta")
-
-var text = staSpace.append("text")
-    .attr("x", workSpaceWidth + 50)
-    .attr("y", topSpaceHeight + 100)
-
 var titletext = workSpace.append("text")
     .attr("y", topSpaceHeight + 50)
     .attr("x", 100)
+// var staSpace = rightSvg.append("g")
+//     .attr("id", "sta")
+
+var mapContainer = rightContainer.append("div")
+    .attr("id", "mapContainer")
+    .attr("width", width - workSpaceWidth)
+    .attr("height", topSpaceHeight-10)
+    // .attr("height")
+
+var map = mapContainer.append("svg")
+    .attr("id", "map")
+    .attr("viewBox", [0, 0, staSpaceWidth, topSpaceHeight])
+
+map.append("rect")
+    .attr("id", "heatmap")
+    .attr("fill", "#CCC")
+    .attr("width", width - workSpaceWidth)
+    .attr("height", topSpaceHeight)
+    // .attr("x", workSpaceWidth)
+
+var staContainer = rightContainer.append("div")
+    .attr("id", "staContainer")
+    .attr("width", width - workSpaceWidth)
+    .attr("height", workSpaceHeight)
+    .attr("overflow", "auto")
+
+    // .attr()
+    // .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight])
+
+// staSpace.append("div")
+//     .attr("width", width - workSpaceWidth)
+//     .attr("height", workSpaceHeight)
+var staSpace = staContainer.append("svg")
+    .attr("id", "staSpace")
+    .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight])
+
+var text = staSpace.append("text")
+    .attr("x", 100)
+    .attr("y", 50)
+
+var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
+// nodeList = d3.range(5)
+drawTopNodes();
+
+
 
 
 
@@ -91,7 +131,6 @@ function drawTopNodes() {
         .attr("x", xPosition)
         .attr("y", topSpaceHeight / 2)
         .call(d3.drag().on("drag", dragged).on("end", dragended))
-
 
     node
         .append("circle")
@@ -611,7 +650,7 @@ function drawGraph() {
 
         function clicked(d) {
             console.log("clicked");
-            staSpace.selectAll("path").remove();
+            d3.selectAll(".samplePie").remove();
             drawsamplepie();
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
             graphContainer.selectAll("circle").attr("stroke", "#fff")
@@ -644,9 +683,10 @@ function drawGraph() {
         let samplePieColorScale = d3.schemeCategory20c;
 
         let samplePie = staSpace.append("g")
+            .attr("class","samplePie")
 
         let arcSample = d3.arc()
-            .outerRadius(90)
+            .outerRadius(70)
             .innerRadius(0)
 
         let spConverter = d3.pie().value(d => d.value)
@@ -655,7 +695,7 @@ function drawGraph() {
             .data(spConverter(fakeData))
             .enter()
             .append("path")
-            .attr('transform', 'translate(' + (workSpaceWidth + 150) + ',' + (topSpaceHeight + workSpaceHeight * 0.7) + ')')
+            .attr('transform', 'translate(' + 150 + ',' + (workSpaceHeight * 0.9) + ')')
             .attr("fill", (d, i) => pieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("drag", dragged).on("end", dragended))
