@@ -15,6 +15,8 @@ var topSpaceHeight = 0.3 * height;
 var workSpaceHeight = 0.7 * height;
 var workSpaceWidth = 0.7 * width;
 var graphExist = false;
+var graphRightPlusExist = false;
+var graphLeftPlusExist = false;
 
 var topSpace = svg.append("g")
     .attr("id", "top");
@@ -60,7 +62,7 @@ workSpace
     .attr("width", workSpaceWidth / 5)
     .attr("height", workSpaceHeight / 4)
     .attr("y", topSpaceHeight + workSpaceHeight * 0.7)
-    .attr("x", workSpaceWidth * (3/4) )
+    .attr("x", workSpaceWidth * (3 / 4))
 
 var staSpace = svg.append("g")
     .attr("id", "sta")
@@ -85,18 +87,17 @@ function drawTopNodes() {
         .data(nodeList)
         .enter()
         .append("g")
-        .attr("class","topnodes")
+        .attr("class", "topnodes")
         .attr("x", xPosition)
         .attr("y", topSpaceHeight / 2)
         .call(d3.drag().on("drag", dragged).on("end", dragended))
 
-        
+
     node
         .append("circle")
         .attr("cx", xPosition)
         .attr("cy", topSpaceHeight / 2)
-        .attr("r", 20)
-;
+        .attr("r", 20);
 
     node
         .append('text')
@@ -106,8 +107,8 @@ function drawTopNodes() {
         .attr("y", topSpaceHeight / 2)
         .style('font-size', '13px')
         .attr('fill', 'white')
-        .text(d => d.slice(0,3))
-    
+        .text(d => d.slice(0, 3))
+
     //draw transparent node on text
     node
         .append("circle")
@@ -117,22 +118,22 @@ function drawTopNodes() {
         .attr("opacity", 0)
 
 
-//Data exchange
-    function postQuery(d){
-        var queryNode = d; 
+    //Data exchange
+    function postQuery(d) {
+        var queryNode = d;
         console.log(d);
         $.ajax({
             type: "POST",
             url: 'http://127.0.0.1:5000/receivedata', //send data by route
             dataType: 'json',
             data: JSON.stringify({
-                name : queryNode
+                name: queryNode
             }),
             // data : JSON(queryNode),
-            success: function(data){ // if success then update data
+            success: function (data) { // if success then update data
                 graph = data
             }
-        
+
         })
         titletext.text("Routes of people who go to " + queryNode);
         // console.log(graph);
@@ -157,7 +158,7 @@ function drawTopNodes() {
     function dragended(d) {
         let endXPos = d3.event.x,
             endYPos = d3.event.y;
-        if (endYPos > topSpaceHeight) {   //judge height space
+        if (endYPos > topSpaceHeight) { //judge height space
             d3.select(this)
                 .select("circle")
                 .transition().duration(200)
@@ -176,6 +177,8 @@ function drawTopNodes() {
             } else {
                 graphContainer.remove();
                 createQuery(d);
+                graphLeftPlusExist = false;
+                graphRightPlusExist = false;
             }
 
         } else {
@@ -194,30 +197,30 @@ function drawTopNodes() {
 function drawGraph() {
 
     var graphContainer = workSpace.append("g")
-        .attr("id","graphContainer");
-        // .attr('transform', 'translate(' + 0 + ',' + 0 + ')');
+        .attr("id", "graphContainer");
+    // .attr('transform', 'translate(' + 0 + ',' + 0 + ')');
     graphExist = true;
 
     //Create zoom behavior
     var zoom = d3.zoom()
-    .scaleExtent([0.5,1.5])
-    .on("zoom", zoom_actions);
+        .scaleExtent([0.5, 1.5])
+        .on("zoom", zoom_actions);
 
-    function zoom_actions(){
-    graphContainer.attr("transform", d3.event.transform)
+    function zoom_actions() {
+        graphContainer.attr("transform", d3.event.transform)
     }
 
     zoom(workSpace);
 
 
     //Calculate pie chart data
-    let rightNodePieData = graph.filter(d => d.sequence == 1);
-    let leftNodePieData = graph.filter(d => d.sequence == -1);
+    let nodeRightPieData = graph.filter(d => d.sequence == 1);
+    let nodeLeftPieData = graph.filter(d => d.sequence == -1);
     let centerNodePieData = graph.filter(d => d.sequence == 0)
     let nodePieStartAngle = 20;
     let nodePieEndAngle = 160;
-    let rightCountSum = d3.sum(rightNodePieData, d => d.count);
-    let leftCountSum = d3.sum(leftNodePieData, d => d.count);
+    let rightCountSum = d3.sum(nodeRightPieData, d => d.count); //here count = frequency
+    let leftCountSum = d3.sum(nodeLeftPieData, d => d.count);
     //define pie around node
     let pieColorScale = d3.schemeCategory10; //define color scale
 
@@ -238,139 +241,127 @@ function drawGraph() {
         .startAngle(-nodePieStartAngle * (Math.PI / 180))
         .endAngle(-nodePieEndAngle * (Math.PI / 180))
         .padAngle(0.01);
-    
-    let rpieData = rightdraw(rightNodePieData);
-    let lpieData = leftdraw(leftNodePieData);
+
+    let rpieData = rightdraw(nodeRightPieData);
+    let lpieData = leftdraw(nodeLeftPieData);
     let cpieData = rightdraw(centerNodePieData); // format the central node
-    
+
     // Layout position calculator - make the links and nodes fit the pie graph
-    function y1PosCalculator(xPosOffset, startRadian, endRadian){
+    function y1PosCalculator(xPosOffset, startRadian, endRadian) {
         //convert radian to degree
         let startDegree = startRadian * 180 / Math.PI;
         let endDegree = endRadian * 180 / Math.PI;
         let degreeDiff = endDegree - startDegree;
         //
         let yPosOffset = 0;
-        if (endDegree <= 90){
-            yPosOffset = - xPosOffset * Math.sin(Math.PI / 180 * (degreeDiff/2 + (90 - endDegree)));
-        }
-        else if (endDegree > 90 && startDegree <= 90){
-            if ((90 - startDegree - degreeDiff/2) > 0) 
-            {
-                yPosOffset = - xPosOffset * Math.sin(Math.PI / 180 * (90 - startDegree - degreeDiff/2));
+        if (endDegree <= 90) {
+            yPosOffset = -xPosOffset * Math.sin(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
+        } else if (endDegree > 90 && startDegree <= 90) {
+            if ((90 - startDegree - degreeDiff / 2) > 0) {
+                yPosOffset = -xPosOffset * Math.sin(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
+            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
+                yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
             }
-            else if ((90 - startDegree - degreeDiff/2) < 0){
-                yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (-(90 - startDegree - degreeDiff/2)));
-            } 
-        } 
-        else if (startDegree > 90) {
-            yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
+        } else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
         }
         console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
         return yPosOffset;
-        
+
     }
 
-    function x1PosCalculator(xPosOffset, startRadian, endRadian){
+    function x1PosCalculator(xPosOffset, startRadian, endRadian) {
         //convert radian to degree
         let startDegree = startRadian * 180 / Math.PI;
         let endDegree = endRadian * 180 / Math.PI;
         let degreeDiff = endDegree - startDegree;
         //
         let yPosOffset = 0;
-        if (endDegree <= 90){
-            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (degreeDiff/2 + (90 - endDegree)));
-        }
-        else if (endDegree > 90 && startDegree <= 90){
-            if ((90 - startDegree - degreeDiff/2) > 0) 
-            {
-                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (90 - startDegree - degreeDiff/2));
+        if (endDegree <= 90) {
+            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
+        } else if (endDegree > 90 && startDegree <= 90) {
+            if ((90 - startDegree - degreeDiff / 2) > 0) {
+                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
+            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
+                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
             }
-            else if ((90 - startDegree - degreeDiff/2) < 0){
-                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (-(90 - startDegree - degreeDiff/2)));
-            } 
-        } 
-        else if (startDegree > 90) {
-            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
+        } else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
         }
         // console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
         return yPosOffset;
-        
+
     }
 
-    function y2PosCalculator(xPosOffset, startRadian, endRadian){
+    function y2PosCalculator(xPosOffset, startRadian, endRadian) {
         //convert radian to degree
         let startDegree = startRadian * 180 / Math.PI;
         let endDegree = endRadian * 180 / Math.PI;
         let degreeDiff = endDegree - startDegree;
         //
         let yPosOffset = 0;
-        if (endDegree <= 90){
-            yPosOffset = - xPosOffset * Math.tan(Math.PI / 180 * (degreeDiff/2 + (90 - endDegree)));
-        }
-        else if (endDegree > 90 && startDegree <= 90){
-            if ((90 - startDegree - degreeDiff/2) > 0) 
-            {
-                yPosOffset = - xPosOffset * Math.tan(Math.PI / 180 * (90 - startDegree - degreeDiff/2));
+        if (endDegree <= 90) {
+            yPosOffset = -xPosOffset * Math.tan(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
+        } else if (endDegree > 90 && startDegree <= 90) {
+            if ((90 - startDegree - degreeDiff / 2) > 0) {
+                yPosOffset = -xPosOffset * Math.tan(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
+            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
+                yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
             }
-            else if ((90 - startDegree - degreeDiff/2) < 0){
-                yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (-(90 - startDegree - degreeDiff/2)));
-            } 
-        } 
-        else if (startDegree > 90) {
-            yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (startDegree - 90 + degreeDiff/2))
+        } else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
         }
         // console.log(startDegree, endDegree, degreeDiff, xPosOffset, yPosOffset);
         return yPosOffset;
-        
+
     }
 
     // Draw links
     let link = graphContainer.append('g')
-        .attr("id","link")
+        .attr("id", "link")
 
-    let rightlink = link.append("g")
-    .attr("class", "link")
-    .selectAll("line")
-    .data(rpieData)
-    .enter().append("line")
-    .attr("x1", d => workSpaceWidth / 2 + x1PosCalculator(50, d.startAngle, d.endAngle))
-    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2 + y1PosCalculator(50, d.startAngle, d.endAngle)) 
-    .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
-    
-    let leftlink = link.append("g")
-    .attr("class", "link")
-    .selectAll("line")
-    .data(lpieData)
-    .enter().append("line")
-    .attr("x1", d => workSpaceWidth / 2 + x1PosCalculator(-50, -d.startAngle, -d.endAngle))
-    .attr("y1", d => topSpaceHeight + workSpaceHeight / 2 + y1PosCalculator(50, -d.startAngle, -d.endAngle))
-    .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
+    let linkRight = link.append("g")
+        .attr("class", "link")
+        .selectAll("line")
+        .data(rpieData)
+        .enter().append("line")
+        .attr("x1", d => workSpaceWidth / 2 + x1PosCalculator(50, d.startAngle, d.endAngle))
+        .attr("y1", d => topSpaceHeight + workSpaceHeight / 2 + y1PosCalculator(50, d.startAngle, d.endAngle))
+        .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
+        .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
+
+    let linkLeft = link.append("g")
+        .attr("class", "link")
+        .selectAll("line")
+        .data(lpieData)
+        .enter().append("line")
+        .attr("x1", d => workSpaceWidth / 2 + x1PosCalculator(-50, -d.startAngle, -d.endAngle))
+        .attr("y1", d => topSpaceHeight + workSpaceHeight / 2 + y1PosCalculator(50, -d.startAngle, -d.endAngle))
+        .attr("x2", d => workSpaceWidth / 2 + d.data.sequence * 100)
+        .attr("y2", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
 
     let pieNode = graphContainer.append("g")
-        .attr("id","pieNode")
+        .attr("id", "pieNode")
         .attr('transform', 'translate(' + workSpaceWidth / 2 + ',' + (topSpaceHeight + workSpaceHeight / 2) + ')');
 
-    let pieright = pieNode.append("g");
-    let pierightDiv = d3.select("body").append("div")
+    let pieRight = pieNode.append("g");
+    let pieDiv = d3.select("body").append("div")
         .attr("class", "tooltip-donut")
         .style("opacity", 0);
-    pieright.selectAll("path")
-        .data(rightdraw(rightNodePieData))
+    pieRight.selectAll("path")
+        .data(rightdraw(nodeRightPieData))
         .enter()
         .append("path")
-        .attr("fill", (d,i) => pieColorScale[i])
+        .attr("fill", (d, i) => pieColorScale[i])
         .attr("d", arc)
-        .on('mouseover', function (d, i) {  //show the frequency sta when hover on pie segment
+        .on('mouseover', function (d, i) { //show the frequency sta when hover on pie segment
             d3.select(this).transition()
                 .duration('50')
                 .attr('opacity', '.85')
-            pierightDiv.transition()
+            pieDiv.transition()
                 .duration(50)
                 .style("opacity", 1);
-            pierightDiv.html("Proportion: "+d.data.count / rightCountSum)
+            pieDiv.html("Proportion: " + d.data.count / rightCountSum)
                 .style("left", (d3.event.pageX + 10) + "px")
                 .style("top", (d3.event.pageY - 15) + "px");
         })
@@ -378,27 +369,27 @@ function drawGraph() {
             d3.select(this).transition()
                 .duration('50')
                 .attr('opacity', '1')
-            pierightDiv.transition()
+            pieDiv.transition()
                 .duration('50')
                 .style("opacity", 0);
         });
 
-    let pieleft = pieNode.append("g") // draw left half of the piechart
+    let pieLeft = pieNode.append("g") // draw left half of the piechart
 
-    pieleft.selectAll("path")
-        .data(leftdraw(leftNodePieData))
+    pieLeft.selectAll("path")
+        .data(leftdraw(nodeLeftPieData))
         .enter()
         .append("path")
-        .attr("fill", (d,i) => pieColorScale[i])
+        .attr("fill", (d, i) => pieColorScale[i])
         .attr("d", arc)
         .on('mouseover', function (d, i) { //show the frequency sta when hover on pie
             d3.select(this).transition()
                 .duration('50')
                 .attr('opacity', '.85')
-            pierightDiv.transition()
+            pieDiv.transition()
                 .duration(50)
                 .style("opacity", 1);
-            pierightDiv.html("Proportion: "+ d.data.count / leftCountSum)
+            pieDiv.html("Proportion: " + d.data.count / leftCountSum)
                 .style("left", (d3.event.pageX + 10) + "px")
                 .style("top", (d3.event.pageY - 15) + "px");
 
@@ -407,7 +398,7 @@ function drawGraph() {
             d3.select(this).transition()
                 .duration('50')
                 .attr('opacity', '1')
-            pierightDiv.transition()
+            pieDiv.transition()
                 .duration('50')
                 .style("opacity", 0);
         });
@@ -415,8 +406,8 @@ function drawGraph() {
     //Draw nodes
     let node = graphContainer.append("g")
         .attr("id", "nodes")
-    
-    let rightnode = node.append("g")
+
+    let nodeRight = node.append("g")
         .attr("class", "node")
         .selectAll("circle")
         .data(rpieData)
@@ -426,29 +417,32 @@ function drawGraph() {
         .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle))
         .call(d3.drag().on("drag", dragged))
         .on("click", clicked);
-    
-    let leftnode = node.append("g")
-    .attr("class", "node")
-    .selectAll("circle")
-    .data(lpieData)
-    .enter().append("circle")
-    .attr("r", 20)
-    .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
-    .call(d3.drag().on("drag", dragged))
-    .on("click", clicked);
+
+    let nodeLeft = node.append("g")
+        .attr("class", "node")
+        .selectAll("circle")
+        .data(lpieData)
+        .enter().append("circle")
+        .attr("r", 20)
+        .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
+        .attr("cy", d => topSpaceHeight + workSpaceHeight / 2 + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
+        .call(d3.drag().on("drag", dragged))
+        .on("click", clicked);
 
     let centernode = node.append("g")
-    .attr("class", "node")
-    .attr("id", "queryNode")
-    .selectAll("circle")
-    .data(cpieData)
-    .enter().append("circle")
-    .attr("r", 30)
-    .attr("cx", d =>  workSpaceWidth / 2 + d.data.sequence * 100)
-    .attr("cy", topSpaceHeight + workSpaceHeight / 2 )
-    // .call(d3.drag().on("drag", clicked))
-    .on("click", clicked);
+        .attr("class", "node")
+        .attr("id", "queryNode")
+        .selectAll("circle")
+        .data(cpieData)
+        .enter().append("circle")
+        .attr("r", 30)
+        .attr("cx", d => workSpaceWidth / 2 + d.data.sequence * 100)
+        .attr("cy", topSpaceHeight + workSpaceHeight / 2)
+        // .call(d3.drag().on("drag", clicked))
+        .on("click", clicked);
+
+    let linkRightplus;
+    let nodeRightplus;
 
     function dragged(d) {
         // console.log(d);
@@ -457,23 +451,35 @@ function drawGraph() {
         d3.select(this).attr("stroke", "#18569C");
         d3.select(this).attr("cx", d.x).attr("cy", d.y);
         console.log(d.data.sequence);
-        rightlink.filter(
-            l => l.data.source === d.data.target
+        linkRight.filter(
+            l => l.data.source == d.data.target
         ).attr("x1", d.x).attr("y1", d.y);
-        rightlink.filter(
-            l => l.data.target === d.data.target
+        linkRight.filter(
+            l => l.data.target == d.data.target
         ).attr("x2", d.x).attr("y2", d.y);
-        leftlink.filter(
-            l => l.data.source === d.data.target
+        linkLeft.filter(
+            l => l.data.source == d.data.target
         ).attr("x1", d.x).attr("y1", d.y);
-        leftlink.filter(
-            l => l.data.target === d.data.target
+        linkLeft.filter(
+            l => l.data.target == d.data.target
         ).attr("x2", d.x).attr("y2", d.y);
+
+        if (graphRightPlusExist){
+            linkRightplus.filter(
+                l => l.source == d.data.target
+            ).attr("x1", d.x).attr("y1", d.y);
+        }
+
+        if (graphLeftPlusExist){
+            linkLeftplus.filter(
+                l => l.source == d.data.target
+            ).attr("x1", d.x).attr("y1", d.y);
+        }
+
         console.log(this.getBoundingClientRect().x);
         console.log(d.x, d.y);
 
         // console.log(d.id);
-
 
         drawsamplepie();
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
@@ -485,44 +491,186 @@ function drawGraph() {
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
+        // thiscx = graph.filter(n => n.source == d.data.target);
+        if (!graphRightPlusExist){
+            drawRightplus(2);
+            drawLeftplus(-2);
+        }
+
+        
+
+    }
+
+    function drawRightplus(seq) {
+
+        graphRightPlusExist = true;
+
+        //Calculate vertical layout
+        function LayoutScaler(subID, subC) {
+            let scaler = d3.scaleLinear()
+                .domain([-40, 40])
+                .range([0.8, subC+0.2]);
+            return scaler.invert(subID);
+        }
+
+        linkRightplus = link.append("g")
+            .attr("class", "link")
+            .selectAll("line")
+            .data(graph.filter(d => d.sequence == seq))
+            .enter().append("line")
+            .attr("x1", d => nodeRight.filter(n => n.data.target == d.source).attr("cx"))
+            .attr("y1", d => nodeRight.filter(n => n.data.target == d.source).attr("cy"))
+            .attr("x2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 100)
+            .attr("y2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+
+        nodeRightplus = node.append("g")
+            .attr("class", "node")
+            .selectAll("circle")
+            .data(graph.filter(d => d.sequence == seq))
+            .enter().append("circle")
+            .attr("r", 15)
+            .attr("cx", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 100)
+            .attr("cy", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+            .call(d3.drag().on("drag", dragged))
+            .on("click", clicked);
+
+        function dragged(d) {
+            // console.log(d);
+            graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
+            d.x = d3.event.x, d.y = d3.event.y;
+            d3.select(this).attr("stroke", "#18569C");
+            d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            linkRightplus.filter(
+                l => l.source == d.target
+            ).attr("x1", d.x).attr("y1", d.y);
+            linkRightplus.filter(
+                l => l.target == d.target && l.source == d.source
+            ).attr("x2", d.x).attr("y2", d.y);
+            drawsamplepie();
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+        }
+
+        function clicked(d) {
+            console.log("clicked");
+            staSpace.selectAll("path").remove();
+            drawsamplepie();
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+            graphContainer.selectAll("circle").attr("stroke", "#fff")
+            d3.select(this).attr("stroke", "#18569C")
+        }
+    }
+
+    function drawLeftplus(seq) {
+
+        graphLeftPlusExist = true;
+
+        //Calculate vertical layout
+        function LayoutScaler(subID, subC) {
+            let scaler = d3.scaleLinear()
+                .domain([-40, 40])
+                .range([0.8, subC+0.2]);
+            return scaler.invert(subID);
+        }
+
+        linkLeftplus = link.append("g")
+            .attr("class", "link")
+            .selectAll("line")
+            .data(graph.filter(d => d.sequence == seq))
+            .enter().append("line")
+            .attr("x1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cx"))
+            .attr("y1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cy"))
+            .attr("x2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 100)
+            .attr("y2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+
+        nodeLeftplus = node.append("g")
+            .attr("class", "node")
+            .selectAll("circle")
+            .data(graph.filter(d => d.sequence == seq))
+            .enter().append("circle")
+            .attr("r", 15)
+            .attr("cx", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 100)
+            .attr("cy", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+            .call(d3.drag().on("drag", dragged))
+            .on("click", clicked);
+
+        function dragged(d) {
+            // console.log(d);
+            graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
+            d.x = d3.event.x, d.y = d3.event.y;
+            d3.select(this).attr("stroke", "#18569C");
+            d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            linkLeftplus.filter(
+                l => l.source == d.target
+            ).attr("x1", d.x).attr("y1", d.y);
+            linkLeftplus.filter(
+                l => l.target == d.target && l.source == d.source
+            ).attr("x2", d.x).attr("y2", d.y);
+            drawsamplepie();
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+        }
+
+        function clicked(d) {
+            console.log("clicked");
+            staSpace.selectAll("path").remove();
+            drawsamplepie();
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+            graphContainer.selectAll("circle").attr("stroke", "#fff")
+            d3.select(this).attr("stroke", "#18569C")
+        }
+    }
+    //IF HAVE TIME TRY TO USE FORCE GRAPH
+    function drawRightplusForce(seq){
+        let simulation = d3.forceSimulation();
+        
     }
 
 
     //draw sample pie chart
-    function drawsamplepie(){
-        let fakeData = [{"label":"one", "value":20}, 
-        {"label":"two", "value":50}, 
-        {"label":"three", "value":30}];
+    function drawsamplepie() {
+        let fakeData = [{
+                "label": "one",
+                "value": 20
+            },
+            {
+                "label": "two",
+                "value": 50
+            },
+            {
+                "label": "three",
+                "value": 30
+            }
+        ];
 
         let samplePieColorScale = d3.schemeCategory20c;
 
         let samplePie = staSpace.append("g")
-        
+
         let arcSample = d3.arc()
             .outerRadius(90)
             .innerRadius(0)
-        
+
         let spConverter = d3.pie().value(d => d.value)
 
         samplePie.selectAll("path")
-        .data(spConverter(fakeData))
-        .enter()
-        .append("path")
-        .attr('transform', 'translate(' + (workSpaceWidth + 150) + ',' + (topSpaceHeight + workSpaceHeight * 0.7) + ')')
-        .attr("fill", (d,i) => pieColorScale[i])
-        .attr("d", arcSample)
-        .call(d3.drag().on("drag", dragged).on("end", dragended))
+            .data(spConverter(fakeData))
+            .enter()
+            .append("path")
+            .attr('transform', 'translate(' + (workSpaceWidth + 150) + ',' + (topSpaceHeight + workSpaceHeight * 0.7) + ')')
+            .attr("fill", (d, i) => pieColorScale[i])
+            .attr("d", arcSample)
+            .call(d3.drag().on("drag", dragged).on("end", dragended))
 
         function dragged(d) {
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this)
-            .attr('transform', 'translate(' + d.x + ',' + d.y + ')');
+                .attr('transform', 'translate(' + d.x + ',' + d.y + ')');
         }
+
         function dragended(d) {
             let endXPos = d3.event.x,
                 endYPos = d3.event.y;
             staSpace.selectAll("path").remove();
-            graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
+            // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
             drawsamplepie();
         }
     }
