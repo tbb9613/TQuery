@@ -8,10 +8,6 @@ var  mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
 var height = mainContainer.clientHeight;
 console.log(width, height);
-
-    // .attr("viewBox", [0, 0, width, height])
-    // .attr("preserveAspectRatio", "none");
-
 var topSpaceHeight = 0.3 * height;
 var workSpaceHeight = 0.7 * height;
 var workSpaceWidth = 0.7 * width;
@@ -20,6 +16,20 @@ var graphExist = false;
 var graphRightPlusExist = false;
 var graphLeftPlusExist = false;
 
+window.onresize = function(){
+    getSize()
+    this.console.log(workSpaceWidth)
+}
+function getSize(){
+    width = mainContainer.clientWidth;
+    height = mainContainer.clientHeight;
+    topSpaceHeight = 0.3 * height;
+    workSpaceHeight = 0.7 * height;
+    workSpaceWidth = 0.7 * width;
+    staSpaceWidth = 0.3 * width
+
+}
+
 var leftContainer = d3.select("#leftContainer")
 
 var rightContainer = d3.select("#rightContainer")
@@ -27,7 +37,10 @@ var rightContainer = d3.select("#rightContainer")
 var leftSvg = leftContainer
     .append("svg")
     .attr("id", "leftSpace")
-    .attr("viewBox", [0, 0, workSpaceWidth, height])
+    // .attr("viewBox", [0, 0, "100%", "100%"])
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("preserveAspectRatio", "xMidyMid slice")
     // .attr()
 // var rightSvg = rightContainer
 //     .append("svg")
@@ -37,73 +50,69 @@ var leftSvg = leftContainer
 var topSpace = leftSvg.append("g")
     .attr("id", "top");
 
+//Draw ts bg
 topSpace.append("rect")
     .attr("id", "topSpace")
     .attr("fill", "#CCC")
     .attr("opacity", .1)
-    .attr("width", workSpaceWidth)
-    .attr("height", topSpaceHeight);
+    .attr("width", "100%")
+    .attr("height", "30%");
+
 var workSpace = leftSvg.append("g")
     .attr("id", "work");
 
-//Draw background
+//Draw ws background
 workSpace
     .append("rect")
     .attr("fill", "#CCC")
     .attr("opacity", .15)
-    .attr("width", workSpaceWidth)
-    .attr("height", workSpaceHeight)
-    .attr("y", topSpaceHeight); //make the workspace under topspace
-
-workSpace
-    .append('g')
-    .append("rect")
-    .attr("id", "conditionBox")
-    // .attr("fill", "black")
-    // .attr("opacity", .20)
-    .attr("width", workSpaceWidth / 5)
-    .attr("height", workSpaceHeight / 4)
-    .attr("y", topSpaceHeight + workSpaceHeight * 0.7)
-    .attr("x", workSpaceWidth * (3 / 4))
+    .attr("width", "100%")
+    .attr("height", "70%")
+    .attr("y", "30%"); //make the workspace under topspace
 
 var titletext = workSpace.append("text")
     .attr("y", topSpaceHeight + 50)
     .attr("x", 100)
-// var staSpace = rightSvg.append("g")
-//     .attr("id", "sta")
 
-var mapContainer = rightContainer.append("div")
-    .attr("id", "mapContainer")
-    .attr("width", width - workSpaceWidth)
-    .attr("height", topSpaceHeight-10)
-    // .attr("height")
+
+var mapContainer = d3.select("#mapContainer")
 
 var map = mapContainer.append("svg")
     .attr("id", "map")
-    .attr("viewBox", [0, 0, staSpaceWidth, topSpaceHeight])
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("preserveAspectRatio", "xMidyMid slice")
 
 map.append("rect")
     .attr("id", "heatmap")
     .attr("fill", "#CCC")
-    .attr("width", width - workSpaceWidth)
-    .attr("height", topSpaceHeight)
-    // .attr("x", workSpaceWidth)
+    .attr("width", "100%")
+    .attr("height", "100%")
 
-var staContainer = rightContainer.append("div")
-    .attr("id", "staContainer")
-    .attr("width", width - workSpaceWidth)
-    .attr("height", workSpaceHeight)
-    .attr("overflow", "auto")
+var staContainer = d3.select("#staContainer")
 
-    // .attr()
-    // .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight])
-
-// staSpace.append("div")
-//     .attr("width", width - workSpaceWidth)
-//     .attr("height", workSpaceHeight)
 var staSpace = staContainer.append("svg")
     .attr("id", "staSpace")
-    .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight])
+    .attr("width", "100%")
+    .attr("height", "300%")
+    // .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight+1000])
+    // .attr("")
+
+const staCardList = [1,2,3,4]
+
+var staCards = staSpace.selectAll(".stacard")
+        .data(staCardList)
+        .enter()
+        .append("rect")
+        .attr("class", "stacard")
+        .attr("width", "100%")
+        .attr("height", 200)
+        .attr("fill", "white")
+        .attr("stroke", "yellow")
+        .attr("y", (d,i) => i*210)
+        
+    
+
 
 var text = staSpace.append("text")
     .attr("x", 100)
@@ -129,7 +138,7 @@ function drawTopNodes() {
         .append("g")
         .attr("class", "topnodes")
         .attr("x", xPosition)
-        .attr("y", topSpaceHeight / 2)
+        .attr("y", "50%")
         .call(d3.drag().on("drag", dragged).on("end", dragended))
 
     node

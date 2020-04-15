@@ -38,11 +38,20 @@
       height: 100%;
       padding: 0;
       float: left;
-      background-color: greenyellow;
+      background-color: beige;
     }
 
     #mapContainer {
+      height: 30%;
+      width: 100%;
+      /* display: inline; */
+    }
 
+    #staContainer {
+      height: 70%;
+      width: 100%;
+      overflow: scroll;
+      /* display: inline; */
     }
 
     .node {
@@ -78,10 +87,12 @@
     }
 
     #conditionBox {
-      fill: rgb(255, 255, 255);
-      stroke: blue;
-      /* opacity: 0.5; */
-      stroke-width: 2px;
+        background-color: bisque;
+        position: fixed;
+        right: 10%;
+        top: 300px;
+        height: 100px;
+        width: 100px;
     }
 
     #queryNode{
@@ -96,15 +107,17 @@
 
 <body>
 <div id = "mainContainer">
-  <div id = "leftContainer"></div>
+  <div id = "leftContainer">
+    
+  </div>
   <div id = "rightContainer">
-    <!-- <div id="mapContainer"></div> -->
-    <!-- <div id="staContainer"></div> -->
+    <div id="mapContainer"></div>
+    <div id="staContainer">
+      <div id="conditionBox"></div>
+    </div>
+    
   </div>
 </div>
-
-
-
 
 <script src="{{ url_for('static',filename='js/Graph0.js') }}">
 </script>
