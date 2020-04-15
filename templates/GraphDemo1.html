@@ -50,7 +50,8 @@
     #staContainer {
       height: 70%;
       width: 100%;
-      overflow: scroll;
+      overflow-y: scroll;
+      overflow-x: visible;
       /* display: inline; */
     }
 
@@ -107,13 +108,15 @@
 
 <body>
 <div id = "mainContainer">
+  <svg id="globalDrag"></svg>
   <div id = "leftContainer">
     
   </div>
   <div id = "rightContainer">
+    
     <div id="mapContainer"></div>
     <div id="staContainer">
-      <div id="conditionBox"></div>
+      <!-- <div id="conditionBox"></div> -->
     </div>
     
   </div>

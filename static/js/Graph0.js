@@ -1,6 +1,5 @@
 var graph // define data
-console.log(graph)
-
+// console.log(graph)
 
 var  mainContainer = document.getElementById("mainContainer");
 // var width = document.documentElement.clientWidth;
@@ -30,9 +29,19 @@ function getSize(){
 
 }
 
+var globalDragLayer = d3.select("#globalDrag")
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("position", "absolute")
+    .attr("height", 0)
+    .attr("width", 0)
+
+
 var leftContainer = d3.select("#leftContainer")
 
 var rightContainer = d3.select("#rightContainer")
+
+
 
 var leftSvg = leftContainer
     .append("svg")
@@ -95,6 +104,7 @@ var staSpace = staContainer.append("svg")
     .attr("id", "staSpace")
     .attr("width", "100%")
     .attr("height", "300%")
+    .attr("overflow", "visible")
     // .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight+1000])
     // .attr("")
 
@@ -110,13 +120,17 @@ var staCards = staSpace.selectAll(".stacard")
         .attr("fill", "white")
         .attr("stroke", "yellow")
         .attr("y", (d,i) => i*210)
-        
-    
-
 
 var text = staSpace.append("text")
     .attr("x", 100)
     .attr("y", 50)
+
+staSpace.append("svg")
+    .attr("overflow", "visible")
+    .append("rect")
+    .attr("width", 100)
+    .attr("height", 100)
+    .attr("x", -10)
 
 var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 // nodeList = d3.range(5)
@@ -493,6 +507,7 @@ function drawGraph() {
     let nodeRightplus;
 
     function dragged(d) {
+        console.log(event.pageX)
         // console.log(d);
         graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
         d.x = d3.event.x, d.y = d3.event.y;
@@ -545,7 +560,7 @@ function drawGraph() {
             drawLeftplus(-2);
         }
 
-        
+        console.log(d3.event.pageX)
 
     }
 
@@ -689,7 +704,7 @@ function drawGraph() {
             }
         ];
 
-        let samplePieColorScale = d3.schemeCategory20c;
+        let samplePieColorScale = d3.schemeAccent;
 
         let samplePie = staSpace.append("g")
             .attr("class","samplePie")
@@ -705,20 +720,50 @@ function drawGraph() {
             .enter()
             .append("path")
             .attr('transform', 'translate(' + 150 + ',' + (workSpaceHeight * 0.9) + ')')
-            .attr("fill", (d, i) => pieColorScale[i])
+            .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
-            .call(d3.drag().on("drag", dragged).on("end", dragended))
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+        
+        function dragstarted(d){
+            let boundingPos = this.getBoundingClientRect();
+            // globalDragLayer.append(this)
+            console.log("boundingPos", boundingPos.bottom, boundingPos.right)
+            console.log("getCTM", this.getCTM());
+            console.log("getSCTM", this.getScreenCTM());
 
+            globalDragLayer
+                .attr("height", "100%")
+                .attr("width", "100%")
+                .append("path")
+                .attr("fill", d3.select(this).attr("fill"))
+                .attr("d", d3.select(this).attr("d"))
+                .attr("transform", "translate(" +  event.pageX + ","  + event.pageY + ") scale(1.2)")
+
+            d3.select(this)
+                .attr("opacity", 0)
+        }
         function dragged(d) {
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this)
-                .attr('transform', 'translate(' + d.x + ',' + d.y + ')');
+                .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
+            dpx = d3.event.pageX;
+            dpy = d3.event.pageY;
+            console.log(d3.event.PageX, d3.event.x)
+            // console.log("dxdy",d.x, d.y);
+            boundingPos = this.getBoundingClientRect();
+            console.log(boundingPos)
+            globalDragLayer.selectAll("path")
+            .attr("transform", "translate(" +  event.pageX + ","  + event.pageY + ") scale(1.2)")
+
         }
 
         function dragended(d) {
             let endXPos = d3.event.x,
                 endYPos = d3.event.y;
+            globalDragLayer.selectAll("path").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
             staSpace.selectAll("path").remove();
+
             // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
             drawsamplepie();
         }
