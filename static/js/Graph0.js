@@ -38,28 +38,21 @@ var globalDragLayer = d3.select("#globalDrag")
 
 
 var leftContainer = d3.select("#leftContainer")
-
 var rightContainer = d3.select("#rightContainer")
 
-
-
-var leftSvg = leftContainer
+//Add svg to left
+var leftSvg = leftContainer 
     .append("svg")
     .attr("id", "leftSpace")
     // .attr("viewBox", [0, 0, "100%", "100%"])
     .attr("width", "100%")
     .attr("height", "100%")
     .attr("preserveAspectRatio", "xMidyMid slice")
-    // .attr()
-// var rightSvg = rightContainer
-//     .append("svg")
-//     .attr("id", "rightSpace")
-//     .attr("viewBox", [0, 0, staSpaceWidth, height])
 
 var topSpace = leftSvg.append("g")
     .attr("id", "top");
 
-//Draw ts bg
+//Draw topspace bg
 topSpace.append("rect")
     .attr("id", "topSpace")
     .attr("fill", "#CCC")
@@ -70,7 +63,7 @@ topSpace.append("rect")
 var workSpace = leftSvg.append("g")
     .attr("id", "work");
 
-//Draw ws background
+//Draw workspace background
 workSpace
     .append("rect")
     .attr("fill", "#CCC")
@@ -79,6 +72,7 @@ workSpace
     .attr("height", "70%")
     .attr("y", "30%"); //make the workspace under topspace
 
+//Add workspace text(interpretation of node map)
 var titletext = workSpace.append("text")
     .attr("y", topSpaceHeight + 50)
     .attr("x", 100)
@@ -98,47 +92,51 @@ map.append("rect")
     .attr("width", "100%")
     .attr("height", "100%")
 
+
 var staContainer = d3.select("#staContainer")
 
+var staCardHeight = 2 * staSpaceWidth/3
 var staSpace = staContainer.append("svg")
     .attr("id", "staSpace")
     .attr("width", "100%")
-    .attr("height", "300%")
+    // .attr("height", "300%")
     .attr("overflow", "visible")
     // .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight+1000])
     // .attr("")
 
-const staCardList = [1,2,3,4]
+//Create sta cards
+const staCardList = ["pie", "bar", "line"]
 
+//Create background
 var staCards = staSpace.selectAll(".stacard")
         .data(staCardList)
         .enter()
-        .append("rect")
+        .append("g")
         .attr("class", "stacard")
+        .attr("id", d => d)
         .attr("width", "100%")
-        .attr("height", 200)
-        .attr("fill", "white")
-        .attr("stroke", "yellow")
-        .attr("y", (d,i) => i*210)
+        .attr("height", staCardHeight)
+        // .attr("fill", "#CCC")
+        .attr("y", (d,i) => 200 + i*(30 + staCardHeight))
+
+staCards
+    .append("rect")
+    .attr("width", "100%")
+    .attr("height", 2 * staSpaceWidth/3)
+    .attr("fill", "#CCC")
+    .attr("y", (d,i) => 200 + i*(30 + 2 * staSpaceWidth/3))
+
+staSpace.attr("height", 300 + staCardList.length * (30 + 2 * staSpaceWidth/3))
 
 var text = staSpace.append("text")
     .attr("x", 100)
     .attr("y", 50)
-
-staSpace.append("svg")
-    .attr("overflow", "visible")
-    .append("rect")
-    .attr("width", 100)
-    .attr("height", 100)
-    .attr("x", -10)
+    .attr("fill", "white")
+    
 
 var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 // nodeList = d3.range(5)
 drawTopNodes();
-
-
-
-
 
 function drawTopNodes() {
 
@@ -273,7 +271,6 @@ function drawGraph() {
     }
 
     zoom(workSpace);
-
 
     //Calculate pie chart data
     let nodeRightPieData = graph.filter(d => d.sequence == 1);
@@ -706,7 +703,7 @@ function drawGraph() {
 
         let samplePieColorScale = d3.schemeAccent;
 
-        let samplePie = staSpace.append("g")
+        let samplePie = staSpace.select("#pie").append("g")
             .attr("class","samplePie")
 
         let arcSample = d3.arc()
@@ -719,7 +716,7 @@ function drawGraph() {
             .data(spConverter(fakeData))
             .enter()
             .append("path")
-            .attr('transform', 'translate(' + 150 + ',' + (workSpaceHeight * 0.9) + ')')
+            .attr('transform', 'translate(' + staSpaceWidth/2 + ',' + (parseFloat(staSpace.select("#pie").attr("y")) + staCardHeight/2) + ')')
             .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
@@ -738,6 +735,8 @@ function drawGraph() {
                 .attr("fill", d3.select(this).attr("fill"))
                 .attr("d", d3.select(this).attr("d"))
                 .attr("transform", "translate(" +  event.pageX + ","  + event.pageY + ") scale(1.2)")
+                .attr("stroke", "white")
+                
 
             d3.select(this)
                 .attr("opacity", 0)
@@ -767,6 +766,9 @@ function drawGraph() {
             // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
             drawsamplepie();
         }
+    }
+    function drawsamplebar() {
+        
     }
     // });
 }
