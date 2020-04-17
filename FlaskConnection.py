@@ -109,6 +109,7 @@ def queryNode(typeMCC):
 @app.route('/', methods=['GET','POST'])
 def index():
         return render_template("GraphDemo1.html", data=queryNode("Restaurant"))
+#Assign a initial data
 
 @app.route('/receivedata/', methods=['GET','POST'])
 def receive_query_data():
