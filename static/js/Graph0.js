@@ -548,6 +548,7 @@ function drawGraph() {
     function clicked(d) {
         staSpace.selectAll("path").remove();
         drawsamplepie();
+        drawsamplebar();
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
@@ -707,7 +708,7 @@ function drawGraph() {
             .attr("class","samplePie")
 
         let arcSample = d3.arc()
-            .outerRadius(70)
+            .outerRadius(75)
             .innerRadius(0)
 
         let spConverter = d3.pie().value(d => d.value)
@@ -716,7 +717,7 @@ function drawGraph() {
             .data(spConverter(fakeData))
             .enter()
             .append("path")
-            .attr('transform', 'translate(' + staSpaceWidth/2 + ',' + (parseFloat(staSpace.select("#pie").attr("y")) + staCardHeight/2) + ')')
+            .attr('transform', `translate(${staSpaceWidth/2}, ${(parseFloat(staSpace.select("#pie").attr("y")) + staCardHeight/2)})`)
             .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
@@ -727,14 +728,14 @@ function drawGraph() {
             console.log("boundingPos", boundingPos.bottom, boundingPos.right)
             console.log("getCTM", this.getCTM());
             console.log("getSCTM", this.getScreenCTM());
-
+            //Draw a same path on drag layer
             globalDragLayer
                 .attr("height", "100%")
                 .attr("width", "100%")
                 .append("path")
                 .attr("fill", d3.select(this).attr("fill"))
                 .attr("d", d3.select(this).attr("d"))
-                .attr("transform", "translate(" +  event.pageX + ","  + event.pageY + ") scale(1.2)")
+                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
                 .attr("stroke", "white")
                 
 
@@ -755,20 +756,94 @@ function drawGraph() {
             .attr("transform", "translate(" +  event.pageX + ","  + event.pageY + ") scale(1.2)")
 
         }
-
         function dragended(d) {
             let endXPos = d3.event.x,
                 endYPos = d3.event.y;
             globalDragLayer.selectAll("path").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
             staSpace.selectAll("path").remove();
-
             // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
             drawsamplepie();
         }
     }
     function drawsamplebar() {
+        let fakeData = [{
+            "label": "one",
+            "value": 20
+        },
+        {
+            "label": "two",
+            "value": 50
+        },
+        {
+            "label": "three",
+            "value": 30
+        }
+    ];
+        let sampleBar = staSpace.select("#bar").append("g")
+        .attr("class","sampleBar")
+        .attr('transform', `translate(${ staSpaceWidth / 4}, ${(parseFloat(staSpace.select("#bar").attr("y")) + staCardHeight/4)})`)
+
+        let barWidth = staSpaceWidth/2
+        let barHeight = staCardHeight/2
+
+        let xScale = d3.scaleLinear()
+            .domain([0, d3.max(fakeData,  d => d.value
+            )])
+            .range([0, barWidth]);
+
+        let yScale = d3.scaleBand()
+            // .rangeRoundBands([barHeight, 0], .1)
+            .domain(fakeData.map(d => d.label))
+            .range([0, barHeight])
+            .padding(.3);
+        
+        sampleBar.selectAll("rect").data(fakeData)
+            .enter().append("rect")
+            .attr("y", d => yScale(d.label))
+            .attr("width", d => xScale(d.value))
+            .attr("height", yScale.bandwidth())
+            .attr("fill", "#4BC1C1")
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+        
+        function dragstarted(d){
+            //Draw a same path on drag layer
+            globalDragLayer
+                .attr("height", "100%")
+                .attr("width", "100%")
+                .append("rect")
+                .attr("fill", d3.select(this).attr("fill"))
+                .attr("width", d3.select(this).attr("width"))
+                .attr("height", d3.select(this).attr("height"))
+                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
+                .attr("stroke", "white")
+                
+
+            d3.select(this)
+                .attr("opacity", 0)
+        }
+        function dragged(d) {
+            dpx = d3.event.pageX;
+            dpy = d3.event.pageY;
+            console.log(d3.event.PageX, d3.event.x)
+            // console.log("dxdy",d.x, d.y);
+            boundingPos = this.getBoundingClientRect();
+            console.log(boundingPos)
+            globalDragLayer.selectAll("rect")
+            .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
+
+        }
+        function dragended(d) {
+            let endXPos = d3.event.x,
+                endYPos = d3.event.y;
+            globalDragLayer.selectAll("rect").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
+            sampleBar.remove();
+            // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
+            drawsamplebar();
+        }
         
     }
+
     // });
 }
