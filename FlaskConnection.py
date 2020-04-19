@@ -12,12 +12,12 @@ app.jinja_env.auto_reload = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds = 1)
 
-def queryNode(typeMCC):
+def queryNode(typeMCC, time):
     # locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
     route = pd.read_csv("route.csv",index_col=0)
     # print(route.head())
     # Choose time
-    timePoint = 3
+    timePoint = time
 
     # nodeList = route.iloc[:,timePoint].value_counts().index.to_list()
     # print(nodeList) #Node List
@@ -105,21 +105,29 @@ def queryNode(typeMCC):
     QueryNodeMap = newNodeMap.to_json(orient = "records")
     return QueryNodeMap
 
+def Heatmap():
+    heatmap = pd.read_csv("heatmapProbMatrix.csv", index_col=0)
+    heatmapSend = heatmap.to_json(orient = "records")
+    # print(heatmapSend)
+    return heatmapSend
 
 @app.route('/', methods=['GET','POST'])
 def index():
-        return render_template("GraphDemo1.html", data=queryNode("Restaurant"))
-#Assign a initial data
+        return render_template("GraphDemo1.html")
 
 @app.route('/receivedata/', methods=['GET','POST'])
 def receive_query_data():
     datagetjson = request.get_json(force=True)
-    dataget = datagetjson['name']
+    getName = datagetjson['name']
+    getTime = datagetjson['time']
     # print(dataget)
-    QueryNodeMapOut = queryNode(dataget)
+    QueryNodeMapOut = queryNode(getName, getTime)
     # print(QueryNodeMapOut)
     return QueryNodeMapOut
 
+@app.route('/heatmap/', methods = ['GET', 'POST'])
+def postheatmap():
+    return Heatmap()
 
 
 if __name__ == '__main__': 

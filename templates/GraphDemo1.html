@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Graph Demo</title>
   <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js" ></script>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   <style>
-    html, body {
+    html,
+    body {
       font-family: Arial, Helvetica, sans-serif;
       height: 100%;
       padding: 0;
@@ -16,13 +18,13 @@
       /* display: inline; */
     }
 
-    body{
-    overflow: hidden;
-    -moz-user-select:none;
-    -webkit-user-select:none;
-    -ms-user-select:none;
-    -khtml-user-select:none;
-    user-select:none;
+    body {
+      overflow: hidden;
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      -khtml-user-select: none;
+      user-select: none;
     }
 
     #mainContainer {
@@ -31,7 +33,7 @@
       padding: 0;
       margin: 0;
       box-sizing: border-box;
-      
+
       /* position: relative; */
     }
 
@@ -78,25 +80,26 @@
       background-color: #999;
     }
 
-    div.tooltip-donut {
-    position: absolute;
-    text-align: center;
-    padding: .5rem;
-    background: #FFFFFF;
-    color: #313639;
-    border: 1px solid #313639;
-    border-radius: 2px;
-    pointer-events: none;
-    font-size: 1rem;
+    div.tooltip {
+      position: absolute;
+      text-align: center;
+      padding: .5rem;
+      background: #FFFFFF;
+      color: #313639;
+      border: 1px solid #313639;
+      border-radius: 2px;
+      pointer-events: none;
+      /* font-size: 1rem; */
+      font-size: 14px;
     }
 
     #conditionBox {
-        background-color: bisque;
-        position: fixed;
-        right: 10%;
-        top: 300px;
-        height: 100px;
-        width: 100px;
+      background-color: bisque;
+      position: fixed;
+      right: 10%;
+      top: 300px;
+      height: 100px;
+      width: 100px;
     }
 
     button.add-graph {
@@ -105,27 +108,116 @@
       right: 40%;
     }
 
+    .icon {
+      width: 40px;
+      height: 40px;
+      margin: 0;
+      padding: 0;
+    }
+    .heatmap-button {
+      position: absolute;
+      bottom: 5%;
+      right: 35%;
+      padding: 0;
+      margin: 0;
+      opacity: 0.5;
+      /* transition: background-color .3s; */
+    }
+
+    .heatmap-button:hover{
+      opacity: 1;
+      transition: ease-in-out .2s;
+      /* background-color: white; */
+    }
+
+    .heatmap-button-active{
+      opacity: .8;
+      /* background-color: #999; */
+    }
+
+
+
+    .heatmap-container{
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        bottom: 5%;
+        right: 35%;
+        transition: .3s;
+      /* transition: all 0.3s; */
+    }
+
+    .heatmap-container-active {
+        background-color: #212F3D;
+        position: absolute;
+        /* padding: 2%; */
+        margin: 0;
+        width: 40%;
+        height: 60%;
+        opacity: 1;
+    }
+
+    .heatmap-axis line {
+      stroke: white;
+    }
+    .heatmap-axis path {
+      stroke: none;
+    }
+    .heatmap-axis text {
+      fill: white;
+      font-size: 13px;
+    }
+
+
 
   </style>
 
 </head>
 
 <body>
-<div id = "mainContainer">
-  <svg id="globalDrag"></svg>
-  <div id = "leftContainer">
-    <button class="add-graph">add graph</button>
-  </div>
-  <div id = "rightContainer">
-    
-    <div id="mapContainer"></div>
-    <div id="staContainer">
-      <!-- <div id="conditionBox"></div> -->
-    </div>
-    
-  </div>
-</div>
+  <div id="mainContainer">
+    <svg id="globalDrag"></svg>
+    <div id="leftContainer">
+      <button class="add-graph">add graph</button>
+      <div class="heatmap-container"></div>
+      <svg t="1587228100265" class="icon heatmap-button" viewBox="0 0 1024 1024" version="1.1"
+      xmlns="http://www.w3.org/2000/svg" p-id="2215" width="200" height="200">
+      <path d="M193.207547 193.207547h637.584906v637.584906H193.207547z" fill="#A8A8A8" p-id="2216"></path>
+      <path d="M212.528302 212.528302h135.245283v135.245283h-135.245283z" fill="#EAEAEA" p-id="2217"></path>
+      <path d="M367.09434 212.528302h135.245283v135.245283h-135.245283z" fill="#D6D6D6" p-id="2218"></path>
+      <path d="M521.660377 212.528302h135.245283v135.245283h-135.245283z" fill="#FFFFFF" p-id="2219"></path>
+      <path d="M676.226415 212.528302h135.245283v135.245283h-135.245283z" fill="#F5F5F5" p-id="2220"></path>
+      <path d="M212.528302 367.09434h135.245283v135.245283h-135.245283z" fill="#FFFFFF" p-id="2221"></path>
+      <path d="M367.09434 367.09434h135.245283v135.245283h-135.245283z" fill="#EAEAEA" p-id="2222"></path>
+      <path d="M521.660377 367.09434h135.245283v135.245283h-135.245283z" fill="#D6D6D6" p-id="2223"></path>
+      <path
+        d="M676.226415 367.09434h135.245283v135.245283h-135.245283z m-463.698113 154.566037h135.245283v135.245283h-135.245283z"
+        fill="#EAEAEA" p-id="2224"></path>
+      <path d="M367.09434 521.660377h135.245283v135.245283h-135.245283z" fill="#E0E0E0" p-id="2225"></path>
+      <path d="M521.660377 521.660377h135.245283v135.245283h-135.245283z" fill="#FFFFFF" p-id="2226"></path>
+      <path d="M676.226415 521.660377h135.245283v135.245283h-135.245283z" fill="#E0E0E0" p-id="2227"></path>
+      <path d="M212.528302 676.226415h135.245283v135.245283h-135.245283z" fill="#D6D6D6" p-id="2228"></path>
+      <path
+        d="M367.09434 676.226415h135.245283v135.245283h-135.245283z m154.566037 0h135.245283v135.245283h-135.245283z"
+        fill="#EAEAEA" p-id="2229"></path>
+      <path d="M676.226415 676.226415h135.245283v135.245283h-135.245283z" fill="#F5F5F5" p-id="2230"></path>
+      </svg>
 
-<script src="{{ url_for('static',filename='js/Graph0.js') }}">
-</script>
+    </div>
+    <!-- <button class="heatmap-button"> -->
+
+    </button>
+
+    <div id="rightContainer">
+
+      <div id="mapContainer"></div>
+      <div id="staContainer">
+        <!-- <div id="conditionBox"></div> -->
+      </div>
+
+    </div>
+  </div>
+
+  <script src="{{ url_for('static',filename='js/Graph0.js') }}">
+  </script>
 </body>

@@ -1,4 +1,6 @@
-var graph // define data
+// define data
+var graph  //nodemap data
+var probHeatmap  //heatmap data
 
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
@@ -90,8 +92,7 @@ var staSpace = staContainer.append("svg")
     .attr("width", "100%")
     // .attr("height", "300%")
     .attr("overflow", "visible")
-// .attr("viewBox", [0, 0, staSpaceWidth, workSpaceHeight+1000])
-// .attr("")
+
 
 //Create sta cards
 const staCardList = ["pie", "bar", "line"]
@@ -126,6 +127,11 @@ var text = staSpace.append("text")
 var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 // nodeList = d3.range(5)
 drawTopNodes();
+getHeatmap();
+
+
+let isHeatmapActive = false;
+d3.select(".heatmap-button").on("click", drawHeatmap)
 
 function drawTopNodes() {
 
@@ -167,22 +173,24 @@ function drawTopNodes() {
         .attr("opacity", 0)
 
 
+
+    // getHeatmap()
     //Data exchange
     function postQuery(d) {
-        var queryNode = d;
+        let queryNode = d;
         console.log(d);
         $.ajax({
             type: "POST",
             url: 'http://127.0.0.1:5000/receivedata', //send data by route
             dataType: 'json',
             data: JSON.stringify({
-                name: queryNode
+                name: queryNode,
+                time: 3
             }),
             // data : JSON(queryNode),
             success: function (data) { // if success then update data
                 graph = data
             }
-
         })
         titletext.text("Routes of people who go to " + queryNode);
         // console.log(graph);
@@ -225,6 +233,7 @@ function drawTopNodes() {
                 createQuery(d);
             } else {
                 workSpace.selectAll("g").remove();
+                leftContainer.selectAll(".tooltip").remove();
                 createQuery(d);
                 graphLeftPlusExist = false;
                 graphRightPlusExist = false;
@@ -241,6 +250,125 @@ function drawTopNodes() {
 
 };
 
+function getHeatmap(){
+    $.ajax({
+        url: "http://127.0.0.1:5000/heatmap",
+        dataType: "json",
+        success: function (data) {
+            probHeatmap = data
+            // console.log(heatmap)
+        }
+    });
+}
+
+function drawHeatmap(d){
+    let heatmapContainer = leftContainer.select(".heatmap-container")
+    if (!isHeatmapActive) {
+        // console.log(heatmap);
+        d3.select(this).classed("heatmap-button-active", true);
+        heatmapContainer.classed("heatmap-container-active", true);
+        let heatmapWidth = 0.4 * width;
+        let heatmapHeight = 0.6 * height;
+        // let heatmap = heatmapContainer.append("svg")
+        setTimeout(() => {
+            let heatmap = heatmapContainer.append("svg")
+                .attr("id", "heatmap")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("fill", "white");
+            let heatmap_x = d3.map(probHeatmap, d => d.place2).keys();
+            let heatmap_y = d3.map(probHeatmap, d => d.place1).keys();
+
+            //x axis
+            let x = d3.scaleBand()
+                .range([0, 0.7 * heatmapWidth])
+                .domain(heatmap_x)
+                .padding(0.05)
+            heatmap.append("g")
+                .attr("transform", `translate(${0.2 * heatmapWidth},${0.85 * heatmapHeight})`)
+                .classed("heatmap-axis", true)
+                .call(d3.axisBottom(x).tickSize(0))
+                .select(".domamin").remove()
+                .attr("stroke", "white")
+                
+            
+            //y axis
+            let y = d3.scaleBand()
+                .range([0.7 * heatmapHeight, 0])
+                .domain(heatmap_y)
+                .padding(0.05)
+            heatmap.append("g")
+                .attr("transform", `translate(${0.2 * heatmapWidth},${0.15 * heatmapHeight})`)
+                .classed("heatmap-axis", true)
+                .call(d3.axisLeft(y).tickSize(0))
+                .select(".domamin").remove()
+                
+                
+
+            let heatmapColorScale = d3.scaleSequential(d3.interpolateBlues)
+                .domain([0,1])
+            
+            let tooltip = heatmapContainer
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+
+            function heatmapMouseover (d) {
+                tooltip
+                    .style("opacity", 1)
+                d3.select(this)
+                    .style("stroke", "#154360")
+                    .style("opacity", 1)
+                }
+            
+            function heatmapMousemove(d) {
+                tooltip
+                    .html("The prob from "+ d.place1+" to "+ d.place2+" is: " + d.prob)
+                    .style("left", (d3.mouse(this)[0]+70) + "px")
+                    .style("top", (d3.mouse(this)[1]) + "px")
+                }
+
+            function heatmapMouseleave(d) {
+                tooltip
+                    .style("opacity", 0)
+                d3.select(this)
+                    .style("stroke", "none")
+                    .style("opacity", 0.9)
+                }
+
+            heatmap.selectAll()
+                .data(probHeatmap, d => d.place1+":"+d.place2)
+                .enter()
+                .append("rect")
+                    .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
+                    .attr("y", d => y(d.place1) + 0.15 * heatmapHeight)
+                    // .attr("rx", 4)
+                    // .attr("ry", 4)
+                    .attr("width", x.bandwidth() )
+                    .attr("height", y.bandwidth() )
+                    .style("fill", d => heatmapColorScale(d.prob))
+                    .style("stroke-width", 3)
+                    .style("stroke", "none")
+                    .style("opacity", 0.9)
+                    .on("mouseover", heatmapMouseover)
+                    .on("mousemove", heatmapMousemove)
+                    .on("mouseleave", heatmapMouseleave)
+
+
+        }, 300);
+
+
+        isHeatmapActive = true;
+
+    } else {
+        isHeatmapActive = false;
+        d3.select(this).classed("heatmap-button-active", false);
+        heatmapContainer.selectAll("svg").remove();
+        heatmapContainer.classed("heatmap-container-active", false);
+        
+    }
+
+}
 // drawGraph();
 
 function drawGraph(graphid) {
@@ -448,16 +576,10 @@ function drawGraph(graphid) {
         .attr('transform', `translate(${graphCenter[0]}, ${graphCenter[1]})`);
 
     let pieRight = pieNode.append("g");
-    let pieDiv = d3.select("body").append("div")
-        .attr("class", "tooltip-donut")
+    let pieDiv = leftContainer.append("div")
+        .attr("class", "tooltip")
         .style("opacity", 0);
-    pieRight.selectAll("path")
-        .data(rightdraw(nodeRightPieData))
-        .enter()
-        .append("path")
-        .attr("fill", (d, i) => pieColorScale[i])
-        .attr("d", arc)
-        .on('mouseover', function (d, i) { //show the frequency sta when hover on pie segment
+    function pieMouseover (d, i) { //show the frequency sta when hover on pie segment
             d3.select(this).transition()
                 .duration('50')
                 .attr('opacity', '.85')
@@ -467,15 +589,25 @@ function drawGraph(graphid) {
             pieDiv.html("Proportion: " + d.data.count / rightCountSum)
                 .style("left", (d3.event.pageX + 10) + "px")
                 .style("top", (d3.event.pageY - 15) + "px");
-        })
-        .on('mouseout', function (d, i) {
-            d3.select(this).transition()
-                .duration('50')
-                .attr('opacity', '1')
-            pieDiv.transition()
-                .duration('50')
-                .style("opacity", 0);
-        });
+        }
+    
+    function pieMouseout (d, i) {
+        d3.select(this).transition()
+            .duration('50')
+            .attr('opacity', '1')
+        pieDiv.transition()
+            .duration('50')
+            .style("opacity", 0);
+    }
+    
+    pieRight.selectAll("path")
+        .data(rightdraw(nodeRightPieData))
+        .enter()
+        .append("path")
+        .attr("fill", (d, i) => pieColorScale[i])
+        .attr("d", arc)
+        .on('mouseover', pieMouseover)
+        .on('mouseout', pieMouseout);
 
     let pieLeft = pieNode.append("g") // draw left half of the piechart
 
@@ -485,26 +617,8 @@ function drawGraph(graphid) {
         .append("path")
         .attr("fill", (d, i) => pieColorScale[i])
         .attr("d", arc)
-        .on('mouseover', function (d, i) { //show the frequency sta when hover on pie
-            d3.select(this).transition()
-                .duration('50')
-                .attr('opacity', '.85')
-            pieDiv.transition()
-                .duration(50)
-                .style("opacity", 1);
-            pieDiv.html("Proportion: " + d.data.count / leftCountSum)
-                .style("left", (d3.event.pageX + 10) + "px")
-                .style("top", (d3.event.pageY - 15) + "px");
-
-        })
-        .on('mouseout', function (d, i) {
-            d3.select(this).transition()
-                .duration('50')
-                .attr('opacity', '1')
-            pieDiv.transition()
-                .duration('50')
-                .style("opacity", 0);
-        });
+        .on('mouseover', pieMouseover)
+        .on('mouseout', pieMouseout);
 
     //Draw nodes
     let node = graphContainer.append("g")
