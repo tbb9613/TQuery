@@ -1,6 +1,8 @@
 // define data
-var graph //nodemap data
+var nodeMap //nodemap data
+var subNodeMap
 var probHeatmap //heatmap data
+var queryNode
 
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
@@ -10,6 +12,7 @@ var topSpaceHeight = 0.3 * height;
 var workSpaceHeight = 0.7 * height;
 var workSpaceWidth = 0.7 * width;
 var staSpaceWidth = 0.3 * width
+
 var graphExist = false;
 
 window.onresize = function () {
@@ -94,8 +97,6 @@ map.on('moveend', function() {
     console.log(northEast, southWest);
 });
 
-
-
 var staContainer = d3.select("#staContainer")
 
 var staSpace = staContainer.append("svg")
@@ -114,7 +115,6 @@ var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "The
 // nodeList = d3.range(5)
 drawTopNodes();
 getHeatmap();
-
 
 let isHeatmapActive = false;
 d3.select(".heatmap-button").on("click", drawHeatmap)
@@ -158,12 +158,11 @@ function drawTopNodes() {
         .attr("r", 20)
         .attr("opacity", 0)
 
-
-
     // getHeatmap()
     //Data exchange
-    function postQuery(d) {
-        let queryNode = d;
+    function postQuery(d, t) {
+        // var dataReceived
+        queryNode = d;
         console.log(d);
         $.ajax({
             type: "POST",
@@ -171,21 +170,42 @@ function drawTopNodes() {
             dataType: 'json',
             data: JSON.stringify({
                 name: queryNode,
-                time: 3
+                time: t
             }),
             // data : JSON(queryNode),
             success: function (data) { // if success then update data
-                graph = data
+                nodeMap = data;
             }
         })
         titletext.text("Routes of people who go to " + queryNode);
-        // console.log(graph);
+        ;
+    }
+
+    function postSubQuery(t) {
+
+        $.ajax({
+            type: "POST",
+            url: 'http://127.0.0.1:5000/receivedata', //send data by route
+            dataType: 'json',
+            data: JSON.stringify({
+                name: queryNode,
+                time: t
+            }),
+            // data : JSON(queryNode),
+            success: function (data) { // if success then update data
+                subNodeMap = data;
+            }
+        })
+        // titletext.text("Routes of people who go to " + queryNode);
+        
     }
 
     function createQuery(d) {
-        postQuery(d);
+        postQuery(d, 4);
+        postSubQuery(7);
+        console.log(postQuery(d, 4));
         setTimeout(() => {
-            drawGraph("graph-first");
+            drawGraph("graph-first", nodeMap);
             topSpace.selectAll(".topnodes").remove();
             drawTopNodes()
         }, 500);
@@ -355,11 +375,12 @@ function drawHeatmap(d) {
 }
 // drawGraph();
 
-function drawGraph(graphid) {
+function drawGraph(graphid, graph) {
 
     let graphRightPlusExist = false;
     let graphLeftPlusExist = false;
 
+    staSpace.selectAll("g").remove();
 
     graphExist = true;
 
@@ -374,11 +395,14 @@ function drawGraph(graphid) {
 
     graphBg
         .append("rect")
+        .classed("graph-background", true)
         .attr("fill", "#CCC")
         .attr("opacity", .25)
         .attr("width", "100%")
         .attr("height", "70%")
         .attr("y", "30%");
+
+    
 
     let graphContainer = graphBg.append("g")
         .attr("id", "graphContainer");
@@ -387,12 +411,14 @@ function drawGraph(graphid) {
     var zoom = d3.zoom()
         .scaleExtent([0.5, 1.5])
         .on("zoom", zoom_actions);
+        
 
     function zoom_actions() {
         graphContainer.attr("transform", d3.event.transform)
     }
 
-    zoom(graphBg);
+    // zoom(graphBg);
+    graphBg.call(zoom).on("dblclick.zoom", null);
 
     //display side tab menu
     d3.select("#staTab").classed("hide", false)
@@ -400,7 +426,6 @@ function drawGraph(graphid) {
     let staCardHeight = 2 * staSpaceWidth / 3;
     function drawStaCards(){
         //Create sta cards
-        // const staCardList = ["pie", "bar", "line"]
         const staCardList = [{
             "category" : "general",
             "type" : "pie",
@@ -426,8 +451,8 @@ function drawGraph(graphid) {
             "type" : "bar",
             "name" : "sta6"
         }]
-        //Create background
-        
+
+        //Create background   
         var staCards = staSpace.selectAll(".stacard")
             .data(staCardList).enter()
             .append("g")
@@ -441,6 +466,7 @@ function drawGraph(graphid) {
     
         staCards
             .append("rect")
+            .attr("class", "stacard-bg")
             .attr("x", "2.5%")
             .attr("width", "95%")
             .attr("height", staCardHeight)
@@ -556,23 +582,26 @@ function drawGraph(graphid) {
             brushLayer.attr("width", 0)
                 .attr("height", 0)
                 .attr("y", 0)            
-            zoom(graphBg);
+            graphBg.call(zoom).on("dblclick.zoom", null);
         }
     }
  
-    
+    //add graoh judgement
     if (graphid === "graph-first") {
         d3.select(".add-graph")
             .on("click", addGraph)
             
         function addGraph() {
             graphBg.attr("width", "50%")
-            graphBg.selectAll("rect")
+            graphBg.selectAll(".graph-background")
                 .attr("width", "50%");
+            graphBg.selectAll(".after-controller")
+                .attr("x", "45%")
+            
             zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
             zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight])
 
-            drawGraph("graph-second")
+            drawGraph("graph-second", subNodeMap)
             
             console.log("clicked!")
         }
@@ -584,7 +613,7 @@ function drawGraph(graphid) {
             // .on("click", addGraph)
 
         graphBg.attr("width", "50%")
-        graphBg.selectAll("rect")
+        graphBg.selectAll(".graph-background")
             .attr("width", "50%")
             .attr("x", "50%");
         const scalePoint = [0, 0]
@@ -853,13 +882,13 @@ function drawGraph(graphid) {
         ).attr("x2", d.x).attr("y2", d.y);
 
         if (graphRightPlusExist) {
-            linkRightplus.filter(
+            linkRightplus[2].filter(
                 l => l.source == d.data.target
             ).attr("x1", d.x).attr("y1", d.y);
         }
 
         if (graphLeftPlusExist) {
-            linkLeftplus.filter(
+            linkLeftplus[2].filter(
                 l => l.source == d.data.target
             ).attr("x1", d.x).attr("y1", d.y);
         }
@@ -886,22 +915,64 @@ function drawGraph(graphid) {
     d3.select("#afterMinus").on("click", afterminus);
     d3.select("#beforeMinus").on("click", beforeminus);
 
+    graphBg.append("g")
+        .on("click", afterplus)
+        .append('text')
+        .attr("class", "after-controller")
+        .text("➕")
+        .attr("x", "95%")
+        .attr("y", "63%")
+    
+    graphBg.append("g")
+        .on("click", afterminus)
+        .append('text')
+        .attr("class", "after-controller")
+        .text("➖")
+        .attr("x", "95%")
+        .attr("y", "67%")
+        
+    graphBg.append("g")
+        .on("click", beforeplus)
+        .append('text')
+        .attr("class", "before-controller")
+        .text("➕")
+        .attr("x", "5%")
+        .attr("y", "63%")
+
+    graphBg.append("g")
+        .on("click", beforeminus)
+        .append('text')
+        .attr("class", "before-controller")
+        .text("➖")
+        .attr("x", "5%")
+        .attr("y", "67%")
+
+    if (graphid === "graph-second"){
+        graphBg.selectAll(".before-controller")
+            .attr("x", "55%")
+    }
+
     let rseq = 2;
     let lseq = 2;
     let maxseq = 3;
     function afterplus() {
-
-        drawRightplus(rseq);
+        if (rseq <= maxseq){
+            drawRightplus(rseq);
+        }
+        
         if (rseq < maxseq+1){
             rseq += 1;
         }
         
     }
     function beforeplus() {
-        drawLeftplus(lseq);
+        if (lseq <= maxseq){
+            drawLeftplus(lseq);
         if (lseq < maxseq+1){
             lseq += 1;
         }
+        }
+
     }
     function afterminus() {
         d3.selectAll(`#seq${rseq-1}`).remove();
@@ -952,11 +1023,6 @@ function drawGraph(graphid) {
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked);
         } else {
-            console.log("draw"+seq);
-            console.log(graph.filter(d => d.sequence == seq));
-            console.log(nodeRightplus.filter(n => n.target == "2Cafe"));
-            console.log(graph.filter(d => d.sequence == seq).filter(d => d.source == "2Cafe"));
-            
 
             linkRightplus[seq] = link.append("g")
             .attr("class", "link")

@@ -118,6 +118,13 @@
       display: none !important;
     }
 
+    .disable-select {
+      -webkit-user-select: none;  
+      -moz-user-select: none;    
+      -ms-user-select: none;      
+      user-select: none;
+    }
+
     .add-graph {
       position: absolute;
       top: 31%;
@@ -162,8 +169,6 @@
       opacity: .8;
       /* background-color: #999; */
     }
-
-
 
     .heatmap-container{
         position: absolute;
@@ -255,6 +260,10 @@
       left: 50%;
     }
 
+    button, .after-controller, .before-controller{
+      cursor: pointer;
+    }
+
 
   </style>
 </head>
@@ -267,14 +276,7 @@
       <svg id="brushLayer"></svg>
       <button class="add-graph">[-|-]</button>
       <button class="select-mode">select</button>
-      <div id = "step-before">
-        <button class="step-control" id = "beforeMinus">-</button>
-        <button class="step-control" id = "beforePlus">+</button>
-      </div>
-      <div id = "step-after">
-        <button class="step-control" id = "afterMinus">-</button>
-        <button class="step-control" id = "afterPlus">+</button>
-      </div>
+
 
       <div class="heatmap-container"></div>
       <svg t="1587228100265" class="icon heatmap-button" viewBox="0 0 1024 1024" version="1.1"
