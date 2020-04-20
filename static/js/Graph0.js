@@ -1,6 +1,6 @@
 // define data
-var graph  //nodemap data
-var probHeatmap  //heatmap data
+var graph //nodemap data
+var probHeatmap //heatmap data
 
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
@@ -39,10 +39,8 @@ var leftContainer = d3.select("#leftContainer")
 var rightContainer = d3.select("#rightContainer")
 
 //Add svg to left
-var leftSvg = leftContainer
-    .append("svg")
+var leftSvg = leftContainer.append("svg")
     .attr("id", "leftSpace")
-    // .attr("viewBox", [0, 0, "100%", "100%"])
     .attr("width", "100%")
     .attr("height", "100%")
     .attr("preserveAspectRatio", "xMidyMid slice")
@@ -71,22 +69,28 @@ var titletext = workSpace.append("text")
 
 var mapContainer = d3.select("#mapContainer")
 
-var map = mapContainer.append("svg")
-    .attr("id", "map")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("preserveAspectRatio", "xMidyMid slice")
+//Draw map
+var map = L.map("mapContainer").setView([51.505, -0.09], 13);
+L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'mapbox/streets-v11',
+    // id: "mapbox/satellite-v9",
+    tileSize: 512,
+    zoomOffset: -1,
+    accessToken: 'pk.eyJ1IjoidGJiOTYxMyIsImEiOiJjazk3ODBldjkwbWNwM29wY2dwc3Y5MzBpIn0.gQo8BJUk8CfAIsNFJNmy7A'
+}).addTo(map); 
+//get displaying area box
+map.on('moveend', function() { 
+    let northEast = [map.getBounds()._northEast.lat, map.getBounds()._northEast.lng];
+    let southWest = [map.getBounds()._southWest.lat, map.getBounds()._southWest.lng];
+    console.log(northEast, southWest);
+});
 
-map.append("rect")
-    .attr("id", "heatmap")
-    .attr("fill", "#CCC")
-    .attr("width", "100%")
-    .attr("height", "100%")
 
 
 var staContainer = d3.select("#staContainer")
 
-var staCardHeight = 2 * staSpaceWidth / 3
 var staSpace = staContainer.append("svg")
     .attr("id", "staSpace")
     .attr("width", "100%")
@@ -94,29 +98,6 @@ var staSpace = staContainer.append("svg")
     .attr("overflow", "visible")
 
 
-//Create sta cards
-const staCardList = ["pie", "bar", "line"]
-
-//Create background
-var staCards = staSpace.selectAll(".stacard")
-    .data(staCardList)
-    .enter()
-    .append("g")
-    .attr("class", "stacard")
-    .attr("id", d => d)
-    .attr("width", "100%")
-    .attr("height", staCardHeight)
-    // .attr("fill", "#CCC")
-    .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
-
-staCards
-    .append("rect")
-    .attr("width", "100%")
-    .attr("height", 2 * staSpaceWidth / 3)
-    .attr("fill", "#CCC")
-    .attr("y", (d, i) => 200 + i * (30 + 2 * staSpaceWidth / 3))
-
-staSpace.attr("height", 300 + staCardList.length * (30 + 2 * staSpaceWidth / 3))
 
 var text = staSpace.append("text")
     .attr("x", 100)
@@ -250,7 +231,7 @@ function drawTopNodes() {
 
 };
 
-function getHeatmap(){
+function getHeatmap() {
     $.ajax({
         url: "http://127.0.0.1:5000/heatmap",
         dataType: "json",
@@ -261,7 +242,7 @@ function getHeatmap(){
     });
 }
 
-function drawHeatmap(d){
+function drawHeatmap(d) {
     let heatmapContainer = leftContainer.select(".heatmap-container")
     if (!isHeatmapActive) {
         // console.log(heatmap);
@@ -290,8 +271,8 @@ function drawHeatmap(d){
                 .call(d3.axisBottom(x).tickSize(0))
                 .select(".domamin").remove()
                 .attr("stroke", "white")
-                
-            
+
+
             //y axis
             let y = d3.scaleBand()
                 .range([0.7 * heatmapHeight, 0])
@@ -302,31 +283,29 @@ function drawHeatmap(d){
                 .classed("heatmap-axis", true)
                 .call(d3.axisLeft(y).tickSize(0))
                 .select(".domamin").remove()
-                
-                
 
             let heatmapColorScale = d3.scaleSequential(d3.interpolateBlues)
-                .domain([0,1])
-            
+                .domain([0, d3.max(probHeatmap, d => d.prob)])
+
             let tooltip = heatmapContainer
                 .append("div")
                 .style("opacity", 0)
                 .attr("class", "tooltip")
 
-            function heatmapMouseover (d) {
+            function heatmapMouseover(d) {
                 tooltip
                     .style("opacity", 1)
                 d3.select(this)
                     .style("stroke", "#154360")
                     .style("opacity", 1)
-                }
-            
+            }
+
             function heatmapMousemove(d) {
                 tooltip
-                    .html("The prob from "+ d.place1+" to "+ d.place2+" is: " + d.prob)
-                    .style("left", (d3.mouse(this)[0]+70) + "px")
+                    .html("The prob from " + d.place1 + " to " + d.place2 + " is: " + parseFloat(d.prob).toFixed(2))
+                    .style("left", (d3.mouse(this)[0] + 70) + "px")
                     .style("top", (d3.mouse(this)[1]) + "px")
-                }
+            }
 
             function heatmapMouseleave(d) {
                 tooltip
@@ -334,25 +313,25 @@ function drawHeatmap(d){
                 d3.select(this)
                     .style("stroke", "none")
                     .style("opacity", 0.9)
-                }
+            }
 
             heatmap.selectAll()
-                .data(probHeatmap, d => d.place1+":"+d.place2)
+                .data(probHeatmap, d => d.place1 + ":" + d.place2)
                 .enter()
                 .append("rect")
-                    .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
-                    .attr("y", d => y(d.place1) + 0.15 * heatmapHeight)
-                    // .attr("rx", 4)
-                    // .attr("ry", 4)
-                    .attr("width", x.bandwidth() )
-                    .attr("height", y.bandwidth() )
-                    .style("fill", d => heatmapColorScale(d.prob))
-                    .style("stroke-width", 3)
-                    .style("stroke", "none")
-                    .style("opacity", 0.9)
-                    .on("mouseover", heatmapMouseover)
-                    .on("mousemove", heatmapMousemove)
-                    .on("mouseleave", heatmapMouseleave)
+                .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
+                .attr("y", d => y(d.place1) + 0.15 * heatmapHeight)
+                // .attr("rx", 4)
+                // .attr("ry", 4)
+                .attr("width", x.bandwidth())
+                .attr("height", y.bandwidth())
+                .style("fill", d => heatmapColorScale(d.prob))
+                .style("stroke-width", 3)
+                .style("stroke", "none")
+                .style("opacity", 0.9)
+                .on("mouseover", heatmapMouseover)
+                .on("mousemove", heatmapMousemove)
+                .on("mouseleave", heatmapMouseleave)
 
 
         }, 300);
@@ -365,7 +344,7 @@ function drawHeatmap(d){
         d3.select(this).classed("heatmap-button-active", false);
         heatmapContainer.selectAll("svg").remove();
         heatmapContainer.classed("heatmap-container-active", false);
-        
+
     }
 
 }
@@ -410,6 +389,118 @@ function drawGraph(graphid) {
 
     zoom(graphBg);
 
+    //display side tab menu
+    d3.select("#staTab").classed("hide", false)
+    //draw sta cards
+    let staCardHeight = 2 * staSpaceWidth / 3;
+    function drawStaCards(){
+        //Create sta cards
+        // const staCardList = ["pie", "bar", "line"]
+        const staCardList = [{
+            "category" : "general",
+            "type" : "pie",
+            "name" : "sta1"
+        },{
+            "category" : "general",
+            "type" : "bar",
+            "name" : "sta2"
+        },{
+            "category" : "business",
+            "type" : "pie",
+            "name" : "sta3"
+        },{
+            "category" : "business",
+            "type" : "bar",
+            "name" : "sta4"
+        },{
+            "category" : "consumer",
+            "type" : "pie",
+            "name" : "sta5"
+        },{
+            "category" : "consumer",
+            "type" : "bar",
+            "name" : "sta6"
+        }]
+        //Create background
+        
+        var staCards = staSpace.selectAll(".stacard")
+            .data(staCardList).enter()
+            .append("g")
+            .classed("stacard", true)
+            .attr("class", d => (d.category+" "+d.type))
+            .attr("id", d => d.name)
+            .attr("width", "100%")
+            .attr("height", staCardHeight)
+            // .attr("fill", "#CCC")
+            .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
+    
+        staCards
+            .append("rect")
+            .attr("x", "2.5%")
+            .attr("width", "95%")
+            .attr("height", staCardHeight)
+            .attr("fill", "#CCC")
+            .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
+    
+        staSpace.attr("height", 300 + staCardList.length * (30 + staCardHeight))
+    }
+
+    drawStaCards();
+    let businessHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
+    let customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
+
+    d3.selectAll(".sta-button")
+        .on("click", clickStaTab)
+    var isTabClicked = false;
+    function clickStaTab(){
+        isTabClicked = true;
+        let id = d3.select(this).attr("id");
+        if (id === "G") {
+            staContainer.node().scrollTo({top: 0, behavior: "smooth"});
+            d3.select("#G").classed("sta-button-active", true);
+            d3.select("#B").classed("sta-button-active", false);
+            d3.select("#C").classed("sta-button-active", false);
+        } else if (id === "B") {
+            staContainer.node().scrollTo({top: businessHeight, behavior: "smooth"})
+            d3.select("#G").classed("sta-button-active", false);
+            d3.select("#B").classed("sta-button-active", true);
+            d3.select("#C").classed("sta-button-active", false);
+        } else if (id === "C") {
+            staContainer.node().scrollTo({top: customerHeight, behavior: "smooth"})
+            d3.select("#G").classed("sta-button-active", false);
+            d3.select("#B").classed("sta-button-active", false);
+            d3.select("#C").classed("sta-button-active", true);
+        }
+        setTimeout(() =>{
+            isTabClicked = false;
+            checkScroll();
+        }, 1500)
+        
+    }
+    staContainer.node().onscroll = checkScroll;
+    
+    function checkScroll(){
+        let sTop = staContainer.node().scrollTop;
+        if (!isTabClicked) {
+            if (sTop < businessHeight){
+                d3.select("#G").classed("sta-button-active", true);
+                d3.select("#B").classed("sta-button-active", false);
+                d3.select("#C").classed("sta-button-active", false);
+            } else if (sTop >= businessHeight && sTop < customerHeight) {
+                d3.select("#G").classed("sta-button-active", false);
+                d3.select("#B").classed("sta-button-active", true);
+                d3.select("#C").classed("sta-button-active", false);
+            }  else {
+                d3.select("#G").classed("sta-button-active", false);
+                d3.select("#B").classed("sta-button-active", false);
+                d3.select("#C").classed("sta-button-active", true);
+            }
+        }
+
+        console.log("scroll!", sTop);
+    }
+    
+
     if (graphid === "graph-first") {
         d3.select(".add-graph")
             .on("click", addGraph)
@@ -423,6 +514,8 @@ function drawGraph(graphid) {
 
             drawGraph("graph-second")
             console.log("clicked!")
+
+
         }
     } else if (graphid === "graph-second") {
 
@@ -447,7 +540,7 @@ function drawGraph(graphid) {
         console.log("second-layout done!")
     }
 
-//Pie around center node
+    //Pie around center node
     //Calculate pie chart data
     let nodeRightPieData = graph.filter(d => d.sequence == 1);
     let nodeLeftPieData = graph.filter(d => d.sequence == -1);
@@ -501,7 +594,6 @@ function drawGraph(graphid) {
             yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
         }
         return yPosOffset;
-
     }
 
     function x1PosCalculator(xPosOffset, startRadian, endRadian) {
@@ -579,19 +671,32 @@ function drawGraph(graphid) {
     let pieDiv = leftContainer.append("div")
         .attr("class", "tooltip")
         .style("opacity", 0);
-    function pieMouseover (d, i) { //show the frequency sta when hover on pie segment
-            d3.select(this).transition()
-                .duration('50')
-                .attr('opacity', '.85')
-            pieDiv.transition()
-                .duration(50)
-                .style("opacity", 1);
-            pieDiv.html("Proportion: " + d.data.count / rightCountSum)
-                .style("left", (d3.event.pageX + 10) + "px")
-                .style("top", (d3.event.pageY - 15) + "px");
-        }
-    
-    function pieMouseout (d, i) {
+
+    function pierightMouseover(d, i) { //show the frequency sta when hover on pie segment
+        d3.select(this).transition()
+            .duration('50')
+            .attr('opacity', '.85')
+        pieDiv.transition()
+            .duration(50)
+            .style("opacity", 1);
+        pieDiv.html("Proportion: " + (d.data.count / rightCountSum).toFixed(2))
+            .style("left", (d3.event.pageX + 10) + "px")
+            .style("top", (d3.event.pageY - 15) + "px");
+    }
+
+    function pieleftMouseover(d, i) { //show the frequency sta when hover on pie segment
+        d3.select(this).transition()
+            .duration('50')
+            .attr('opacity', '.85')
+        pieDiv.transition()
+            .duration(50)
+            .style("opacity", 1);
+        pieDiv.html("Proportion: " + (d.data.count / leftCountSum).toFixed(2))
+            .style("left", (d3.event.pageX + 10) + "px")
+            .style("top", (d3.event.pageY - 15) + "px");
+    }
+
+    function pieMouseout(d, i) {
         d3.select(this).transition()
             .duration('50')
             .attr('opacity', '1')
@@ -599,14 +704,14 @@ function drawGraph(graphid) {
             .duration('50')
             .style("opacity", 0);
     }
-    
+
     pieRight.selectAll("path")
         .data(rightdraw(nodeRightPieData))
         .enter()
         .append("path")
         .attr("fill", (d, i) => pieColorScale[i])
         .attr("d", arc)
-        .on('mouseover', pieMouseover)
+        .on('mouseover', pierightMouseover)
         .on('mouseout', pieMouseout);
 
     let pieLeft = pieNode.append("g") // draw left half of the piechart
@@ -617,7 +722,7 @@ function drawGraph(graphid) {
         .append("path")
         .attr("fill", (d, i) => pieColorScale[i])
         .attr("d", arc)
-        .on('mouseover', pieMouseover)
+        .on('mouseover', pieleftMouseover)
         .on('mouseout', pieMouseout);
 
     //Draw nodes
@@ -698,15 +803,12 @@ function drawGraph(graphid) {
         console.log(d.x, d.y);
 
         // console.log(d.id);
-
-        drawsamplepie();
+        drawsta();
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
     }
     //Click node event
     function clicked(d) {
-        staSpace.selectAll("path").remove();
-        drawsamplepie();
-        drawsamplebar();
+        drawsta();
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
@@ -715,9 +817,7 @@ function drawGraph(graphid) {
             drawRightplus(2);
             drawLeftplus(-2);
         }
-
-        console.log(d3.event.pageX)
-
+        // console.log(d3.event.pageX)
     }
 
     function drawRightplus(seq) {
@@ -765,14 +865,14 @@ function drawGraph(graphid) {
             linkRightplus.filter(
                 l => l.target == d.target && l.source == d.source
             ).attr("x2", d.x).attr("y2", d.y);
-            drawsamplepie();
+            drawsta();
+
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
         }
 
         function clicked(d) {
             console.log("clicked");
-            staSpace.selectAll("path").remove();
-            drawsamplepie();
+            drawsta();
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
             graphContainer.selectAll("circle").attr("stroke", "#fff")
             d3.select(this).attr("stroke", "#18569C")
@@ -824,14 +924,14 @@ function drawGraph(graphid) {
             linkLeftplus.filter(
                 l => l.target == d.target && l.source == d.source
             ).attr("x2", d.x).attr("y2", d.y);
-            drawsamplepie();
+            drawsta();
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
         }
 
         function clicked(d) {
             console.log("clicked");
             d3.selectAll(".samplePie").remove();
-            drawsamplepie();
+            drawsta();
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
             graphContainer.selectAll("circle").attr("stroke", "#fff")
             d3.select(this).attr("stroke", "#18569C")
@@ -843,9 +943,15 @@ function drawGraph(graphid) {
 
     }
 
+    function drawsta(){
+        staSpace.selectAll(".samplePie").remove();
+        staSpace.selectAll(".sampleBar").remove();
+        drawsamplepie("#sta1");
+        drawsamplebar("#sta2");
+    }
 
     //draw sample pie chart
-    function drawsamplepie() {
+    function drawsamplepie(id) {
         let fakeData = [{
                 "label": "one",
                 "value": 20
@@ -862,7 +968,7 @@ function drawGraph(graphid) {
 
         let samplePieColorScale = d3.schemeAccent;
 
-        let samplePie = staSpace.select("#pie").append("g")
+        let samplePie = staSpace.select(id).append("g")
             .attr("class", "samplePie")
 
         let arcSample = d3.arc()
@@ -875,17 +981,13 @@ function drawGraph(graphid) {
             .data(spConverter(fakeData))
             .enter()
             .append("path")
-            .attr('transform', `translate(${staSpaceWidth/2}, ${(parseFloat(staSpace.select("#pie").attr("y")) + staCardHeight/2)})`)
+            .attr('transform', `translate(${staSpaceWidth/2}, ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/2)})`)
             .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
 
         function dragstarted(d) {
             let boundingPos = this.getBoundingClientRect();
-            // globalDragLayer.append(this)
-            console.log("boundingPos", boundingPos.bottom, boundingPos.right)
-            console.log("getCTM", this.getCTM());
-            console.log("getSCTM", this.getScreenCTM());
             //Draw a same path on drag layer
             globalDragLayer
                 .attr("height", "100%")
@@ -907,27 +1009,22 @@ function drawGraph(graphid) {
                 .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
             dpx = d3.event.pageX;
             dpy = d3.event.pageY;
-            console.log(d3.event.PageX, d3.event.x)
-            // console.log("dxdy",d.x, d.y);
-            boundingPos = this.getBoundingClientRect();
-            console.log(boundingPos)
             globalDragLayer.selectAll("path")
                 .attr("transform", "translate(" + event.pageX + "," + event.pageY + ") scale(1.2)")
 
         }
 
         function dragended(d) {
-            let endXPos = d3.event.x,
-                endYPos = d3.event.y;
+            let endXPos = event.pageX,
+                endYPos = event.pageY;
             globalDragLayer.selectAll("path").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
-            staSpace.selectAll("path").remove();
-            // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
-            drawsamplepie();
+            samplePie.remove();
+            drawsamplepie(id);
         }
     }
 
-    function drawsamplebar() {
+    function drawsamplebar(id) {
         let fakeData = [{
                 "label": "one",
                 "value": 20
@@ -941,9 +1038,9 @@ function drawGraph(graphid) {
                 "value": 30
             }
         ];
-        let sampleBar = staSpace.select("#bar").append("g")
+        let sampleBar = staSpace.select(id).append("g")
             .attr("class", "sampleBar")
-            .attr('transform', `translate(${ staSpaceWidth / 4}, ${(parseFloat(staSpace.select("#bar").attr("y")) + staCardHeight/4)})`)
+            .attr('transform', `translate(${ staSpaceWidth / 4}, ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/4)})`)
 
         let barWidth = staSpaceWidth / 2
         let barHeight = staCardHeight / 2
@@ -986,23 +1083,19 @@ function drawGraph(graphid) {
         function dragged(d) {
             dpx = d3.event.pageX;
             dpy = d3.event.pageY;
-            console.log(d3.event.PageX, d3.event.x)
-            // console.log("dxdy",d.x, d.y);
-            boundingPos = this.getBoundingClientRect();
-            console.log(boundingPos)
             globalDragLayer.selectAll("rect")
                 .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
 
         }
 
         function dragended(d) {
-            let endXPos = d3.event.x,
-                endYPos = d3.event.y;
+            let endXPos = event.pageX,
+                endYPos = event.pageY;
             globalDragLayer.selectAll("rect").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
             sampleBar.remove();
             // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
-            drawsamplebar();
+            drawsamplebar(id);
         }
 
     }

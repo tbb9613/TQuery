@@ -5,9 +5,16 @@
   <meta charset="UTF-8">
   <title>Graph Demo</title>
   <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
+  <script src="https://unpkg.com/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+  integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+  crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+  integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+  crossorigin=""></script>
   <style>
     html,
     body {
@@ -25,6 +32,10 @@
       -ms-user-select: none;
       -khtml-user-select: none;
       user-select: none;
+    }
+
+    button {
+      outline: none;
     }
 
     #mainContainer {
@@ -91,6 +102,7 @@
       pointer-events: none;
       /* font-size: 1rem; */
       font-size: 14px;
+      z-index: 2;
     }
 
     #conditionBox {
@@ -102,10 +114,26 @@
       width: 100px;
     }
 
-    button.add-graph {
+    .hide {
+      display: none;
+    }
+
+    .add-graph {
       position: absolute;
       top: 31%;
       right: 40%;
+      border: none;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      background-color:gray;
+      display: inline-block;
+      transition: ease-in-out .3s;
+    }
+
+    .add-graph:hover {
+      background-color: darkgrey;
+      box-shadow: aliceblue;
     }
 
     .icon {
@@ -120,7 +148,7 @@
       right: 35%;
       padding: 0;
       margin: 0;
-      opacity: 0.5;
+      opacity: 0.7;
       /* transition: background-color .3s; */
     }
 
@@ -168,17 +196,48 @@
       font-size: 13px;
     }
 
+    #staTab{
+      position: fixed;
+      right: 30%;
+      top: 30%;
+      width: 2.5%;
+      height: 6%;
+      background-color: #fff;
+      margin: 0;
+      align-items: center;
+      /* position: fixed; */
+      /* position:absolute; */
+    }
+
+    .sta-button{
+
+      display: inline-block;
+      /* justify-self: center; */
+      /* float: right; */
+      width: 100%;
+      /* margin: 1% 0.5%; */
+      height: 100%;
+      border: none;
+      background-color: #CCC;
+      font-size: 1em;
+      color: white;
+      /* padding: 0; */
+    }
+
+    .sta-button-active {
+      background-color: slategray;
+    }
+
 
 
   </style>
-
 </head>
 
 <body>
   <div id="mainContainer">
     <svg id="globalDrag"></svg>
     <div id="leftContainer">
-      <button class="add-graph">add graph</button>
+      <button class="add-graph">[-|-]</button>
       <div class="heatmap-container"></div>
       <svg t="1587228100265" class="icon heatmap-button" viewBox="0 0 1024 1024" version="1.1"
       xmlns="http://www.w3.org/2000/svg" p-id="2215" width="200" height="200">
@@ -202,17 +261,21 @@
         fill="#EAEAEA" p-id="2229"></path>
       <path d="M676.226415 676.226415h135.245283v135.245283h-135.245283z" fill="#F5F5F5" p-id="2230"></path>
       </svg>
-
     </div>
     <!-- <button class="heatmap-button"> -->
 
-    </button>
+    
 
     <div id="rightContainer">
 
       <div id="mapContainer"></div>
+      <div id="staTab" class="hide"> 
+        <button id = "G" class="sta-button sta-button-active">G</button>
+        <button id = "B" class="sta-button">B</button>
+        <button id = "C" class="sta-button">C</button>
+      </div>
       <div id="staContainer">
-        <!-- <div id="conditionBox"></div> -->
+
       </div>
 
     </div>
