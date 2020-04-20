@@ -34,6 +34,13 @@ var globalDragLayer = d3.select("#globalDrag")
     .attr("height", 0)
     .attr("width", 0)
 
+var brushLayer = d3.select("#brushLayer")
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("position", "absolute")
+    .attr("height", 0)
+    .attr("width", 0)
+
 
 var leftContainer = d3.select("#leftContainer")
 var rightContainer = d3.select("#rightContainer")
@@ -96,8 +103,6 @@ var staSpace = staContainer.append("svg")
     .attr("width", "100%")
     // .attr("height", "300%")
     .attr("overflow", "visible")
-
-
 
 var text = staSpace.append("text")
     .attr("x", 100)
@@ -189,7 +194,7 @@ function drawTopNodes() {
     function dragged(d) {
         d3.select(this).select("text").attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
         d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
-        console.log(d, d3.event.x)
+        // console.log(d, d3.event.x)
     }; //???????
     //drag top nodes
 
@@ -501,10 +506,65 @@ function drawGraph(graphid) {
     }
     
 
+    //brush - select
+    var brush = d3.brush()
+        .extent([[0, topSpaceHeight], [workSpaceWidth, height]])
+        .on("start brush", brushed)
+        .on("end", brushpopup);
+
+    function brushed(){
+        let selection = d3.event.selection;
+        if (selection != null){
+            let [[x0, y0], [x1, y1]] = selection;
+            let nodes = node.selectAll("circle")
+            nodes.classed("selected", function(d) {return isInSelection(selection, 
+            this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width, 
+            this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)})
+        }
+        function isInSelection(brush_coords, cx, cy){
+            let x0 = brush_coords[0][0],
+            x1 = brush_coords[1][0],
+            y0 = brush_coords[0][1],
+            y1 = brush_coords[1][1];
+            return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1; 
+        }
+    }
+    function brushpopup(){
+        let selection = d3.event.selection;
+        if (selection != null){
+            
+        }
+    }
+
+    var isSelectMode = false;
+    let selectModeButton = d3.select(".select-mode")
+    selectModeButton.on("click", selectMode)
+    function selectMode(){
+        if (!isSelectMode) {
+            selectModeButton.classed("select-mode-active", true);
+            isSelectMode = true;
+            graphBg.on(".zoom", null);
+            brushLayer.attr("width", "70%")
+                .attr("height", "100%")
+                .attr("y", "30%")
+            brush(brushLayer);
+            console.log("select!")
+        } else {
+            selectModeButton.classed("select-mode-active", false);
+            isSelectMode = false;
+            brushLayer.on(".brush", null);
+            brushLayer.attr("width", 0)
+                .attr("height", 0)
+                .attr("y", 0)            
+            zoom(graphBg);
+        }
+    }
+ 
+    
     if (graphid === "graph-first") {
         d3.select(".add-graph")
             .on("click", addGraph)
-
+            
         function addGraph() {
             graphBg.attr("width", "50%")
             graphBg.selectAll("rect")
@@ -513,11 +573,15 @@ function drawGraph(graphid) {
             zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight])
 
             drawGraph("graph-second")
+            
             console.log("clicked!")
-
-
         }
     } else if (graphid === "graph-second") {
+
+        d3.select(".add-graph")
+            .classed("hide", true);
+            // .style("display", "none")
+            // .on("click", addGraph)
 
         graphBg.attr("width", "50%")
         graphBg.selectAll("rect")
@@ -536,7 +600,6 @@ function drawGraph(graphid) {
             .attr("stroke", "black")
             .attr("stroke-width", "3px");
 
-        // drawGraph("graph-second")
         console.log("second-layout done!")
     }
 
@@ -763,8 +826,10 @@ function drawGraph(graphid) {
         // .call(d3.drag().on("drag", clicked))
         .on("click", clicked);
 
-    let linkRightplus;
-    let nodeRightplus;
+    let linkRightplus = new Array();
+    let nodeRightplus = new Array();
+    let linkLeftplus = new Array();
+    let nodeLeftplus = new Array();
 
     function dragged(d) {
         console.log(event.pageX)
@@ -812,12 +877,44 @@ function drawGraph(graphid) {
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
-        // thiscx = graph.filter(n => n.source == d.data.target);
-        if (!graphRightPlusExist) {
-            drawRightplus(2);
-            drawLeftplus(-2);
+        
+    }
+
+    //Add steps
+    d3.select("#afterPlus").on("click", afterplus);
+    d3.select("#beforePlus").on("click", beforeplus);
+    d3.select("#afterMinus").on("click", afterminus);
+    d3.select("#beforeMinus").on("click", beforeminus);
+
+    let rseq = 2;
+    let lseq = 2;
+    let maxseq = 3;
+    function afterplus() {
+
+        drawRightplus(rseq);
+        if (rseq < maxseq+1){
+            rseq += 1;
         }
-        // console.log(d3.event.pageX)
+        
+    }
+    function beforeplus() {
+        drawLeftplus(lseq);
+        if (lseq < maxseq+1){
+            lseq += 1;
+        }
+    }
+    function afterminus() {
+        d3.selectAll(`#seq${rseq-1}`).remove();
+        if (rseq > 2) {
+            rseq -= 1
+        }
+        
+    }
+    function beforeminus() {
+        d3.selectAll(`#seq${-lseq+1}`).remove();
+        if (lseq > 2) {
+            lseq -= 1
+        }
     }
 
     function drawRightplus(seq) {
@@ -831,40 +928,79 @@ function drawGraph(graphid) {
                 .range([0.6, subC + 0.4]);
             return scaler.invert(subID);
         }
+        if (seq === 2){
+            linkRightplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${seq}`)
+                .selectAll("line")
+                .data(graph.filter(d => d.sequence == seq))
+                .enter().append("line")
+                .attr("x1", d => nodeRight.filter(n => n.data.target == d.source).attr("cx"))
+                .attr("y1", d => nodeRight.filter(n => n.data.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 80)
+                .attr("y2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
-        linkRightplus = link.append("g")
+            nodeRightplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${seq}`)
+                .selectAll("circle")
+                .data(graph.filter(d => d.sequence == seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 80)
+                .attr("cy", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+        } else {
+            console.log("draw"+seq);
+            console.log(graph.filter(d => d.sequence == seq));
+            console.log(nodeRightplus.filter(n => n.target == "2Cafe"));
+            console.log(graph.filter(d => d.sequence == seq).filter(d => d.source == "2Cafe"));
+            
+
+            linkRightplus[seq] = link.append("g")
             .attr("class", "link")
+            .attr("id", `seq${seq}`)
             .selectAll("line")
             .data(graph.filter(d => d.sequence == seq))
             .enter().append("line")
-            .attr("x1", d => nodeRight.filter(n => n.data.target == d.source).attr("cx"))
-            .attr("y1", d => nodeRight.filter(n => n.data.target == d.source).attr("cy"))
-            .attr("x2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 80)
-            .attr("y2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+            .attr("x1", d => nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cx"))
+            .attr("y1", d => nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cy"))
+            .attr("x2", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cx")) + 80)
+            .attr("y2", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
-        nodeRightplus = node.append("g")
+            nodeRightplus[seq] = node.append("g")
             .attr("class", "node")
+            .attr("id", `seq${seq}`)
             .selectAll("circle")
             .data(graph.filter(d => d.sequence == seq))
             .enter().append("circle")
             .attr("r", 10)
-            .attr("cx", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 80)
-            .attr("cy", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+            .attr("cx", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cx")) + 80)
+            .attr("cy", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
             .call(d3.drag().on("drag", dragged))
             .on("click", clicked);
+        }
+
 
         function dragged(d) {
-            // console.log(d);
             graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            linkRightplus.filter(
+            
+            linkRightplus[seq].filter(
                 l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
-            linkRightplus.filter(
+            linkRightplus[seq].filter(
                 l => l.target == d.target && l.source == d.source
             ).attr("x2", d.x).attr("y2", d.y);
+            if (seq < maxseq){
+                linkRightplus[seq+1].filter(
+                l => l.source == d.target
+            ).attr("x1", d.x).attr("y1", d.y);
+            }
+
             drawsta();
 
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
@@ -890,27 +1026,53 @@ function drawGraph(graphid) {
                 .range([0.6, subC + 0.4]);
             return scaler.invert(subID);
         }
+        if (seq == 2) {
+            linkLeftplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${-seq}`)
+                .selectAll("line")
+                .data(graph.filter(d => d.sequence == -seq))
+                .enter().append("line")
+                .attr("x1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cx"))
+                .attr("y1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 80)
+                .attr("y2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
-        linkLeftplus = link.append("g")
-            .attr("class", "link")
-            .selectAll("line")
-            .data(graph.filter(d => d.sequence == seq))
-            .enter().append("line")
-            .attr("x1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cx"))
-            .attr("y1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cy"))
-            .attr("x2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 80)
-            .attr("y2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+            nodeLeftplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${-seq}`)
+                .selectAll("circle")
+                .data(graph.filter(d => d.sequence == -seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 80)
+                .attr("cy", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+        }   else {
+            linkLeftplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${-seq}`)
+                .selectAll("line")
+                .data(graph.filter(d => d.sequence == -seq))
+                .enter().append("line")
+                .attr("x1", d => nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cx"))
+                .attr("y1", d => nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cx")) - 80)
+                .attr("y2", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
-        nodeLeftplus = node.append("g")
-            .attr("class", "node")
-            .selectAll("circle")
-            .data(graph.filter(d => d.sequence == seq))
-            .enter().append("circle")
-            .attr("r", 10)
-            .attr("cx", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 80)
-            .attr("cy", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
-            .call(d3.drag().on("drag", dragged))
-            .on("click", clicked);
+            nodeLeftplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${-seq}`)
+                .selectAll("circle")
+                .data(graph.filter(d => d.sequence == -seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cx")) - 80)
+                .attr("cy", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+        }
 
         function dragged(d) {
             // console.log(d);
@@ -918,16 +1080,23 @@ function drawGraph(graphid) {
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            linkLeftplus.filter(
+            // console.log(link.selectAll(`seq${seq}`), linkRightplus[seq])
+            linkLeftplus[seq].filter(
                 l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
-            linkLeftplus.filter(
+            linkLeftplus[seq].filter(
                 l => l.target == d.target && l.source == d.source
             ).attr("x2", d.x).attr("y2", d.y);
+            if (seq < maxseq){
+                linkLeftplus[seq+1].filter(
+                l => l.source == d.target
+            ).attr("x1", d.x).attr("y1", d.y);
+            }
+
             drawsta();
+
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
         }
-
         function clicked(d) {
             console.log("clicked");
             d3.selectAll(".samplePie").remove();
@@ -944,6 +1113,7 @@ function drawGraph(graphid) {
     }
 
     function drawsta(){
+        console.log("draw");
         staSpace.selectAll(".samplePie").remove();
         staSpace.selectAll(".sampleBar").remove();
         drawsamplepie("#sta1");

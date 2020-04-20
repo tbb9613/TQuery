@@ -115,7 +115,7 @@
     }
 
     .hide {
-      display: none;
+      display: none !important;
     }
 
     .add-graph {
@@ -205,29 +205,55 @@
       background-color: #fff;
       margin: 0;
       align-items: center;
-      /* position: fixed; */
-      /* position:absolute; */
     }
 
     .sta-button{
-
       display: inline-block;
-      /* justify-self: center; */
-      /* float: right; */
       width: 100%;
-      /* margin: 1% 0.5%; */
       height: 100%;
       border: none;
       background-color: #CCC;
       font-size: 1em;
       color: white;
-      /* padding: 0; */
     }
 
     .sta-button-active {
       background-color: slategray;
     }
 
+    .select-mode {
+      position: absolute;
+      top: 31%;
+      right: 35%;
+      border: none;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      background-color:gray;
+      display: inline-block;
+      transition: ease-in-out .3s;
+    }
+
+    .select-mode-active {
+      background-color:black;
+    }
+
+    .selected {
+      fill: white !important;
+      stroke: black !important;
+    }
+
+    #step-before{
+      position: absolute;
+      top: 37%;
+      left: 10%;
+    }
+
+    #step-after{
+      position: absolute;
+      top: 37%;
+      left: 50%;
+    }
 
 
   </style>
@@ -236,8 +262,20 @@
 <body>
   <div id="mainContainer">
     <svg id="globalDrag"></svg>
+    
     <div id="leftContainer">
+      <svg id="brushLayer"></svg>
       <button class="add-graph">[-|-]</button>
+      <button class="select-mode">select</button>
+      <div id = "step-before">
+        <button class="step-control" id = "beforeMinus">-</button>
+        <button class="step-control" id = "beforePlus">+</button>
+      </div>
+      <div id = "step-after">
+        <button class="step-control" id = "afterMinus">-</button>
+        <button class="step-control" id = "afterPlus">+</button>
+      </div>
+
       <div class="heatmap-container"></div>
       <svg t="1587228100265" class="icon heatmap-button" viewBox="0 0 1024 1024" version="1.1"
       xmlns="http://www.w3.org/2000/svg" p-id="2215" width="200" height="200">
