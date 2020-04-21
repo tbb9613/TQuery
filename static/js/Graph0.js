@@ -14,6 +14,7 @@ var workSpaceWidth = 0.7 * width;
 var staSpaceWidth = 0.3 * width
 
 var graphExist = false;
+var conditionCount = 0;
 
 window.onresize = function () {
     getSize()
@@ -214,10 +215,9 @@ function drawTopNodes() {
     function dragged(d) {
         d3.select(this).select("text").attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
         d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
-        // console.log(d, d3.event.x)
     }; //???????
-    //drag top nodes
 
+    //drag top nodes
     function dragended(d) {
         let endXPos = d3.event.x,
             endYPos = d3.event.y;
@@ -246,8 +246,6 @@ function drawTopNodes() {
             }
 
         } else {
-            // d3.select(this).attr("cx", d => d * 50 + 60).attr("cy", topSpaceHeight / 2)
-            // topSpace.selectAll("circle").remove();
             topSpace.selectAll(".topnodes").remove();
             drawTopNodes()
         }
@@ -402,8 +400,6 @@ function drawGraph(graphid, graph) {
         .attr("height", "70%")
         .attr("y", "30%");
 
-    
-
     let graphContainer = graphBg.append("g")
         .attr("id", "graphContainer");
 
@@ -535,6 +531,7 @@ function drawGraph(graphid, graph) {
     //brush - select
     var brush = d3.brush()
         .extent([[0, topSpaceHeight], [workSpaceWidth, height]])
+        .on("start")
         .on("start brush", brushed)
         .on("end", brushpopup);
 
@@ -542,7 +539,7 @@ function drawGraph(graphid, graph) {
         let selection = d3.event.selection;
         if (selection != null){
             let [[x0, y0], [x1, y1]] = selection;
-            let nodes = node.selectAll("circle")
+            let nodes = workSpace.selectAll("circle")
             nodes.classed("selected", function(d) {return isInSelection(selection, 
             this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width, 
             this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)})
@@ -557,8 +554,22 @@ function drawGraph(graphid, graph) {
     }
     function brushpopup(){
         let selection = d3.event.selection;
+        let [[x0, y0], [x1, y1]] = selection;
         if (selection != null){
-            
+            brushLayer.append("rect")
+                .attr("x", x1)
+                .attr("y", y0)
+                .attr("fill", "darkgrey")
+                .attr("width", 100)
+                .attr("height", 50)
+            brushLayer
+                .append("text")
+                .attr("x", x1)
+                .attr("y", y0+20)
+                .text("some action")
+                .attr("fill", "white")
+                // .attr("text-anchor", "middle")
+                // .attr("alignment-baseline", "top")
         }
     }
 
@@ -623,13 +634,13 @@ function drawGraph(graphid, graph) {
         workSpace.append("g")
             .append("line")
             .attr("x1", graphCenter[0])
-            .attr("y1", topSpaceHeight)
+            .attr("y1", topSpaceHeight + 0.15 * workSpaceHeight)
             .attr("x2", graphCenter[0])
-            .attr("y2", topSpaceHeight + workSpaceHeight)
+            .attr("y2", topSpaceHeight + 0.85 * workSpaceHeight)
             .attr("stroke", "black")
             .attr("stroke-width", "3px");
 
-        console.log("second-layout done!")
+        // console.log("second-layout done!")
     }
 
     //Pie around center node
@@ -946,7 +957,7 @@ function drawGraph(graphid, graph) {
         .text("➖")
         .attr("x", "5%")
         .attr("y", "67%")
-
+    
     if (graphid === "graph-second"){
         graphBg.selectAll(".before-controller")
             .attr("x", "55%")
@@ -1178,6 +1189,47 @@ function drawGraph(graphid, graph) {
 
     }
 
+    workSpace.selectAll("#conditionBox").remove();
+
+    let conditionBox = graphBg.append("g")
+        .attr("id", "conditionBox")
+    
+    if (graphid === "graph-first") {
+        conditionCount = 0; 
+    }
+    function initializeConditionBox(){
+        conditionBox.append("rect")
+        .attr("x", "45%")
+        .attr("y", "90%")
+        .attr("height", "7%")
+        .attr("width", "10%")
+        .attr("fill", "#808080")
+        .attr("opacity", .5)
+    
+        conditionBox.append("text")
+        .attr("x", "50%")
+        .attr("y", "93.5%")
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .text(`Conditions(${conditionCount})`)
+        .attr("fill","#2B2B2B")
+
+        if (conditionCount===0) {
+            conditionBox.selectAll("text").attr("opacity", .5)
+        } else {
+            conditionBox.selectAll("text").attr("opacity", .5)
+                .attr("opacity", 1).attr("fill", "#CACACA");
+            conditionBox.select("rect").attr("opacity", .8)
+                .attr("fill", "#40496C");
+        }
+    }
+    
+    initializeConditionBox();
+    
+
+let conditionBoxPos = conditionBox.node().getBoundingClientRect();
+
+
     function drawsta(){
         console.log("draw");
         staSpace.selectAll(".samplePie").remove();
@@ -1253,6 +1305,16 @@ function drawGraph(graphid, graph) {
         function dragended(d) {
             let endXPos = event.pageX,
                 endYPos = event.pageY;
+            if (endXPos < conditionBoxPos.x + conditionBoxPos.width && 
+                endXPos > conditionBoxPos.x &&
+                endYPos < conditionBoxPos.y + conditionBoxPos.height &&
+                endYPos > conditionBoxPos.y) {
+                    conditionCount += 1;
+                    conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                        .attr("opacity", 1).attr("fill", "#CACACA");
+                    conditionBox.select("rect").attr("opacity", .8)
+                        .attr("fill", "#40496C");
+                }
             globalDragLayer.selectAll("path").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
             samplePie.remove();
@@ -1327,6 +1389,16 @@ function drawGraph(graphid, graph) {
         function dragended(d) {
             let endXPos = event.pageX,
                 endYPos = event.pageY;
+            if (endXPos < conditionBoxPos.x + conditionBoxPos.width && 
+                endXPos > conditionBoxPos.x &&
+                endYPos < conditionBoxPos.y + conditionBoxPos.height &&
+                endYPos > conditionBoxPos.y) {
+                    conditionCount += 1;
+                    conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                        .attr("opacity", 1).attr("fill", "#CACACA");
+                    conditionBox.select("rect").attr("opacity", .8)
+                        .attr("fill", "#40496C");
+                }
             globalDragLayer.selectAll("rect").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
             sampleBar.remove();
