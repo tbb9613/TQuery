@@ -45,36 +45,44 @@ var brushLayer = d3.select("#brushLayer")
     .attr("height", 0)
     .attr("width", 0)
 
-
 var leftContainer = d3.select("#leftContainer")
 var rightContainer = d3.select("#rightContainer")
 
-//Add svg to left
-var leftSvg = leftContainer.append("svg")
-    .attr("id", "leftSpace")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("preserveAspectRatio", "xMidyMid slice")
+var topContainer = d3.select("#topContainer")
+var workContainer = d3.select("#workContainer")
 
-var topSpace = leftSvg.append("g")
-    .attr("id", "top");
+//Add svg to left
+// var leftSvg = leftContainer.append("svg")
+//     .attr("id", "leftSpace")
+//     .attr("width", "100%")
+//     .attr("height", "100%")
+//     .attr("preserveAspectRatio", "xMidyMid slice")
+
+var topSpace = topContainer.append("svg")
+    .attr("id", "top")
+    .attr("width", "100%")
+    .attr("height", "100%");
 
 //Draw topspace bg
-topSpace.append("rect")
+topSpace.append("g")
     .attr("id", "topSpace")
+    .append("rect")
     .attr("fill", "#CCC")
     .attr("opacity", .1)
     .attr("width", "100%")
-    .attr("height", "30%");
+    .attr("height", "100%");
 
-var workSpace = leftSvg.append("g")
-    .attr("id", "work");
+var workSpace = workContainer.append("svg")
+    // .append("g")
+    .attr("id", "work")
+    .attr("width", "100%")
+    .attr("height", "100%");
 
 //make the workspace under topspace
 
 //Add workspace text(interpretation of node map)
 var titletext = workSpace.append("text")
-    .attr("y", topSpaceHeight + 50)
+    .attr("y", 50)
     .attr("x", 100)
 
 
@@ -133,7 +141,7 @@ function drawTopNodes() {
         .attr("class", "topnodes")
         .attr("x", xPosition)
         .attr("y", "50%")
-        .call(d3.drag().on("drag", dragged).on("end", dragended))
+        .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
 
     node
         .append("circle")
@@ -151,13 +159,13 @@ function drawTopNodes() {
         .attr('fill', 'white')
         .text(d => d.slice(0, 3))
 
-    //draw transparent node on text
-    node
-        .append("circle")
-        .attr("cx", xPosition)
-        .attr("cy", topSpaceHeight / 2)
-        .attr("r", 20)
-        .attr("opacity", 0)
+    // //draw transparent node on text
+    // node
+    //     .append("circle")
+    //     .attr("cx", xPosition)
+    //     .attr("cy", topSpaceHeight / 2)
+    //     .attr("r", 20)
+    //     .attr("opacity", 0)
 
     // getHeatmap()
     //Data exchange
@@ -205,25 +213,63 @@ function drawTopNodes() {
         postQuery(d, 4);
         postSubQuery(7);
         console.log(postQuery(d, 4));
+        topSpace.selectAll(".topnodes").remove();
+        drawTopNodes()
         setTimeout(() => {
             drawGraph("graph-first", nodeMap);
-            topSpace.selectAll(".topnodes").remove();
-            drawTopNodes()
-        }, 500);
+
+        }, 200);
+    }
+
+    function dragstarted(d){
+        let draggingNode = globalDragLayer
+            .attr("height", "100%")
+            .attr("width", "100%")
+            .append("g")
+            .attr("class", "dragging-node");
+
+        draggingNode.append("circle")
+            .attr("cx", d3.select(this).select("circle").attr("cx"))
+            .attr("cy", d3.select(this).select("circle").attr("cy"))
+            .attr("r", d3.select(this).select("circle").attr("r"))
+            .attr("fill", d3.select(this).select("circle").attr("fill"));
+
+        draggingNode.append("text")
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .attr("x", d3.select(this).select("text").attr("x"))
+            .attr("y", d3.select(this).select("text").attr("y"))
+            .attr("fill", d3.select(this).select("text").attr("fill"))
+            .style('font-size', '13px')
+            .text(d.slice(0, 3))
+
+        d3.select(this)
+            .attr("opacity", 0)
+
     }
 
     function dragged(d) {
+        dpx = event.pageX;
+        dpy = event.pageY;
+        globalDragLayer.select(".dragging-node").select("circle")
+            .attr("cx", dpx).attr("cy", dpy)
+        
+        globalDragLayer.select(".dragging-node").select("text")
+            .attr("x", dpx).attr("y", dpy)
+
         d3.select(this).select("text").attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
         d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
     }; //???????
 
     //drag top nodes
     function dragended(d) {
-        let endXPos = d3.event.x,
-            endYPos = d3.event.y;
+        let endXPos = event.pageX,
+        endYPos = event.pageY;
+
         if (endYPos > topSpaceHeight) { //judge height space
-            d3.select(this)
-                .select("circle")
+            
+            globalDragLayer.select(".text").select("text").remove();
+            globalDragLayer.select(".dragging-node").select("circle")
                 .transition().duration(200)
                 .attr("cx", workSpaceWidth / 2)
                 .attr("cy", topSpaceHeight + workSpaceHeight / 2)
@@ -232,21 +278,29 @@ function drawTopNodes() {
                 .attr("r", 80)
                 .attr("opacity", 0.1);
 
-            let thisNode = d;
-            nodeList = nodeList.filter((d, i) => d !== thisNode) // filter this node id, remove from top nodes
-            console.log(nodeList)
-            if (graphExist == false) {
-                createQuery(d);
-            } else {
-                workSpace.selectAll("g").remove();
-                leftContainer.selectAll(".tooltip").remove();
-                createQuery(d);
-                graphLeftPlusExist = false;
-                graphRightPlusExist = false;
-            }
+            
+            
+            setTimeout(() => {
+                globalDragLayer.selectAll("g").remove();
+                globalDragLayer.attr("width", 0).attr("height", 0);
+                let thisNode = d;
+                nodeList = nodeList.filter((d, i) => d !== thisNode) // filter this node id, remove from top nodes
+                console.log(nodeList)
+                if (graphExist == false) {
+                    createQuery(d);
+                } else {
+                    workSpace.selectAll("g").remove();
+                    leftContainer.selectAll(".tooltip").remove();
+                    createQuery(d);
+                    graphLeftPlusExist = false;
+                    graphRightPlusExist = false;
+                }
+            }, 500)
 
         } else {
             topSpace.selectAll(".topnodes").remove();
+            globalDragLayer.selectAll("g").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
             drawTopNodes()
         }
         console.log("end");
@@ -294,7 +348,6 @@ function drawHeatmap(d) {
                 .call(d3.axisBottom(x).tickSize(0))
                 .select(".domamin").remove()
                 .attr("stroke", "white")
-
 
             //y axis
             let y = d3.scaleBand()
@@ -382,14 +435,14 @@ function drawGraph(graphid, graph) {
 
     graphExist = true;
 
-    const graphCenter = [workSpaceWidth / 2, topSpaceHeight + workSpaceHeight / 2];
+    const graphCenter = [workSpaceWidth / 2, workSpaceHeight / 2];
     console.log(graphCenter[0], graphCenter[1])
 
     //Draw workspace background
     let graphBg = workSpace
         .append("g")
         .attr("id", graphid)
-        .attr("y", "30%");
+        // .attr("y", "30%");
 
     graphBg
         .append("rect")
@@ -397,8 +450,8 @@ function drawGraph(graphid, graph) {
         .attr("fill", "#CCC")
         .attr("opacity", .25)
         .attr("width", "100%")
-        .attr("height", "70%")
-        .attr("y", "30%");
+        .attr("height", "100%")
+        // .attr("y", "30%");
 
     let graphContainer = graphBg.append("g")
         .attr("id", "graphContainer");
@@ -531,9 +584,14 @@ function drawGraph(graphid, graph) {
     //brush - select
     var brush = d3.brush()
         .extent([[0, topSpaceHeight], [workSpaceWidth, height]])
-        .on("start")
-        .on("start brush", brushed)
+        .on("start", brushstart)
+        .on("brush", brushed)
         .on("end", brushpopup);
+
+    function brushstart(){
+        leftContainer.selectAll(".brush-menu").remove();
+        console.log("start")
+    };
 
     function brushed(){
         let selection = d3.event.selection;
@@ -554,22 +612,16 @@ function drawGraph(graphid, graph) {
     }
     function brushpopup(){
         let selection = d3.event.selection;
-        let [[x0, y0], [x1, y1]] = selection;
+        
         if (selection != null){
-            brushLayer.append("rect")
-                .attr("x", x1)
-                .attr("y", y0)
-                .attr("fill", "darkgrey")
-                .attr("width", 100)
-                .attr("height", 50)
-            brushLayer
-                .append("text")
-                .attr("x", x1)
-                .attr("y", y0+20)
-                .text("some action")
-                .attr("fill", "white")
-                // .attr("text-anchor", "middle")
-                // .attr("alignment-baseline", "top")
+            let [[x0, y0], [x1, y1]] = selection;
+            let menu = leftContainer.append("button")
+                .attr("class", "brush-menu")
+                .style("top", `${y0}px`)
+                .style("left", `${x1}px`)
+                .append("span")
+                .html("Aggregate")
+                
         }
     }
 
@@ -610,7 +662,7 @@ function drawGraph(graphid, graph) {
                 .attr("x", "45%")
             
             zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
-            zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight])
+            zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight / 2])
 
             drawGraph("graph-second", subNodeMap)
             
@@ -620,8 +672,6 @@ function drawGraph(graphid, graph) {
 
         d3.select(".add-graph")
             .classed("hide", true);
-            // .style("display", "none")
-            // .on("click", addGraph)
 
         graphBg.attr("width", "50%")
         graphBg.selectAll(".graph-background")
@@ -629,18 +679,16 @@ function drawGraph(graphid, graph) {
             .attr("x", "50%");
         const scalePoint = [0, 0]
         zoom.transform(graphBg, d3.zoomIdentity.translate(workSpaceWidth / 4, 0))
-        zoom.scaleBy(graphBg, 0.7, [3 * workSpaceWidth / 4, workSpaceHeight])
+        zoom.scaleBy(graphBg, 0.7, [3 * workSpaceWidth / 4, workSpaceHeight / 2])
 
         workSpace.append("g")
             .append("line")
             .attr("x1", graphCenter[0])
-            .attr("y1", topSpaceHeight + 0.15 * workSpaceHeight)
+            .attr("y1", 0.15 * workSpaceHeight)
             .attr("x2", graphCenter[0])
-            .attr("y2", topSpaceHeight + 0.85 * workSpaceHeight)
+            .attr("y2", 0.85 * workSpaceHeight)
             .attr("stroke", "black")
             .attr("stroke-width", "3px");
-
-        // console.log("second-layout done!")
     }
 
     //Pie around center node
@@ -863,7 +911,6 @@ function drawGraph(graphid, graph) {
         .attr("r", 30)
         .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
         .attr("cy", graphCenter[1])
-        // .call(d3.drag().on("drag", clicked))
         .on("click", clicked);
 
     let linkRightplus = new Array();
@@ -920,19 +967,14 @@ function drawGraph(graphid, graph) {
         
     }
 
-    //Add steps
-    d3.select("#afterPlus").on("click", afterplus);
-    d3.select("#beforePlus").on("click", beforeplus);
-    d3.select("#afterMinus").on("click", afterminus);
-    d3.select("#beforeMinus").on("click", beforeminus);
-
+    //Add steps control
     graphBg.append("g")
         .on("click", afterplus)
         .append('text')
         .attr("class", "after-controller")
         .text("➕")
         .attr("x", "95%")
-        .attr("y", "63%")
+        .attr("y", "48%")
     
     graphBg.append("g")
         .on("click", afterminus)
@@ -940,7 +982,7 @@ function drawGraph(graphid, graph) {
         .attr("class", "after-controller")
         .text("➖")
         .attr("x", "95%")
-        .attr("y", "67%")
+        .attr("y", "54%")
         
     graphBg.append("g")
         .on("click", beforeplus)
@@ -948,7 +990,7 @@ function drawGraph(graphid, graph) {
         .attr("class", "before-controller")
         .text("➕")
         .attr("x", "5%")
-        .attr("y", "63%")
+        .attr("y", "48%")
 
     graphBg.append("g")
         .on("click", beforeminus)
@@ -956,7 +998,7 @@ function drawGraph(graphid, graph) {
         .attr("class", "before-controller")
         .text("➖")
         .attr("x", "5%")
-        .attr("y", "67%")
+        .attr("y", "54%")
     
     if (graphid === "graph-second"){
         graphBg.selectAll(".before-controller")
@@ -1226,9 +1268,7 @@ function drawGraph(graphid, graph) {
     
     initializeConditionBox();
     
-
 let conditionBoxPos = conditionBox.node().getBoundingClientRect();
-
 
     function drawsta(){
         console.log("draw");

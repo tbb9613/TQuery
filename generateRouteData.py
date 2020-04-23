@@ -37,7 +37,7 @@ heatmapProbMatrix.to_csv("heatmapProbMatrix.csv")
 
 allRoute = []
 routeLenth = 11
-for j in range(4):
+for j in range(6):
     for location in locList:
         station = location
         route = []
