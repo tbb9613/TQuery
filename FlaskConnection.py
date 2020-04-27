@@ -111,6 +111,11 @@ def Heatmap():
     # print(heatmapSend)
     return heatmapSend
 
+def TimeData():
+    timeTrans_read = pd.read_csv("timeseries.csv").drop(columns = ["Unnamed: 0"])
+    timeTrans = timeTrans_read.to_json(orient = "records")
+    return timeTrans
+
 @app.route('/', methods=['GET','POST'])
 def index():
         return render_template("GraphDemo1.html")
@@ -128,6 +133,10 @@ def receive_query_data():
 @app.route('/heatmap/', methods = ['GET', 'POST'])
 def postheatmap():
     return Heatmap()
+
+@app.route('/timetrans/', methods = ['GET', 'POST'])
+def timetrans():
+    return TimeData()
 
 
 if __name__ == '__main__': 

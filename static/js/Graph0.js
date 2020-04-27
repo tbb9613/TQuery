@@ -1,8 +1,14 @@
+// import axios from 'axios';
+
+// const axios = require('axios').default;
+//axios.<method> will now provide autocomplete and parameter typings
+
 // define data
 var nodeMap //nodemap data
 var subNodeMap
 var probHeatmap //heatmap data
 var queryNode
+var timeTrans // time selector data
 
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
@@ -128,7 +134,125 @@ getHeatmap();
 let isHeatmapActive = false;
 d3.select(".heatmap-button").on("click", drawHeatmap)
 
+function getTimeData(){
+    axios.get("http://127.0.0.1:5000/timetrans")
+    .then(function(response) {
+        timeTrans = response.data;
+        let time2 = response.data;
+        console.log(response.data);
+        let format = d3.timeParse("%Y-%m-%d %H:%M:%S")
+        timeTrans.forEach(function(d,i) {
+            // console.log(d.date)
+            d.date = format(d.date)
+        })
+        // console.log(timeTrans, d => d3.autoType(d.date));
+        // console.log(d3.autoType());
+        drawTimeSelector(timeTrans);
+    }) .catch(function (error) {
+        // handle error
+        console.log(error);
+    })
+}
+getTimeData();
+console.log(timeTrans)
+console.log(d3.autoType(timeTrans));
+
+function drawTimeSelector(data) {
+    // getTimeData();
+    let selectorWidth = 0.7 * workSpaceWidth;
+    let selectorHeight = 0.4 * topSpaceHeight;
+    let selectorMargin = ({top: 20, right: 20, bottom: 30, left: 30})
+    // let data = timeTrans;
+
+    var areachart  = topSpace.append("g")
+        .attr("id", "timeSelector")
+        .attr("transform", `translate(50, 10)`)
+
+        console.log(data);
+
+
+        let x = d3.scaleUtc()
+            .domain(d3.extent(data, d => d.date))
+            .range([0, selectorWidth-20])
+        // console.log()
+
+        let y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.data)]).nice()
+            .range([selectorHeight-30, 0])
+
+        console.log(d3.max(data, d => d.data));
+
+        areachart.append("g")
+            .attr("transform", `translate(0, ${height-30})`)
+            .call(d3.axisBottom(x).ticks(selectorWidth / 80).tickSizeOuter(0))
+
+        areachart.append("g")
+        
+            .call(d3.axisLeft(y).ticks(selectorHeight/50))    
+
+        areachart
+            .append("g")
+            .attr("id", "pathh")
+            .datum(data)
+            .append("path")
+            .attr("fill", "#cce5df")
+            .attr("stroke", "#69b3a2")
+            .attr("stroke-width", 0.01)
+            .attr("d", d3.area()
+                // .curve()
+                .x(function(d) { return x(d.date) })
+                .y0(y(0))
+                .y1(function(d) { return y(d.data) })
+                )
+
+        const brush = d3.brushX()
+            .extent([[0,0], [selectorWidth, selectorHeight-30]])
+            .on("start brush end", brushmoved);
+        
+        let gBrush = areachart.append("g")
+            .attr("class", "brush")
+
+
+        // style brush resize handle
+
+        let brushResizePath = function(d) {
+            let e = +(d.type == "e"),
+                x = e ? 1 : -1,
+                y = (selectorHeight-30) / 2;
+            return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
+        }
+
+        var handle = gBrush.selectAll(".handle-custom")
+            .data([{type: "w"}, {type: "e"}])
+            .enter().append("path")
+                .attr("class", "handle-custom")
+                .attr("stroke", "#000")
+                .attr("cursor", "ew-resize")
+                .attr("d", brushResizePath);
+
+        gBrush.call(brush)
+            .call(brush.move, [100,200]);
+
+        // console.log(handle);
+        function brushmoved() {
+                var s = d3.event.selection;
+                
+                // const [x0, x1] = s.map(x.invert);
+                if (s == null) {
+                    handle.attr("display", "none");
+                } else {
+                    // console.log(handle);
+                    console.log(x.invert(s[0]));
+                    handle.attr("display", null).attr("transform", (d, i) => "translate(" + [ s[i], - (selectorHeight-30) / 4] + ")");
+                }
+        };
+
+}
+
+
 function drawTopNodes() {
+
+    let nodesyPos = 0.7 * topSpaceHeight
 
     console.log(nodeList)
     const xPosition = (d, i) => i * 50 + 60;
@@ -146,7 +270,7 @@ function drawTopNodes() {
     node
         .append("circle")
         .attr("cx", xPosition)
-        .attr("cy", topSpaceHeight / 2)
+        .attr("cy", nodesyPos)
         .attr("r", 20);
 
     node
@@ -154,56 +278,36 @@ function drawTopNodes() {
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
         .attr("x", xPosition)
-        .attr("y", topSpaceHeight / 2)
+        .attr("y", nodesyPos)
         .style('font-size', '13px')
         .attr('fill', 'white')
         .text(d => d.slice(0, 3))
 
-    // //draw transparent node on text
-    // node
-    //     .append("circle")
-    //     .attr("cx", xPosition)
-    //     .attr("cy", topSpaceHeight / 2)
-    //     .attr("r", 20)
-    //     .attr("opacity", 0)
-
     // getHeatmap()
+
     //Data exchange
     function postQuery(d, t) {
         // var dataReceived
         queryNode = d;
         console.log(d);
-        $.ajax({
-            type: "POST",
-            url: 'http://127.0.0.1:5000/receivedata', //send data by route
-            dataType: 'json',
-            data: JSON.stringify({
-                name: queryNode,
-                time: t
-            }),
-            // data : JSON(queryNode),
-            success: function (data) { // if success then update data
-                nodeMap = data;
-            }
+        axios.post('http://127.0.0.1:5000/receivedata', {
+            name: queryNode,
+            time: t
+        })
+        .then(function (response) { // if success then update data
+            subNodeMap = response.data;
         })
         titletext.text("Routes of people who go to " + queryNode);
         ;
     }
 
     function postSubQuery(t) {
-
-        $.ajax({
-            type: "POST",
-            url: 'http://127.0.0.1:5000/receivedata', //send data by route
-            dataType: 'json',
-            data: JSON.stringify({
-                name: queryNode,
-                time: t
-            }),
-            // data : JSON(queryNode),
-            success: function (data) { // if success then update data
-                subNodeMap = data;
-            }
+        axios.post('http://127.0.0.1:5000/receivedata', {
+            // name: queryNode,
+            time: t
+        })
+        .then(function (response) { // if success then update data
+            subNodeMap = response.data;
         })
         // titletext.text("Routes of people who go to " + queryNode);
         
@@ -309,13 +413,18 @@ function drawTopNodes() {
 };
 
 function getHeatmap() {
-    $.ajax({
-        url: "http://127.0.0.1:5000/heatmap",
-        dataType: "json",
-        success: function (data) {
-            probHeatmap = data
-            // console.log(heatmap)
-        }
+    // $.ajax({
+    //     url: "http://127.0.0.1:5000/heatmap",
+    //     dataType: "json",
+    //     success: function (data) {
+    //         probHeatmap = data
+    //         // console.log(heatmap)
+    //     }
+    // });
+
+    axios.get('http://127.0.0.1:5000/heatmap')
+    .then(function (response) { // if success then update data
+        probHeatmap = response.data;
     });
 }
 
@@ -408,8 +517,6 @@ function drawHeatmap(d) {
                 .on("mouseover", heatmapMouseover)
                 .on("mousemove", heatmapMousemove)
                 .on("mouseleave", heatmapMouseleave)
-
-
         }, 300);
 
 
