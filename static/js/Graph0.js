@@ -1,6 +1,3 @@
-// import axios from 'axios';
-
-// const axios = require('axios').default;
 //axios.<method> will now provide autocomplete and parameter typings
 
 // define data
@@ -8,7 +5,8 @@ var nodeMap //nodemap data
 var subNodeMap
 var probHeatmap //heatmap data
 var queryNode
-var timeTrans // time selector data
+var timeTrans // time selector data 
+var timeSelection // time selector
 
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
@@ -104,9 +102,9 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     tileSize: 512,
     zoomOffset: -1,
     accessToken: 'pk.eyJ1IjoidGJiOTYxMyIsImEiOiJjazk3ODBldjkwbWNwM29wY2dwc3Y5MzBpIn0.gQo8BJUk8CfAIsNFJNmy7A'
-}).addTo(map); 
+}).addTo(map);
 //get displaying area box
-map.on('moveend', function() { 
+map.on('moveend', function () {
     let northEast = [map.getBounds()._northEast.lat, map.getBounds()._northEast.lng];
     let southWest = [map.getBounds()._southWest.lat, map.getBounds()._southWest.lng];
     console.log(northEast, southWest);
@@ -117,14 +115,12 @@ var staContainer = d3.select("#staContainer")
 var staSpace = staContainer.append("svg")
     .attr("id", "staSpace")
     .attr("width", "100%")
-    // .attr("height", "300%")
     .attr("overflow", "visible")
 
 var text = staSpace.append("text")
     .attr("x", 100)
     .attr("y", 50)
     .attr("fill", "white")
-
 
 var nodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 // nodeList = d3.range(5)
@@ -134,24 +130,25 @@ getHeatmap();
 let isHeatmapActive = false;
 d3.select(".heatmap-button").on("click", drawHeatmap)
 
-function getTimeData(){
+
+//TIME SELECTOR
+function getTimeData() {
     axios.get("http://127.0.0.1:5000/timetrans")
-    .then(function(response) {
-        timeTrans = response.data;
-        let time2 = response.data;
-        console.log(response.data);
-        let format = d3.timeParse("%Y-%m-%d %H:%M:%S")
-        timeTrans.forEach(function(d,i) {
-            // console.log(d.date)
-            d.date = format(d.date)
+        .then(function (response) {
+            timeTrans = response.data;
+            let time2 = response.data;
+            console.log(response.data);
+            let parse_s = d3.timeParse("%Y-%m-%d %H:%M:%S")
+            let parse_d = d3.timeParse("%Y-%m-%d")
+            timeTrans.forEach(function (d, i) {
+                // console.log(d.date)
+                d.date = parse_d(d.date)
+            })
+            drawTimeSelector(timeTrans);
+        }).catch(function (error) {
+            // handle error
+            console.log(error);
         })
-        // console.log(timeTrans, d => d3.autoType(d.date));
-        // console.log(d3.autoType());
-        drawTimeSelector(timeTrans);
-    }) .catch(function (error) {
-        // handle error
-        console.log(error);
-    })
 }
 getTimeData();
 console.log(timeTrans)
@@ -160,92 +157,168 @@ console.log(d3.autoType(timeTrans));
 function drawTimeSelector(data) {
     // getTimeData();
     let selectorWidth = 0.7 * workSpaceWidth;
-    let selectorHeight = 0.4 * topSpaceHeight;
-    let selectorMargin = ({top: 20, right: 20, bottom: 30, left: 30})
+    let selectorHeight = 0.2 * topSpaceHeight;
+    let selectorMargin = ({
+        top: 20,
+        right: 20,
+        bottom: 30,
+        left: 30
+    })
     // let data = timeTrans;
 
-    var areachart  = topSpace.append("g")
+    var areachart = topSpace.append("g")
         .attr("id", "timeSelector")
-        .attr("transform", `translate(50, 10)`)
+        .attr("transform", `translate(${workSpaceWidth * 0.02}, ${topSpaceHeight * 0.1})`)
 
-        console.log(data);
+    console.log(data);
 
+    let x = d3.scaleUtc()
+        .domain(d3.extent(data, d => d.date))
+        .range([0, selectorWidth])
+    // console.log()
 
-        let x = d3.scaleUtc()
-            .domain(d3.extent(data, d => d.date))
-            .range([0, selectorWidth-20])
-        // console.log()
+    let y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.data)]).nice()
+        .range([selectorHeight - selectorMargin.bottom, 0])
 
-        let y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.data)]).nice()
-            .range([selectorHeight-30, 0])
+    console.log(d3.max(data, d => d.data));
 
-        console.log(d3.max(data, d => d.data));
+    areachart.append("g")
+        .attr("transform", `translate(0, ${selectorHeight-selectorMargin.bottom})`)
+        .attr("class", "timeselector-axis")
+        .call(d3.axisBottom(x).ticks(selectorWidth / 50).tickSize(3).tickSizeOuter(0)
+            .tickFormat(date => (d3.timeYear(date) < date) ?
+                d3.timeFormat('%b')(date) :
+                d3.timeFormat('%Y')(date))
+        )
 
-        areachart.append("g")
-            .attr("transform", `translate(0, ${height-30})`)
-            .call(d3.axisBottom(x).ticks(selectorWidth / 80).tickSizeOuter(0))
-
-        areachart.append("g")
-        
-            .call(d3.axisLeft(y).ticks(selectorHeight/50))    
-
-        areachart
-            .append("g")
-            .attr("id", "pathh")
-            .datum(data)
-            .append("path")
-            .attr("fill", "#cce5df")
-            .attr("stroke", "#69b3a2")
-            .attr("stroke-width", 0.01)
-            .attr("d", d3.area()
-                // .curve()
-                .x(function(d) { return x(d.date) })
-                .y0(y(0))
-                .y1(function(d) { return y(d.data) })
-                )
-
-        const brush = d3.brushX()
-            .extent([[0,0], [selectorWidth, selectorHeight-30]])
-            .on("start brush end", brushmoved);
-        
-        let gBrush = areachart.append("g")
-            .attr("class", "brush")
+    areachart.append("g")
+        .attr("class", "timeselector-axis")
+        .attr("transform", `translate(${selectorWidth},0)`)
+        .call(d3.axisRight(y).ticks(selectorHeight / 30).tickSize(0)
+            .tickFormat(d3.format("~s")))
 
 
-        // style brush resize handle
+    areachart
+        .append("g")
+        .attr("class", "areapath")
+        .datum(data)
+        .append("path")
+        .attr("fill", "#85869E")
+        .attr("opacity", .5)
+        // .attr("stroke", "#8996E9")
+        // .attr("stroke-width", 1)
+        .attr("d", d3.area()
+            .curve(d3.curveBasis)
+            .x(d => x(d.date))
+            .y0(y(0))
+            .y1(d => y(d.data))
+        )
 
-        let brushResizePath = function(d) {
-            let e = +(d.type == "e"),
-                x = e ? 1 : -1,
-                y = (selectorHeight-30) / 2;
-            return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
+    const brush = d3.brushX()
+        .extent([
+            [0, 0],
+            [selectorWidth, selectorHeight - 30]
+        ])
+        .on("start brush end", brushmoved);
+
+    let gBrush = areachart.append("g")
+        .attr("class", "brush")
+
+
+    // style brush resize handle
+
+    let brushResizePath = function (d) {
+        let e = +(d.type == "e"),
+            x = e ? 1 : -1,
+            y = (selectorHeight - 30) / 2;
+        return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
+    }
+
+    var handle = gBrush.selectAll(".handle-custom")
+        .data([{
+            type: "w"
+        }, {
+            type: "e"
+        }])
+        .enter().append("path")
+        .attr("class", "handle-custom")
+        // .attr("stroke", "#999")
+        .attr("fill", "#999")
+        .attr("cursor", "ew-resize")
+        .attr("d", brushResizePath)
+
+
+    gBrush.call(brush)
+        .call(brush.move, [200, 300]);
+    // console.log(handle);
+
+    function brushmoved() {
+        timeSelection = d3.event.selection;
+        // const [x0, x1] = s.map(x.invert);
+        if (timeSelection == null) {
+            handle.attr("display", "none");
+        } else {
+            handle.attr("display", null).attr("transform", (d, i) => "translate(" + [timeSelection[i], -(selectorHeight - 30) / 4] + ")");
         }
+    };
 
-        var handle = gBrush.selectAll(".handle-custom")
-            .data([{type: "w"}, {type: "e"}])
-            .enter().append("path")
-                .attr("class", "handle-custom")
-                .attr("stroke", "#000")
-                .attr("cursor", "ew-resize")
-                .attr("d", brushResizePath);
+    let lefttooltip = topContainer
+        .append("div")
+        .classed("tooltip-handleleft", true)
+        .style("opacity", 0)
+        .attr("class", "tooltip")
 
-        gBrush.call(brush)
-            .call(brush.move, [100,200]);
+    let righttooltip = topContainer
+        .append("div")
+        .classed("tooltip-handleright", true)
+        .style("opacity", 0)
+        .attr("class", "tooltip")
 
-        // console.log(handle);
-        function brushmoved() {
-                var s = d3.event.selection;
-                
-                // const [x0, x1] = s.map(x.invert);
-                if (s == null) {
-                    handle.attr("display", "none");
-                } else {
-                    // console.log(handle);
-                    console.log(x.invert(s[0]));
-                    handle.attr("display", null).attr("transform", (d, i) => "translate(" + [ s[i], - (selectorHeight-30) / 4] + ")");
-                }
-        };
+    gBrush.selectAll(".handle--w")
+        // .attr("fill", "blue")
+        .on("mouseover", leftHandleOver)
+        .on("mouseout", function () {
+            lefttooltip.style("opacity", 0)
+        });
+
+    gBrush.selectAll(".handle--e")
+        .on("mouseover", rightHandleOver)
+        .on("mouseout", function () {
+            righttooltip.style("opacity", 0)
+        });;
+
+    gBrush.selectAll(".selection")
+        .attr("fill", "white")
+        // .attr("stroke", "none")
+        .attr("opacity", 1)
+        .attr("stroke", "#85929E")
+        .attr("stroke-width", 1)
+    // .attr("height", selectorHeight/2)
+
+    let timeFormat = {
+        "day": "%Y-%m-%d",
+        "sec": "%c"
+    }
+
+    function leftHandleOver() {
+        let format = d3.timeFormat(timeFormat["day"])
+        lefttooltip.style("opacity", 1)
+            .html("Start: " + format(x.invert(timeSelection[0])))
+            .style("left", (d3.mouse(this)[0]) + "px")
+            .style("top", "20px")
+        // let selection = d3.brushSelection();
+        // console.log("start",x.invert(timeSelection[0]));
+    };
+
+    function rightHandleOver() {
+        // let selection = d3.brushSelection();
+        let format = d3.timeFormat(timeFormat["day"])
+        righttooltip.style("opacity", 1)
+            .html("End: " + format(x.invert(timeSelection[1])))
+            .style("left", (d3.mouse(this)[0]) + "px")
+            .style("top", "20px")
+    };
 
 }
 
@@ -291,26 +364,25 @@ function drawTopNodes() {
         queryNode = d;
         console.log(d);
         axios.post('http://127.0.0.1:5000/receivedata', {
-            name: queryNode,
-            time: t
-        })
-        .then(function (response) { // if success then update data
-            subNodeMap = response.data;
-        })
+                name: queryNode,
+                time: t
+            })
+            .then(function (response) { // if success then update data
+                nodeMap = response.data;
+            })
         titletext.text("Routes of people who go to " + queryNode);
-        ;
     }
 
     function postSubQuery(t) {
         axios.post('http://127.0.0.1:5000/receivedata', {
-            // name: queryNode,
-            time: t
-        })
-        .then(function (response) { // if success then update data
-            subNodeMap = response.data;
-        })
+                name: queryNode,
+                time: t
+            })
+            .then(function (response) { // if success then update data
+                subNodeMap = response.data;
+            })
         // titletext.text("Routes of people who go to " + queryNode);
-        
+
     }
 
     function createQuery(d) {
@@ -325,7 +397,7 @@ function drawTopNodes() {
         }, 200);
     }
 
-    function dragstarted(d){
+    function dragstarted(d) {
         let draggingNode = globalDragLayer
             .attr("height", "100%")
             .attr("width", "100%")
@@ -357,7 +429,7 @@ function drawTopNodes() {
         dpy = event.pageY;
         globalDragLayer.select(".dragging-node").select("circle")
             .attr("cx", dpx).attr("cy", dpy)
-        
+
         globalDragLayer.select(".dragging-node").select("text")
             .attr("x", dpx).attr("y", dpy)
 
@@ -368,10 +440,10 @@ function drawTopNodes() {
     //drag top nodes
     function dragended(d) {
         let endXPos = event.pageX,
-        endYPos = event.pageY;
+            endYPos = event.pageY;
 
         if (endYPos > topSpaceHeight) { //judge height space
-            
+
             globalDragLayer.select(".text").select("text").remove();
             globalDragLayer.select(".dragging-node").select("circle")
                 .transition().duration(200)
@@ -382,8 +454,8 @@ function drawTopNodes() {
                 .attr("r", 80)
                 .attr("opacity", 0.1);
 
-            
-            
+
+
             setTimeout(() => {
                 globalDragLayer.selectAll("g").remove();
                 globalDragLayer.attr("width", 0).attr("height", 0);
@@ -423,9 +495,9 @@ function getHeatmap() {
     // });
 
     axios.get('http://127.0.0.1:5000/heatmap')
-    .then(function (response) { // if success then update data
-        probHeatmap = response.data;
-    });
+        .then(function (response) { // if success then update data
+            probHeatmap = response.data;
+        });
 }
 
 function drawHeatmap(d) {
@@ -549,7 +621,7 @@ function drawGraph(graphid, graph) {
     let graphBg = workSpace
         .append("g")
         .attr("id", graphid)
-        // .attr("y", "30%");
+    // .attr("y", "30%");
 
     graphBg
         .append("rect")
@@ -558,7 +630,7 @@ function drawGraph(graphid, graph) {
         .attr("opacity", .25)
         .attr("width", "100%")
         .attr("height", "100%")
-        // .attr("y", "30%");
+    // .attr("y", "30%");
 
     let graphContainer = graphBg.append("g")
         .attr("id", "graphContainer");
@@ -567,7 +639,7 @@ function drawGraph(graphid, graph) {
     var zoom = d3.zoom()
         .scaleExtent([0.5, 1.5])
         .on("zoom", zoom_actions);
-        
+
 
     function zoom_actions() {
         graphContainer.attr("transform", d3.event.transform)
@@ -580,32 +652,33 @@ function drawGraph(graphid, graph) {
     d3.select("#staTab").classed("hide", false)
     //draw sta cards
     let staCardHeight = 2 * staSpaceWidth / 3;
-    function drawStaCards(){
+
+    function drawStaCards() {
         //Create sta cards
         const staCardList = [{
-            "category" : "general",
-            "type" : "pie",
-            "name" : "sta1"
-        },{
-            "category" : "general",
-            "type" : "bar",
-            "name" : "sta2"
-        },{
-            "category" : "business",
-            "type" : "pie",
-            "name" : "sta3"
-        },{
-            "category" : "business",
-            "type" : "bar",
-            "name" : "sta4"
-        },{
-            "category" : "consumer",
-            "type" : "pie",
-            "name" : "sta5"
-        },{
-            "category" : "consumer",
-            "type" : "bar",
-            "name" : "sta6"
+            "category": "general",
+            "type": "pie",
+            "name": "sta1"
+        }, {
+            "category": "general",
+            "type": "bar",
+            "name": "sta2"
+        }, {
+            "category": "business",
+            "type": "pie",
+            "name": "sta3"
+        }, {
+            "category": "business",
+            "type": "bar",
+            "name": "sta4"
+        }, {
+            "category": "consumer",
+            "type": "pie",
+            "name": "sta5"
+        }, {
+            "category": "consumer",
+            "type": "bar",
+            "name": "sta6"
         }]
 
         //Create background   
@@ -613,13 +686,13 @@ function drawGraph(graphid, graph) {
             .data(staCardList).enter()
             .append("g")
             .classed("stacard", true)
-            .attr("class", d => (d.category+" "+d.type))
+            .attr("class", d => (d.category + " " + d.type))
             .attr("id", d => d.name)
             .attr("width", "100%")
             .attr("height", staCardHeight)
             // .attr("fill", "#CCC")
             .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
-    
+
         staCards
             .append("rect")
             .attr("class", "stacard-bg")
@@ -628,7 +701,7 @@ function drawGraph(graphid, graph) {
             .attr("height", staCardHeight)
             .attr("fill", "#CCC")
             .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
-    
+
         staSpace.attr("height", 300 + staCardList.length * (30 + staCardHeight))
     }
 
@@ -639,37 +712,47 @@ function drawGraph(graphid, graph) {
     d3.selectAll(".sta-button")
         .on("click", clickStaTab)
     var isTabClicked = false;
-    function clickStaTab(){
+
+    function clickStaTab() {
         isTabClicked = true;
         let id = d3.select(this).attr("id");
         if (id === "G") {
-            staContainer.node().scrollTo({top: 0, behavior: "smooth"});
+            staContainer.node().scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
             d3.select("#G").classed("sta-button-active", true);
             d3.select("#B").classed("sta-button-active", false);
             d3.select("#C").classed("sta-button-active", false);
         } else if (id === "B") {
-            staContainer.node().scrollTo({top: businessHeight, behavior: "smooth"})
+            staContainer.node().scrollTo({
+                top: businessHeight,
+                behavior: "smooth"
+            })
             d3.select("#G").classed("sta-button-active", false);
             d3.select("#B").classed("sta-button-active", true);
             d3.select("#C").classed("sta-button-active", false);
         } else if (id === "C") {
-            staContainer.node().scrollTo({top: customerHeight, behavior: "smooth"})
+            staContainer.node().scrollTo({
+                top: customerHeight,
+                behavior: "smooth"
+            })
             d3.select("#G").classed("sta-button-active", false);
             d3.select("#B").classed("sta-button-active", false);
             d3.select("#C").classed("sta-button-active", true);
         }
-        setTimeout(() =>{
+        setTimeout(() => {
             isTabClicked = false;
             checkScroll();
         }, 1500)
-        
+
     }
     staContainer.node().onscroll = checkScroll;
-    
-    function checkScroll(){
+
+    function checkScroll() {
         let sTop = staContainer.node().scrollTop;
         if (!isTabClicked) {
-            if (sTop < businessHeight){
+            if (sTop < businessHeight) {
                 d3.select("#G").classed("sta-button-active", true);
                 d3.select("#B").classed("sta-button-active", false);
                 d3.select("#C").classed("sta-button-active", false);
@@ -677,7 +760,7 @@ function drawGraph(graphid, graph) {
                 d3.select("#G").classed("sta-button-active", false);
                 d3.select("#B").classed("sta-button-active", true);
                 d3.select("#C").classed("sta-button-active", false);
-            }  else {
+            } else {
                 d3.select("#G").classed("sta-button-active", false);
                 d3.select("#B").classed("sta-button-active", false);
                 d3.select("#C").classed("sta-button-active", true);
@@ -686,56 +769,70 @@ function drawGraph(graphid, graph) {
 
         console.log("scroll!", sTop);
     }
-    
+
 
     //brush - select
     var brush = d3.brush()
-        .extent([[0, topSpaceHeight], [workSpaceWidth, height]])
+        .extent([
+            [0, topSpaceHeight],
+            [workSpaceWidth, height]
+        ])
         .on("start", brushstart)
         .on("brush", brushed)
         .on("end", brushpopup);
 
-    function brushstart(){
+    function brushstart() {
         leftContainer.selectAll(".brush-menu").remove();
         console.log("start")
     };
 
-    function brushed(){
+    function brushed() {
         let selection = d3.event.selection;
-        if (selection != null){
-            let [[x0, y0], [x1, y1]] = selection;
+        if (selection != null) {
+            let [
+                [x0, y0],
+                [x1, y1]
+            ] = selection;
             let nodes = workSpace.selectAll("circle")
-            nodes.classed("selected", function(d) {return isInSelection(selection, 
-            this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width, 
-            this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)})
+            nodes.classed("selected", function (d) {
+                return isInSelection(selection,
+                    this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width,
+                    this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)
+            })
         }
-        function isInSelection(brush_coords, cx, cy){
+
+        function isInSelection(brush_coords, cx, cy) {
             let x0 = brush_coords[0][0],
-            x1 = brush_coords[1][0],
-            y0 = brush_coords[0][1],
-            y1 = brush_coords[1][1];
-            return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1; 
+                x1 = brush_coords[1][0],
+                y0 = brush_coords[0][1],
+                y1 = brush_coords[1][1];
+            return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
         }
     }
-    function brushpopup(){
+
+    function brushpopup() {
         let selection = d3.event.selection;
-        
-        if (selection != null){
-            let [[x0, y0], [x1, y1]] = selection;
+
+        if (selection != null) {
+            let [
+                [x0, y0],
+                [x1, y1]
+            ] = selection;
             let menu = leftContainer.append("button")
                 .attr("class", "brush-menu")
                 .style("top", `${y0}px`)
                 .style("left", `${x1}px`)
                 .append("span")
                 .html("Aggregate")
-                
+
         }
     }
 
     var isSelectMode = false;
     let selectModeButton = d3.select(".select-mode")
     selectModeButton.on("click", selectMode)
-    function selectMode(){
+
+    function selectMode() {
         if (!isSelectMode) {
             selectModeButton.classed("select-mode-active", true);
             isSelectMode = true;
@@ -751,28 +848,28 @@ function drawGraph(graphid, graph) {
             brushLayer.on(".brush", null);
             brushLayer.attr("width", 0)
                 .attr("height", 0)
-                .attr("y", 0)            
+                .attr("y", 0)
             graphBg.call(zoom).on("dblclick.zoom", null);
         }
     }
- 
+
     //add graoh judgement
     if (graphid === "graph-first") {
         d3.select(".add-graph")
             .on("click", addGraph)
-            
+
         function addGraph() {
             graphBg.attr("width", "50%")
             graphBg.selectAll(".graph-background")
                 .attr("width", "50%");
             graphBg.selectAll(".after-controller")
                 .attr("x", "45%")
-            
+
             zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
             zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight / 2])
 
             drawGraph("graph-second", subNodeMap)
-            
+
             console.log("clicked!")
         }
     } else if (graphid === "graph-second") {
@@ -1071,7 +1168,7 @@ function drawGraph(graphid, graph) {
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
-        
+
     }
 
     //Add steps control
@@ -1082,7 +1179,7 @@ function drawGraph(graphid, graph) {
         .text("➕")
         .attr("x", "95%")
         .attr("y", "48%")
-    
+
     graphBg.append("g")
         .on("click", afterminus)
         .append('text')
@@ -1090,7 +1187,7 @@ function drawGraph(graphid, graph) {
         .text("➖")
         .attr("x", "95%")
         .attr("y", "54%")
-        
+
     graphBg.append("g")
         .on("click", beforeplus)
         .append('text')
@@ -1106,8 +1203,8 @@ function drawGraph(graphid, graph) {
         .text("➖")
         .attr("x", "5%")
         .attr("y", "54%")
-    
-    if (graphid === "graph-second"){
+
+    if (graphid === "graph-second") {
         graphBg.selectAll(".before-controller")
             .attr("x", "55%")
     }
@@ -1115,32 +1212,36 @@ function drawGraph(graphid, graph) {
     let rseq = 2;
     let lseq = 2;
     let maxseq = 3;
+
     function afterplus() {
-        if (rseq <= maxseq){
+        if (rseq <= maxseq) {
             drawRightplus(rseq);
         }
-        
-        if (rseq < maxseq+1){
+
+        if (rseq < maxseq + 1) {
             rseq += 1;
-        }
-        
-    }
-    function beforeplus() {
-        if (lseq <= maxseq){
-            drawLeftplus(lseq);
-        if (lseq < maxseq+1){
-            lseq += 1;
-        }
         }
 
     }
+
+    function beforeplus() {
+        if (lseq <= maxseq) {
+            drawLeftplus(lseq);
+            if (lseq < maxseq + 1) {
+                lseq += 1;
+            }
+        }
+
+    }
+
     function afterminus() {
         d3.selectAll(`#seq${rseq-1}`).remove();
         if (rseq > 2) {
             rseq -= 1
         }
-        
+
     }
+
     function beforeminus() {
         d3.selectAll(`#seq${-lseq+1}`).remove();
         if (lseq > 2) {
@@ -1159,7 +1260,7 @@ function drawGraph(graphid, graph) {
                 .range([0.6, subC + 0.4]);
             return scaler.invert(subID);
         }
-        if (seq === 2){
+        if (seq === 2) {
             linkRightplus[seq] = link.append("g")
                 .attr("class", "link")
                 .attr("id", `seq${seq}`)
@@ -1185,27 +1286,27 @@ function drawGraph(graphid, graph) {
         } else {
 
             linkRightplus[seq] = link.append("g")
-            .attr("class", "link")
-            .attr("id", `seq${seq}`)
-            .selectAll("line")
-            .data(graph.filter(d => d.sequence == seq))
-            .enter().append("line")
-            .attr("x1", d => nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cx"))
-            .attr("y1", d => nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cy"))
-            .attr("x2", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cx")) + 80)
-            .attr("y2", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("class", "link")
+                .attr("id", `seq${seq}`)
+                .selectAll("line")
+                .data(graph.filter(d => d.sequence == seq))
+                .enter().append("line")
+                .attr("x1", d => nodeRightplus[seq - 1].filter(n => n.target == d.source).attr("cx"))
+                .attr("y1", d => nodeRightplus[seq - 1].filter(n => n.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeRightplus[seq - 1].filter(n => n.target == d.source).attr("cx")) + 80)
+                .attr("y2", d => parseFloat(nodeRightplus[seq - 1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeRightplus[seq] = node.append("g")
-            .attr("class", "node")
-            .attr("id", `seq${seq}`)
-            .selectAll("circle")
-            .data(graph.filter(d => d.sequence == seq))
-            .enter().append("circle")
-            .attr("r", 10)
-            .attr("cx", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cx")) + 80)
-            .attr("cy", d => parseFloat(nodeRightplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
-            .call(d3.drag().on("drag", dragged))
-            .on("click", clicked);
+                .attr("class", "node")
+                .attr("id", `seq${seq}`)
+                .selectAll("circle")
+                .data(graph.filter(d => d.sequence == seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => parseFloat(nodeRightplus[seq - 1].filter(n => n.target == d.source).attr("cx")) + 80)
+                .attr("cy", d => parseFloat(nodeRightplus[seq - 1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
         }
 
 
@@ -1214,17 +1315,17 @@ function drawGraph(graphid, graph) {
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            
+
             linkRightplus[seq].filter(
                 l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
             linkRightplus[seq].filter(
                 l => l.target == d.target && l.source == d.source
             ).attr("x2", d.x).attr("y2", d.y);
-            if (seq < maxseq){
-                linkRightplus[seq+1].filter(
-                l => l.source == d.target
-            ).attr("x1", d.x).attr("y1", d.y);
+            if (seq < maxseq) {
+                linkRightplus[seq + 1].filter(
+                    l => l.source == d.target
+                ).attr("x1", d.x).attr("y1", d.y);
             }
 
             drawsta();
@@ -1275,17 +1376,17 @@ function drawGraph(graphid, graph) {
                 .attr("cy", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked);
-        }   else {
+        } else {
             linkLeftplus[seq] = link.append("g")
                 .attr("class", "link")
                 .attr("id", `seq${-seq}`)
                 .selectAll("line")
                 .data(graph.filter(d => d.sequence == -seq))
                 .enter().append("line")
-                .attr("x1", d => nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cx"))
-                .attr("y1", d => nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cy"))
-                .attr("x2", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cx")) - 80)
-                .attr("y2", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("x1", d => nodeLeftplus[seq - 1].filter(n => n.target == d.source).attr("cx"))
+                .attr("y1", d => nodeLeftplus[seq - 1].filter(n => n.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeLeftplus[seq - 1].filter(n => n.target == d.source).attr("cx")) - 80)
+                .attr("y2", d => parseFloat(nodeLeftplus[seq - 1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeLeftplus[seq] = node.append("g")
                 .attr("class", "node")
@@ -1294,8 +1395,8 @@ function drawGraph(graphid, graph) {
                 .data(graph.filter(d => d.sequence == -seq))
                 .enter().append("circle")
                 .attr("r", 10)
-                .attr("cx", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cx")) - 80)
-                .attr("cy", d => parseFloat(nodeLeftplus[seq-1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
+                .attr("cx", d => parseFloat(nodeLeftplus[seq - 1].filter(n => n.target == d.source).attr("cx")) - 80)
+                .attr("cy", d => parseFloat(nodeLeftplus[seq - 1].filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked);
         }
@@ -1313,16 +1414,17 @@ function drawGraph(graphid, graph) {
             linkLeftplus[seq].filter(
                 l => l.target == d.target && l.source == d.source
             ).attr("x2", d.x).attr("y2", d.y);
-            if (seq < maxseq){
-                linkLeftplus[seq+1].filter(
-                l => l.source == d.target
-            ).attr("x1", d.x).attr("y1", d.y);
+            if (seq < maxseq) {
+                linkLeftplus[seq + 1].filter(
+                    l => l.source == d.target
+                ).attr("x1", d.x).attr("y1", d.y);
             }
 
             drawsta();
 
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
         }
+
         function clicked(d) {
             console.log("clicked");
             d3.selectAll(".samplePie").remove();
@@ -1342,28 +1444,29 @@ function drawGraph(graphid, graph) {
 
     let conditionBox = graphBg.append("g")
         .attr("id", "conditionBox")
-    
-    if (graphid === "graph-first") {
-        conditionCount = 0; 
-    }
-    function initializeConditionBox(){
-        conditionBox.append("rect")
-        .attr("x", "45%")
-        .attr("y", "90%")
-        .attr("height", "7%")
-        .attr("width", "10%")
-        .attr("fill", "#808080")
-        .attr("opacity", .5)
-    
-        conditionBox.append("text")
-        .attr("x", "50%")
-        .attr("y", "93.5%")
-        .attr('text-anchor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .text(`Conditions(${conditionCount})`)
-        .attr("fill","#2B2B2B")
 
-        if (conditionCount===0) {
+    if (graphid === "graph-first") {
+        conditionCount = 0;
+    }
+
+    function initializeConditionBox() {
+        conditionBox.append("rect")
+            .attr("x", "45%")
+            .attr("y", "90%")
+            .attr("height", "7%")
+            .attr("width", "10%")
+            .attr("fill", "#808080")
+            .attr("opacity", .5)
+
+        conditionBox.append("text")
+            .attr("x", "50%")
+            .attr("y", "93.5%")
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .text(`Conditions(${conditionCount})`)
+            .attr("fill", "#2B2B2B")
+
+        if (conditionCount === 0) {
             conditionBox.selectAll("text").attr("opacity", .5)
         } else {
             conditionBox.selectAll("text").attr("opacity", .5)
@@ -1372,12 +1475,12 @@ function drawGraph(graphid, graph) {
                 .attr("fill", "#40496C");
         }
     }
-    
-    initializeConditionBox();
-    
-let conditionBoxPos = conditionBox.node().getBoundingClientRect();
 
-    function drawsta(){
+    initializeConditionBox();
+
+    let conditionBoxPos = conditionBox.node().getBoundingClientRect();
+
+    function drawsta() {
         console.log("draw");
         staSpace.selectAll(".samplePie").remove();
         staSpace.selectAll(".sampleBar").remove();
@@ -1452,16 +1555,16 @@ let conditionBoxPos = conditionBox.node().getBoundingClientRect();
         function dragended(d) {
             let endXPos = event.pageX,
                 endYPos = event.pageY;
-            if (endXPos < conditionBoxPos.x + conditionBoxPos.width && 
+            if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
                 endXPos > conditionBoxPos.x &&
                 endYPos < conditionBoxPos.y + conditionBoxPos.height &&
                 endYPos > conditionBoxPos.y) {
-                    conditionCount += 1;
-                    conditionBox.select("text").text(`Conditions(${conditionCount})`)
-                        .attr("opacity", 1).attr("fill", "#CACACA");
-                    conditionBox.select("rect").attr("opacity", .8)
-                        .attr("fill", "#40496C");
-                }
+                conditionCount += 1;
+                conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                    .attr("opacity", 1).attr("fill", "#CACACA");
+                conditionBox.select("rect").attr("opacity", .8)
+                    .attr("fill", "#40496C");
+            }
             globalDragLayer.selectAll("path").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
             samplePie.remove();
@@ -1536,16 +1639,16 @@ let conditionBoxPos = conditionBox.node().getBoundingClientRect();
         function dragended(d) {
             let endXPos = event.pageX,
                 endYPos = event.pageY;
-            if (endXPos < conditionBoxPos.x + conditionBoxPos.width && 
+            if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
                 endXPos > conditionBoxPos.x &&
                 endYPos < conditionBoxPos.y + conditionBoxPos.height &&
                 endYPos > conditionBoxPos.y) {
-                    conditionCount += 1;
-                    conditionBox.select("text").text(`Conditions(${conditionCount})`)
-                        .attr("opacity", 1).attr("fill", "#CACACA");
-                    conditionBox.select("rect").attr("opacity", .8)
-                        .attr("fill", "#40496C");
-                }
+                conditionCount += 1;
+                conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                    .attr("opacity", 1).attr("fill", "#CACACA");
+                conditionBox.select("rect").attr("opacity", .8)
+                    .attr("fill", "#40496C");
+            }
             globalDragLayer.selectAll("rect").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
             sampleBar.remove();

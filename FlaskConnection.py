@@ -112,7 +112,7 @@ def Heatmap():
     return heatmapSend
 
 def TimeData():
-    timeTrans_read = pd.read_csv("timeseries.csv").drop(columns = ["Unnamed: 0"])
+    timeTrans_read = pd.read_csv("timeseries1.csv").drop(columns = ["Unnamed: 0"])
     timeTrans = timeTrans_read.to_json(orient = "records")
     return timeTrans
 
@@ -125,7 +125,7 @@ def receive_query_data():
     datagetjson = request.get_json(force=True)
     getName = datagetjson['name']
     getTime = datagetjson['time']
-    # print(dataget)
+    print(datagetjson, getName, getTime)
     QueryNodeMapOut = queryNode(getName, getTime)
     # print(QueryNodeMapOut)
     return QueryNodeMapOut

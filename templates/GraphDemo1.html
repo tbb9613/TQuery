@@ -117,6 +117,10 @@
       z-index: 2;
     }
 
+    .tooltip-handleleft{
+      font-size: 12px;
+    }
+
     #conditionBox {
       background-color: bisque;
       position: fixed;
@@ -213,6 +217,22 @@
       font-size: 13px;
     }
 
+    .timeselector-axis path {
+      stroke: none;
+    }
+
+    .timeselector-axis line {
+      stroke: #999;
+    }
+
+    .timeselector-axis text {
+      fill: #484848;
+    }
+
+    .handle-custom {
+      cursor: ew-resize;
+    }
+
     #staTab{
       position: fixed;
       right: 30%;
@@ -272,7 +292,7 @@
       left: 50%;
     }
 
-    button, .after-controller, .before-controller .brush-menu{
+    button, .after-controller, .before-controller, .brush-menu{
       cursor: pointer;
     }
 
@@ -293,7 +313,6 @@
       position: absolute;
       z-index: 2;
       background-color: rgb(104, 104, 104);;
-      
       color: #fff;
       border: none;
       border-radius: 10px;
