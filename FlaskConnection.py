@@ -116,6 +116,16 @@ def TimeData():
     timeTrans = timeTrans_read.to_json(orient = "records")
     return timeTrans
 
+def NodeList(listNmae):
+    listdict = { "Location": ["Restaurant","Surpermarket", "Cafe", "Restaurant", "School", "Theatre", "Cinema","Cafe"],
+                "SIC": ["Pharmacy", "Surpermarket", "School", "Theatre", "Cinema","Cafe"], 
+                "MCC": ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]}
+    if listdict.__contains__(listNmae):
+        return json.dumps(listdict[listNmae])
+    else:
+        return json.dumps(listdict["MCC"])
+
+
 @app.route('/', methods=['GET','POST'])
 def index():
         return render_template("GraphDemo1.html")
@@ -125,7 +135,7 @@ def receive_query_data():
     datagetjson = request.get_json(force=True)
     getName = datagetjson['name']
     getTime = datagetjson['time']
-    print(datagetjson, getName, getTime)
+    # print(datagetjson, getName, getTime)
     QueryNodeMapOut = queryNode(getName, getTime)
     # print(QueryNodeMapOut)
     return QueryNodeMapOut
@@ -137,6 +147,12 @@ def postheatmap():
 @app.route('/timetrans/', methods = ['GET', 'POST'])
 def timetrans():
     return TimeData()
+
+@app.route('/nodelist/', methods = ['GET', 'POST'])
+def getlist():
+    getListName = request.get_json()["name"]
+    print(getListName)
+    return NodeList(getListName)
 
 
 if __name__ == '__main__': 

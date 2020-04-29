@@ -8,29 +8,15 @@
 </head>
 
 <style>
-#calendar {
-  margin: 20px;
-}
-.month {
-  margin-right: 8px;
-}
-.month-name {
-  font-size: 85%;
-  fill: #777;
-  font-family: Arial, Helvetica;
-}
-.day.hover {
-  stroke: #6d6E70;
-  stroke-width: 2;
-}
-.day.focus {
-  stroke: #ffff33;
-  stroke-width: 2;
+div {
+  width: 80%;
 }
 </style>
 <body>
+<div>
+  <svg id="calendar"></svg>
+</div>
 
-<svg id="calendar"></svg>
 </body>
 
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
@@ -51,7 +37,7 @@ function drawCalendar(data){
     
     var years = d3.groups(data, d => d.date.getUTCFullYear()).reverse(), // get years
     cellSize = 17,
-    width = 954,
+    width = 1080,
     height = cellSize * 9,
     timeWeek = weekday === "sunday" ? d3.utcSunday : d3.utcMonday,
     countDay = weekday === "sunday" ? d => d.getUTCDay() : d => (d.getUTCDay() + 6) % 7,
@@ -111,9 +97,11 @@ function drawCalendar(data){
       .attr("x", d => timeWeek.count(d3.utcYear(d.date), d.date) * cellSize + 0.5)
       .attr("y", d => countDay(d.date) * cellSize + 0.5)
       .attr("fill", d => color(d.data))
-    .append("title")
-        .text("_title")
-      .text(d => `${formatDate(d.date)}`)
+      .on("mouseover", d => console.log(d.data))
+
+    // .append("title")
+        // .text("_title")
+      // .text(d => `${formatDate(d.date)}`)
 // ${formatValue(d.data)}${d.close === undefined ? "" : `
 // ${formatClose(d.close)}`}`);
 
