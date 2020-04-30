@@ -7,6 +7,7 @@
   <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
   <script src="https://unpkg.com/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
+  <!-- <script src="https://d3js.org/d3-hierarchy.v1.min.js"></script> -->
   <!-- <script src="https://d3js.org/d3-dsv.v1.min.js"></script> -->
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
@@ -276,33 +277,6 @@
       box-shadow: aliceblue;
     }
 
-    .select-mode {
-      position: absolute;
-      top: 31%;
-      right: 35%;
-      border: none;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      background-color: gray;
-      display: inline-block;
-      /* transition: ease-in-out .3s; */
-    }
-
-    .select-mode:hover {
-      background-color: darkgrey;
-      box-shadow: aliceblue;
-    }
-
-    .select-mode-active {
-      background-color: #393261;
-    }
-
-    .selected {
-      fill: white !important;
-      stroke: black !important;
-    }
-
     #step-before {
       position: absolute;
       top: 37%;
@@ -338,15 +312,15 @@
     }
 
     .brush-menu {
-      position: absolute;
+      /* position: absolute; */
       z-index: 2;
       background-color: rgb(104, 104, 104);
-      ;
       color: #fff;
       border: none;
       border-radius: 10px;
       font-size: 12px;
       padding: 10px;
+      display: block;
     }
 
     .brush-menu:active {
@@ -443,7 +417,6 @@
       border-radius: 3px;
       padding: 2.5%;
       overflow: auto;
-
     }
 
     .nodelist-input {
@@ -506,6 +479,62 @@
     }
 
 
+    #toolsContainer {
+      position: absolute;
+      left:60%;
+      top:20%;
+      width: 8%;
+    }
+
+    .multi-nodes, .draw-undirected-line, .draw-directed-line, .select-mode{
+      outline: none;
+      /* background-color: #0C0537; */
+      background-color: gray;
+      color: #fff;
+      border: none;
+      margin-bottom: 3%;
+      padding: 3%;
+    }
+
+    .multi-nodes {
+      width: 100%;
+    }
+
+    /* .multi-nodes:hover, .draw-undirected-line:hover, .draw-directed-line:hover {
+      background-color: darkgrey;
+      box-shadow: aliceblue;
+    } */
+    .draw-undirected-line, .draw-directed-line {
+      width: 25%;
+    }
+
+    .multi-nodes-active, .draw-active {
+      background-color: #393261;
+    }
+
+    .select-mode {
+      width: 44%;
+    }
+
+    .select-mode:hover {
+      background-color: darkgrey;
+      box-shadow: aliceblue;
+    }
+
+    .select-mode-active {
+      background-color: #393261;
+    }
+
+    .selected {
+      fill: #999 !important;
+      stroke: black !important;
+    }
+
+    .node-multi {
+      cursor:default;
+    }
+
+
   </style>
 </head>
 
@@ -517,9 +546,10 @@
     </div>
     <div id="leftContainer">
 
-      <svg id="brushLayer"></svg>
+      <!-- <svg id="brushLayer"></svg> -->
+      
       <button class="add-graph"><i class="fas fa-columns"></i></button>
-      <button class="select-mode"><i class="fas fa-object-group"></i></button>
+
       <div id="topContainer">
         <div id="topNodesTab">
           <button class="toptab">SIC</button>
@@ -538,8 +568,18 @@
             </svg>
           </button>
         </div>
+        <div id="toolsContainer">
+          <button class="multi-nodes">Multi</button>
+          <button class="draw-undirected-line"><i class="fas fa-minus"></i></button>
+          <button class="draw-directed-line"><i class="fas fa-arrow-right"></i></button>
+          <button class="select-mode"><i class="fas fa-object-group"></i></button>
+        </div>
       </div>
-      <div id="workContainer"></div>
+      <div id="workContainer">
+        <svg id="drawLayer"></svg>
+        <svg id="brushLayer"></svg>
+      </div>
+      
       <div class="nodelist-edit-container hide">
         <button class="button-close">
           <i class="fas fa-times"></i>

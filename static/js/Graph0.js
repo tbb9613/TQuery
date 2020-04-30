@@ -8,6 +8,8 @@ var queryNode
 var timeTrans // time selector data 
 var timeSelection // time selector
 
+var isMultiMode = false // is multi nodes mode?
+
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
 var height = mainContainer.clientHeight;
@@ -49,18 +51,29 @@ var brushLayer = d3.select("#brushLayer")
     .attr("height", 0)
     .attr("width", 0)
 
+var drawLayer = d3.select("#drawLayer")
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("position", "absolute")
+    .attr("height", 0)
+    .attr("width", 0)
+
+drawLayer.append("svg:defs").append("svg:marker")
+    .attr("id", "triangleArrow")
+    .attr("refX", 6)
+    .attr("refY", 6)
+    .attr("markerWidth", 30)
+    .attr("markerHeight", 30)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M 0 0 12 6 0 12 3 6")
+    .style("fill", "black");
+
 var leftContainer = d3.select("#leftContainer")
 var rightContainer = d3.select("#rightContainer")
 
 var topContainer = d3.select("#topContainer")
 var workContainer = d3.select("#workContainer")
-
-//Add svg to left
-// var leftSvg = leftContainer.append("svg")
-//     .attr("id", "leftSpace")
-//     .attr("width", "100%")
-//     .attr("height", "100%")
-//     .attr("preserveAspectRatio", "xMidyMid slice")
 
 var topSpace = topContainer.append("svg")
     .attr("id", "top")
@@ -122,12 +135,20 @@ var text = staSpace.append("text")
     .attr("fill", "white")
 
 var initialNodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
-// nodeList = d3.range(5)
+
+//define brush
+var brush = d3.brush()
+    .extent([
+        [0, 0],
+        [workSpaceWidth, workSpaceHeight]
+    ])
+
 drawTopNodes(initialNodeList);
 getHeatmap();
 
 let isHeatmapActive = false;
 d3.select(".heatmap-button").on("click", drawHeatmap)
+
 
 
 //TIME SELECTOR
@@ -136,7 +157,7 @@ function getTimeData() {
         .then(function (response) {
             timeTrans = response.data;
             let time2 = response.data;
-            console.log(response.data);
+            // console.log(response.data);
             let parse_s = d3.timeParse("%Y-%m-%d %H:%M:%S")
             let parse_d = d3.timeParse("%Y-%m-%d")
             timeTrans.forEach(function (d, i) {
@@ -150,8 +171,6 @@ function getTimeData() {
         })
 }
 getTimeData();
-console.log(timeTrans)
-console.log(d3.autoType(timeTrans));
 
 function drawTimeSelector(data) {
     // getTimeData();
@@ -169,18 +188,15 @@ function drawTimeSelector(data) {
         .attr("id", "timeSelector")
         .attr("transform", `translate(40, ${topSpaceHeight * 0.1})`)
 
-    console.log(data);
+    // console.log(data);
 
     let x = d3.scaleUtc()
         .domain(d3.extent(data, d => d.date))
         .range([0, selectorWidth])
-    // console.log()
 
     let y = d3.scaleLinear()
         .domain([0, d3.max(data, d => d.data)]).nice()
         .range([selectorHeight - selectorMargin.bottom, 0])
-
-    console.log(d3.max(data, d => d.data));
 
     areachart.append("g")
         .attr("transform", `translate(0, ${selectorHeight-selectorMargin.bottom})`)
@@ -375,14 +391,50 @@ function drawTopNodes(list) {
     const xPosition = (d, i) => i * 50 + 60;
     // console.log(d);
 
-    let node = topSpace.selectAll(".topnodes")
+    var node = topSpace.selectAll(".topnodes")
         .data(nodeList)
         .enter()
         .append("g")
         .attr("class", "topnodes")
         .attr("x", xPosition)
-        .attr("y", "50%")
-        .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+        .attr("y", "50%");
+
+    var drawLineMode = false;
+    var drawRectMode = false;
+    var drawDirectedLineMode = false;
+    var drawUnDirectedLineMode = false;
+
+    d3.select(".multi-nodes").on("click", function(){
+        if (!isMultiMode) {
+            console.log("multi-mode")
+            isMultiMode = true;
+            graphExist = false;
+            drawLayer.attr("height", "100%").attr("width", "100%");
+            workSpace.selectAll("g").remove();
+            workSpace.selectAll("text").text(null);
+            node.remove();
+            drawTopNodes(nodeList);
+            d3.select(this).classed("multi-nodes-active", true);
+            d3.select(".draw-undirected-line").on("click", drawUndirectedLine);
+            d3.select(".draw-directed-line").on("click", drawDirectedLine);
+        } else {
+            isMultiMode = false;
+            drawLayer.attr("height", 0).attr("width", 0);
+            drawLayer.selectAll("circle").remove();
+            drawLayer.selectAll("line").remove();
+            workSpace.selectAll("g").remove();
+            node.remove();
+            drawTopNodes(nodeList);
+            d3.select(this).classed("multi-nodes-active", false);
+        }
+    })
+
+    if (!isMultiMode) {
+        node.call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+    } else {
+        node.call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragendedMulti));
+    }
+        
 
     node
         .append("circle")
@@ -451,8 +503,8 @@ function drawTopNodes(list) {
         draggingNode.append("circle")
             .attr("cx", d3.select(this).select("circle").attr("cx"))
             .attr("cy", d3.select(this).select("circle").attr("cy"))
-            .attr("r", parseFloat(d3.select(this).select("circle").attr("r"))+5)
-            .attr("stroke", "#CCC");
+            .attr("r", parseFloat(d3.select(this).select("circle").attr("r"))+5);
+            // .attr("stroke", "#CCC");
 
         draggingNode.append("text")
             .attr('text-anchor', 'middle')
@@ -524,7 +576,416 @@ function drawTopNodes(list) {
         console.log("end");
     }
 
+    function dragendedMulti(d) {
+        let endXPos = event.pageX,
+            endYPos = event.pageY;
+        
+        let counter = 0
+
+        if (endYPos > topSpaceHeight) { //judge height space
+
+            globalDragLayer.select(".text").select("text").remove();
+            globalDragLayer.select(".dragging-node").select("circle")
+
+            globalDragLayer.selectAll("g").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
+            let thisNode = d;
+            nodeList = nodeList.filter((d, i) => d !== thisNode); // filter this node id, remove from top nodes
+            // console.log(nodeList)
+            node.remove();
+            drawTopNodes(nodeList)
+
+            let drawLayerNode = drawLayer.append("g")
+                .attr("class", "node-multi")
+                
+            drawLayerNode.call(d3.drag().on("drag",draggedInMultiDraw))
+            
+            drawLayerNode.append("circle")
+                .attr("cx", endXPos)
+                .attr("cy", endYPos-topSpaceHeight)
+                .attr("r", parseFloat(d3.select(this).select("circle").attr("r"))+5)
+                .attr("fill", "#4F4688")
+                .attr("stroke", "#CCC")
+                .attr("stroke-width", 1.5)
+            
+            drawLayerNode.append("text")
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .attr("x", endXPos)
+                .attr("y", endYPos-topSpaceHeight)
+                .attr("fill", "#fff")
+                .style('font-size', '15px')
+                .text(d.slice(0, 3))
+
+        } else {
+            topSpace.selectAll(".topnodes").remove();
+            globalDragLayer.selectAll("g").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
+            drawTopNodes(nodeList)
+            // .call(d3.drag().on("drag",draggedInMultiDraw))
+        }
+
+
+        // console.log("end");
+    }
+
+    function draggedInMultiDraw(d){
+        let dx = d3.event.x, dy = d3.event.y;
+        d3.select(this).select("circle").attr("cx", dx);
+        d3.select(this).select("circle").attr("cy", dy);
+        d3.select(this).select("text").attr("x", dx);
+        d3.select(this).select("text").attr("y", dy);
+    }
+
+    function drawUndirectedLine(){
+        var line
+        var lineCount = 1;
+        
+        if (!drawLineMode){
+            drawLayer
+                .on("mousedown", mousedown)
+                .on("mouseup", mouseup);
+            drawLineMode = true;
+            drawLayer.selectAll(".node-multi")
+                .on(".drag", null);
+            d3.select(this).classed("draw-active", true);
+        } else {
+            drawLayer
+                .on("mousedown", null)
+                .on("mouseup", null);
+            drawLineMode = false;
+            drawLayer.selectAll(".node-multi")
+                .call(d3.drag().on("drag",draggedInMultiDraw));
+            d3.select(this).classed("draw-active", false);
+        }
+    
+        function mousedown(){
+            let m = d3.mouse(this);
+            // console.log("down", m)
+            line = drawLayer.append("line")
+                .attr("x1", m[0])
+                .attr("y1", m[1])
+                .attr("x2", m[0])
+                .attr("y2", m[1])
+                .attr("stroke", "black")
+                .attr("id", `line${lineCount}`);
+                // line.attr("marker-end", "url(#triangleArrow)");
+                // 
+            drawLayer.on("mousemove", mousemove);
+        }
+    
+        function mousemove() {
+            let m = d3.mouse(this);
+            line.attr("x2", m[0])
+                .attr("y2", m[1]);
+        }
+    
+        function mouseup(){
+            drawLayer.on("mousemove", null)
+            drawLayer.selectAll("circle")
+                .classed(`from-${lineCount}`, function(d){return isInCircle(
+                    line.attr("x1"),
+                    line.attr("y1"),
+                    d3.select(this).attr("cx"),
+                    d3.select(this).attr("cy"),
+                    d3.select(this).attr("r"))})
+                .classed(`to-${lineCount}`, function(d){return isInCircle(
+                    line.attr("x2"),
+                    line.attr("y2"),
+                    d3.select(this).attr("cx"),
+                    d3.select(this).attr("cy"),
+                    d3.select(this).attr("r"))})
+            
+            console.log(document.getElementsByClassName(`from-${lineCount}`).length)
+            if ((document.getElementsByClassName(`from-${lineCount}`).length != 0) && (document.getElementsByClassName(`to-${lineCount}`).length != 0)){
+                line.attr("x1", drawLayer.select(`.from-${lineCount}`).attr("cx"))
+                    .attr("y1", drawLayer.select(`.from-${lineCount}`).attr("cy"))
+                    .attr("x2", drawLayer.select(`.to-${lineCount}`).attr("cx"))
+                    .attr("y2", drawLayer.select(`.to-${lineCount}`).attr("cy"))
+                    // .attr("stroke-width", 1.5)
+                lineCount += 1;
+            } else {
+                drawLayer.selectAll("circle")
+                    .classed(`from-${lineCount}`, false)
+                    .classed(`to-${lineCount}`, false);
+                line.remove();
+            }
+    
+        }
+    
+        function isInCircle(x, y, cx, cy, r) {
+            return ((cx-x) ** 2 + (cy-y) ** 2) <= r ** 2;
+        }
+    }
+
+    function drawDirectedLine(){
+        var line;
+        var lineCount = 1;
+        
+        if (!drawLineMode){
+            drawLayer
+                .on("mousedown", mousedown)
+                .on("mouseup", mouseup);
+            drawLineMode = true;
+            drawLayer.selectAll(".node-multi")
+                .on(".drag", null)
+            d3.select(this).classed("draw-active", true)
+        } else {
+            drawLayer
+                .on("mousedown", null)
+                .on("mouseup", null);
+            drawLineMode = false;
+            drawLayer.selectAll(".node-multi")
+                .call(d3.drag().on("drag",draggedInMultiDraw))
+            d3.select(this).classed("draw-active", false)
+        }
+    
+        function mousedown(){
+            let m = d3.mouse(this);
+            // console.log("down", m)
+            line = drawLayer.append("line")
+                .attr("x1", m[0])
+                .attr("y1", m[1])
+                .attr("x2", m[0])
+                .attr("y2", m[1])
+                .attr("stroke", "black")
+                .attr("id", `line${lineCount}`);
+                line.attr("marker-end", "url(#triangleArrow)");
+                // 
+            drawLayer.on("mousemove", mousemove);
+        }
+    
+        function mousemove() {
+            let m = d3.mouse(this);
+            line.attr("x2", m[0])
+                .attr("y2", m[1]);
+        }
+    
+        function mouseup(){
+            drawLayer.on("mousemove", null)
+            drawLayer.selectAll("circle")
+                .classed(`from-${lineCount}`, function(d){return isInCircle(
+                    line.attr("x1"),
+                    line.attr("y1"),
+                    d3.select(this).attr("cx"),
+                    d3.select(this).attr("cy"),
+                    d3.select(this).attr("r"))})
+                .classed(`to-${lineCount}`, function(d){return isInCircle(
+                    line.attr("x2"),
+                    line.attr("y2"),
+                    d3.select(this).attr("cx"),
+                    d3.select(this).attr("cy"),
+                    d3.select(this).attr("r"))})
+            
+            console.log(document.getElementsByClassName(`from-${lineCount}`).length)
+            if ((document.getElementsByClassName(`from-${lineCount}`).length != 0) && (document.getElementsByClassName(`to-${lineCount}`).length != 0)){
+                line.attr("x1", drawLayer.select(`.from-${lineCount}`).attr("cx"))
+                    .attr("y1", drawLayer.select(`.from-${lineCount}`).attr("cy"))
+                    .attr("x2", drawLayer.select(`.to-${lineCount}`).attr("cx"))
+                    .attr("y2", drawLayer.select(`.to-${lineCount}`).attr("cy"))
+                    // .attr("stroke-width", 1.5)
+                lineCount += 1;
+            } else {
+                drawLayer.selectAll("circle")
+                    .classed(`from-${lineCount}`, false)
+                    .classed(`to-${lineCount}`, false);
+                line.remove();
+            }
+    
+        }
+    
+        function isInCircle(x, y, cx, cy, r) {
+            return ((cx-x) ** 2 + (cy-y) ** 2) <= r ** 2;
+        }
+    }
+
+    function drawUndirectedLine(){
+        var line
+        var rectCount = 1;
+
+        if (drawLineMode === true) {
+            drawLayer.selectAll("button").classed("draw-active", false);
+            drawLineMode = false;
+        }
+        
+
+        if (!drawRectMode){
+            drawLayer
+                .on("mousedown", mousedown)
+                .on("mouseup", mouseup);
+            drawRectMode = true;
+            drawLayer.selectAll(".node-multi")
+                .on(".drag", null);
+            d3.select(this).classed("draw-active", true);
+        } else {
+            drawLayer
+                .on("mousedown", null)
+                .on("mouseup", null);
+            drawRectMode = false;
+            drawLayer.selectAll(".node-multi")
+                .call(d3.drag().on("drag",draggedInMultiDraw));
+            d3.select(this).classed("draw-active", false);
+        }
+    
+        function mousedown(){
+            let m = d3.mouse(this);
+            // console.log("down", m)
+            rect = drawLayer.append("rect")
+                // .attr("class", "rect-or")
+                .attr("x", m[0])
+                .attr("y", m[1])
+                .attr("width", 0)
+                .attr("height", 0)
+                .attr("stroke", "black")
+                .attr("fill", "none")
+                .attr("id", `rect${rectCount}`);
+                // line.attr("marker-end", "url(#triangleArrow)");
+                // 
+            drawLayer.on("mousemove", mousemove);
+        }
+    
+        function mousemove() {
+            let m = d3.mouse(this);
+            line.attr("width", m[0])
+                .attr("y2", m[1]);
+        }
+    
+        function mouseup(){
+            drawLayer.on("mousemove", null)
+            drawLayer.selectAll("circle")
+                .classed(`from-${lineCount}`, function(d){return isInCircle(
+                    line.attr("x1"),
+                    line.attr("y1"),
+                    d3.select(this).attr("cx"),
+                    d3.select(this).attr("cy"),
+                    d3.select(this).attr("r"))})
+                .classed(`to-${lineCount}`, function(d){return isInCircle(
+                    line.attr("x2"),
+                    line.attr("y2"),
+                    d3.select(this).attr("cx"),
+                    d3.select(this).attr("cy"),
+                    d3.select(this).attr("r"))})
+            
+            console.log(document.getElementsByClassName(`from-${lineCount}`).length)
+            if ((document.getElementsByClassName(`from-${lineCount}`).length != 0) && (document.getElementsByClassName(`to-${lineCount}`).length != 0)){
+                line.attr("x1", drawLayer.select(`.from-${lineCount}`).attr("cx"))
+                    .attr("y1", drawLayer.select(`.from-${lineCount}`).attr("cy"))
+                    .attr("x2", drawLayer.select(`.to-${lineCount}`).attr("cx"))
+                    .attr("y2", drawLayer.select(`.to-${lineCount}`).attr("cy"))
+                    // .attr("stroke-width", 1.5)
+                lineCount += 1;
+            } else {
+                drawLayer.selectAll("circle")
+                    .classed(`from-${lineCount}`, false)
+                    .classed(`to-${lineCount}`, false);
+                line.remove();
+            }
+    
+        }
+    
+        function isInCircle(x, y, cx, cy, r) {
+            return ((cx-x) ** 2 + (cy-y) ** 2) <= r ** 2;
+        }
+    }
+
+    //brush
+    if (!graphExist) {
+        brush.on("start", brushstart)
+        .on("brush", brushed)
+        .on("end", brushpopup);
+
+        function brushstart() {
+            leftContainer.selectAll(".brush-menu").remove();
+            console.log("start")
+        };
+
+        function brushed() {
+            let selection = d3.event.selection;
+            if (selection != null) {
+                let [
+                    [x0, y0],
+                    [x1, y1]
+                ] = selection;
+                var nodes = drawLayer.selectAll("circle")
+                nodes.classed("selected", function (d) {
+                    return isInSelection(selection,
+                        this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width,
+                        this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)
+                })
+
+            }
+
+            function isInSelection(brush_coords, cx, cy) {
+                let x0 = brush_coords[0][0],
+                    x1 = brush_coords[1][0],
+                    y0 = brush_coords[0][1]+topSpaceHeight,
+                    y1 = brush_coords[1][1]+topSpaceHeight;
+                return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+            }
+        }
+
+        function brushpopup() {
+            let selection = d3.event.selection;
+            // console.log(selection)
+            if (selection != null) {
+                let [
+                    [x0, y0],
+                    [x1, y1]
+                ] = selection;
+                let menuContainer = leftContainer.append("div")
+                    .attr("class", "brush-menu-container")
+                    .style("position", "absolute")
+                    .style("top", `${y0+topSpaceHeight}px`)
+                    .style("left", `${x1}px`)
+                
+                let menuAnd = menuContainer
+                    .append("button")
+                    .attr("class", "brush-menu")
+                    // .append("span")
+                    .html("AND")
+                
+                let menuOr =  menuContainer
+                    .append("button")
+                    .attr("class", "brush-menu")
+                    // .append("span")
+                    .html("OR")
+
+                .on("click", function(){
+                        console.log(d3.selectAll(".selected").nodes());
+                    })
+
+            }
+        }
+
+        var isSelectMode = false;
+        let selectModeButton = d3.select(".select-mode")
+        selectModeButton.on("click", selectMode)
+
+        function selectMode() {
+            if (!isSelectMode) {
+                selectModeButton.classed("select-mode-active", true);
+                isSelectMode = true;
+                // graphBg.on(".zoom", null);
+                brushLayer.attr("width", "100%")
+                    .attr("height", "100%")
+                    // .attr("y", "30%")
+                brush(brushLayer);
+                console.log("select-multi!")
+            } else {
+                selectModeButton.classed("select-mode-active", false);
+                isSelectMode = false;
+                brushLayer.on(".brush", null);
+                brushLayer.attr("width", 0)
+                    .attr("height", 0)
+                    // .attr("y", 0)
+                // graphBg.call(zoom).on("dblclick.zoom", null);
+            }
+    }
+    }
+
 };
+
+// drawLine("directed");
 
 function getHeatmap() {
     // $.ajax({
@@ -684,7 +1145,6 @@ function drawGraph(graphid, graph) {
         .scaleExtent([0.5, 1.5])
         .on("zoom", zoom_actions);
 
-
     function zoom_actions() {
         graphContainer.attr("transform", d3.event.transform)
     }
@@ -750,8 +1210,8 @@ function drawGraph(graphid, graph) {
     }
 
     drawStaCards();
-    let businessHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
-    let customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
+    var supplierHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
+    var customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
 
     d3.selectAll(".sta-button")
         .on("click", clickStaTab)
@@ -770,7 +1230,7 @@ function drawGraph(graphid, graph) {
             d3.select("#C").classed("sta-button-active", false);
         } else if (id === "B") {
             staContainer.node().scrollTo({
-                top: businessHeight,
+                top: supplierHeight,
                 behavior: "smooth"
             })
             d3.select("#G").classed("sta-button-active", false);
@@ -796,11 +1256,11 @@ function drawGraph(graphid, graph) {
     function checkScroll() {
         let sTop = staContainer.node().scrollTop;
         if (!isTabClicked) {
-            if (sTop < businessHeight) {
+            if (sTop < supplierHeight) {
                 d3.select("#G").classed("sta-button-active", true);
                 d3.select("#B").classed("sta-button-active", false);
                 d3.select("#C").classed("sta-button-active", false);
-            } else if (sTop >= businessHeight && sTop < customerHeight) {
+            } else if (sTop >= supplierHeight && sTop < customerHeight) {
                 d3.select("#G").classed("sta-button-active", false);
                 d3.select("#B").classed("sta-button-active", true);
                 d3.select("#C").classed("sta-button-active", false);
@@ -816,12 +1276,8 @@ function drawGraph(graphid, graph) {
 
 
     //brush - select
-    var brush = d3.brush()
-        .extent([
-            [0, topSpaceHeight],
-            [workSpaceWidth, height]
-        ])
-        .on("start", brushstart)
+
+    brush.on("start", brushstart)
         .on("brush", brushed)
         .on("end", brushpopup);
 
@@ -837,19 +1293,20 @@ function drawGraph(graphid, graph) {
                 [x0, y0],
                 [x1, y1]
             ] = selection;
-            let nodes = workSpace.selectAll("circle")
+            var nodes = workSpace.selectAll("circle")
             nodes.classed("selected", function (d) {
                 return isInSelection(selection,
                     this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width,
                     this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)
             })
+
         }
 
         function isInSelection(brush_coords, cx, cy) {
             let x0 = brush_coords[0][0],
                 x1 = brush_coords[1][0],
-                y0 = brush_coords[0][1],
-                y1 = brush_coords[1][1];
+                y0 = brush_coords[0][1]+topSpaceHeight,
+                y1 = brush_coords[1][1]+topSpaceHeight;
             return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
         }
     }
@@ -862,12 +1319,24 @@ function drawGraph(graphid, graph) {
                 [x0, y0],
                 [x1, y1]
             ] = selection;
-            let menu = leftContainer.append("button")
+            
+            let menuContainer = leftContainer.append("div")
+            .attr("class", "brush-menu-container")
+            .style("position", "absolute")
+            .style("top", `${y0+topSpaceHeight}px`)
+            .style("left", `${x1}px`)
+        
+            let menuAnd = menuContainer
+                .append("button")
                 .attr("class", "brush-menu")
-                .style("top", `${y0}px`)
-                .style("left", `${x1}px`)
-                .append("span")
-                .html("Aggregate")
+                // .append("span")
+                .html("AND")
+            
+            let menuOr =  menuContainer
+                .append("button")
+                .attr("class", "brush-menu")
+                // .append("span")
+                .html("OR")
 
         }
     }
@@ -881,9 +1350,9 @@ function drawGraph(graphid, graph) {
             selectModeButton.classed("select-mode-active", true);
             isSelectMode = true;
             graphBg.on(".zoom", null);
-            brushLayer.attr("width", "70%")
+            brushLayer.attr("width", "100%")
                 .attr("height", "100%")
-                .attr("y", "30%")
+                // .attr("y", "30%")
             brush(brushLayer);
             console.log("select!")
         } else {
@@ -1113,7 +1582,7 @@ function drawGraph(graphid, graph) {
         .on('mouseover', pierightMouseover)
         .on('mouseout', pieMouseout);
 
-    let pieLeft = pieNode.append("g") // draw left half of the piechart
+    let pieLeft = pieNode.append("g"); // draw left half of the piechart
 
     pieLeft.selectAll("path")
         .data(leftdraw(nodeLeftPieData))
@@ -1126,7 +1595,7 @@ function drawGraph(graphid, graph) {
 
     //Draw nodes
     let node = graphContainer.append("g")
-        .attr("id", "nodes")
+        .attr("id", "nodes");
 
     let nodeRight = node.append("g")
         .attr("class", "node")
@@ -1212,7 +1681,6 @@ function drawGraph(graphid, graph) {
         text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
-
     }
 
     //Add steps control
@@ -1265,7 +1733,6 @@ function drawGraph(graphid, graph) {
         if (rseq < maxseq + 1) {
             rseq += 1;
         }
-
     }
 
     function beforeplus() {
@@ -1275,7 +1742,6 @@ function drawGraph(graphid, graph) {
                 lseq += 1;
             }
         }
-
     }
 
     function afterminus() {
@@ -1666,7 +2132,6 @@ function drawGraph(graphid, graph) {
                 .attr("height", d3.select(this).attr("height"))
                 .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
                 .attr("stroke", "white")
-
 
             d3.select(this)
                 .attr("opacity", 0)
