@@ -118,7 +118,7 @@ def TimeData():
 
 def NodeList(listNmae):
     listdict = { "Location": ["Restaurant","Surpermarket", "Cafe", "Restaurant", "School", "Theatre", "Cinema","Cafe"],
-                "SIC": ["Pharmacy", "Surpermarket", "School", "Theatre", "Cinema","Cafe"], 
+                "Industry": ["Pharmacy", "Surpermarket", "School", "Theatre", "Cinema","Cafe"], 
                 "MCC": ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]}
     if listdict.__contains__(listNmae):
         return json.dumps(listdict[listNmae])
@@ -151,7 +151,7 @@ def timetrans():
 @app.route('/nodelist/', methods = ['GET', 'POST'])
 def getlist():
     getListName = request.get_json()["name"]
-    print(getListName)
+    # print(getListName)
     return NodeList(getListName)
 
 
