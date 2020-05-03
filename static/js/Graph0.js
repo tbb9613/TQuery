@@ -13,10 +13,11 @@ var isSelectMode = false;
 var drawDirectedLineMode = false;
 var drawUnDirectedLineMode = false;
 //define list to store node pairs
-var udList = new Array();// undirected pair list
-var dList  = new Array(); // directed pair list
-var andList = new Array(); // [[and area 1], [and area 2], [[lineid],[lineid,lineid],[lineid]]...]
-var orList = new Array(); // [[or area 1], [or area 2], [[lineid],[lineid,lineid],[lineid]]...]
+
+// var dList = new Array(); // directed pair list
+var packList = new Array(); // [pack id, [[node id, node class], [node id, node class], ...]]
+var packLinkList = new Array(); // undirected pair list
+var packCount = 1;
 
 var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
@@ -32,7 +33,6 @@ var conditionCount = 0;
 
 window.onresize = function () {
     getSize()
-    this.console.log(workSpaceWidth)
 }
 
 function getSize() {
@@ -128,7 +128,7 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
 map.on('moveend', function () {
     let northEast = [map.getBounds()._northEast.lat, map.getBounds()._northEast.lng];
     let southWest = [map.getBounds()._southWest.lat, map.getBounds()._southWest.lng];
-    console.log(northEast, southWest);
+    // console.log(northEast, southWest);
 });
 
 var staContainer = d3.select("#staContainer")
@@ -255,7 +255,7 @@ function drawTimeSelector(data) {
     let brushResizePath = function (d) {
         let e = +(d.type == "e"),
             x = e ? 1 : -1,
-            y = (selectorHeight-30) / 2;
+            y = (selectorHeight - 30) / 2;
         return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
     }
 
@@ -283,13 +283,13 @@ function drawTimeSelector(data) {
         .append("div")
         .classed("tooltip-handle", true)
         .style("opacity", 0)
-        // .attr("class", "tooltip")
+    // .attr("class", "tooltip")
 
     let righttooltip = topContainer
         .append("div")
         .classed("tooltip-handle", true)
         .style("opacity", 0)
-        // .attr("class", "tooltip")
+    // .attr("class", "tooltip")
 
     gBrush.selectAll(".handle--w")
         .on("mouseover", leftHandleOver)
@@ -344,33 +344,34 @@ function drawTimeSelector(data) {
 
 }
 
-function topNodeTab(){
+function topNodeTab() {
     let tab = d3.select("#topNodesTab");
     let button = tab.selectAll(".toptab")
     button.on("click", topTabCLicked)
 
     d3.selectAll(".toptab-custom").on("click", customWindow);
 
-    function topTabCLicked(d){
+    function topTabCLicked(d) {
         button.classed("toptab-active", false);
         d3.select(this).classed("toptab-active", true);
         let listName = d3.select(this).node().innerHTML;
-        
+
         topSpace.selectAll(".topnodes").remove();
         getNodeList(listName)
     }
+
     function customWindow() {
         var editContainer = d3.selectAll(".nodelist-edit-container")
         editContainer.classed("hide", false);
         var noClickLayer = d3.selectAll(".noclick");
         noClickLayer.classed("hide", false);
         editContainer.selectAll(".button-close")
-            .on("click", function(){
+            .on("click", function () {
                 editContainer.classed("hide", true);
                 noClickLayer.classed("hide", true);
             });
         editContainer.selectAll(".add-node-list")
-            .on("click", function(){
+            .on("click", function () {
                 editContainer.selectAll(".nodelist-edit").classed("hide", false)
             })
     }
@@ -378,19 +379,19 @@ function topNodeTab(){
 topNodeTab();
 
 
-function getNodeList(name){
+function getNodeList(name) {
     axios.post('http://127.0.0.1:5000/nodelist', {
-        name: name
-    })
-    .then(function (response) { // if success then update data
-        let nodeList = response.data;
-        drawTopNodes(nodeList);
-    })
-   
+            name: name
+        })
+        .then(function (response) { // if success then update data
+            let nodeList = response.data;
+            drawTopNodes(nodeList);
+        })
+
     // return nodeList;
 }
 
-function clearToolState(){
+function clearToolState() {
     brushLayer.on(".brush", null);
     brushLayer.attr("width", 0)
         .attr("height", 0)
@@ -411,6 +412,7 @@ function drawTopNodes(list) {
     var nodeList = list;
 
     let nodesyPos = 0.7 * topSpaceHeight
+    let topNodeRadius = 20;
 
     // console.log(nodeList)
     const xPosition = (d, i) => i * 50 + 60;
@@ -425,7 +427,7 @@ function drawTopNodes(list) {
         .attr("y", "50%");
 
 
-    d3.select(".multi-nodes").on("click", function(){
+    d3.select(".multi-nodes").on("click", function () {
         if (!isMultiMode) {
             console.log("multi-mode")
             isMultiMode = true;
@@ -438,18 +440,26 @@ function drawTopNodes(list) {
             d3.select(this).classed("multi-nodes-active", true);
             d3.select(".draw-undirected-line").on("click", drawUndirectedLine);
             d3.select(".draw-directed-line").on("click", drawDirectedLine);
+            workContainer.append("button")
+                .classed("build-query-btn", true)
+                .html("Create Query")
+                .on("click", packedQuery)
         } else {
+            clearToolState();
             isMultiMode = false;
             drawLayer.attr("height", 0).attr("width", 0);
             drawLayer.selectAll("circle").remove();
             drawLayer.selectAll("line").remove();
             workSpace.selectAll("g").remove();
+            workContainer.selectAll("button").remove();
             node.remove();
             drawTopNodes(nodeList);
             d3.select(this).classed("multi-nodes-active", false);
-            //empty array
+            //reset array
             udList.length = 0
             dList.length = 0
+            packList.length = 0
+            packCount = 1;
         }
     })
 
@@ -458,13 +468,13 @@ function drawTopNodes(list) {
     } else {
         node.call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragendedMulti));
     }
-        
+
 
     node
         .append("circle")
         .attr("cx", xPosition)
         .attr("cy", nodesyPos)
-        .attr("r", 20);
+        .attr("r", topNodeRadius);
 
     node
         .append('text')
@@ -508,13 +518,34 @@ function drawTopNodes(list) {
     function createQuery(d) {
         postQuery(d, 4);
         postSubQuery(7);
-        console.log(postQuery(d, 4));
+        // console.log(postQuery(d, 4));
         topSpace.selectAll(".topnodes").remove();
         drawTopNodes(nodeList)
         setTimeout(() => {
             drawGraph("graph-first", nodeMap);
-
         }, 200);
+    }
+
+    function packedQuery(){
+        clearToolState();
+        isMultiMode = false;
+        drawLayer.attr("height", 0).attr("width", 0);
+        drawLayer.selectAll("circle").remove();
+        drawLayer.selectAll("line").remove();
+        workSpace.selectAll("g").remove();
+        workContainer.selectAll("button").remove();
+        node.remove();
+        drawTopNodes(nodeList);
+        d3.select(this).classed("multi-nodes-active", false);
+        //reset array
+        packCount = 1;
+        drawLayer.selectAll("rect").each(
+            function(d){
+                packLinkList.push([d, d3.select(this).attr("class").replace(" con-rect", "")]);
+            }
+        )
+        console.log(packLinkList);
+        createQuery("Theatre");
     }
     //drag top nodes
     function dragstarted(d) {
@@ -527,8 +558,8 @@ function drawTopNodes(list) {
         draggingNode.append("circle")
             .attr("cx", d3.select(this).select("circle").attr("cx"))
             .attr("cy", d3.select(this).select("circle").attr("cy"))
-            .attr("r", parseFloat(d3.select(this).select("circle").attr("r"))+5);
-            // .attr("stroke", "#CCC");
+            .attr("r", topNodeRadius + 5);
+        // .attr("stroke", "#CCC");
 
         draggingNode.append("text")
             .attr('text-anchor', 'middle')
@@ -603,7 +634,7 @@ function drawTopNodes(list) {
     function dragendedMulti(d) {
         let endXPos = event.pageX,
             endYPos = event.pageY;
-        
+
         let counter = 0
 
         if (endYPos > topSpaceHeight) { //judge height space
@@ -623,10 +654,10 @@ function drawTopNodes(list) {
             let drawLayerNode = drawLayer
                 .append("g")
                 .attr("class", "node-multi")
-                
-                
-            drawLayerNode.call(d3.drag().on("drag",draggedInMultiDraw))
-            
+
+
+            drawLayerNode.call(d3.drag().on("drag", draggedInMultiDraw))
+
             // console.log(d, typeof(d));
             drawLayerNode
                 // .selectAll("circle")
@@ -634,17 +665,17 @@ function drawTopNodes(list) {
                 // .enter()
                 .append("circle")
                 .attr("cx", endXPos)
-                .attr("cy", endYPos-topSpaceHeight)
-                .attr("r", parseFloat(d3.select(this).select("circle").attr("r"))+5)
+                .attr("cy", endYPos - topSpaceHeight)
+                .attr("r", topNodeRadius + 5)
                 .attr("fill", "#4F4688")
                 .attr("stroke", "#CCC")
                 .attr("stroke-width", 1.5)
-            
+
             drawLayerNode.append("text")
                 .attr('text-anchor', 'middle')
                 .attr('alignment-baseline', 'middle')
                 .attr("x", endXPos)
-                .attr("y", endYPos-topSpaceHeight)
+                .attr("y", endYPos - topSpaceHeight)
                 .attr("fill", "#fff")
                 .style('font-size', '15px')
                 .text(d.slice(0, 3))
@@ -661,19 +692,20 @@ function drawTopNodes(list) {
         // console.log("end");
     }
 
-    function draggedInMultiDraw(d){
-        let dx = d3.event.x, dy = d3.event.y;
+    function draggedInMultiDraw(d) {
+        let dx = d3.event.x,
+            dy = d3.event.y;
         d3.select(this).select("circle").attr("cx", dx);
         d3.select(this).select("circle").attr("cy", dy);
         d3.select(this).select("text").attr("x", dx);
         d3.select(this).select("text").attr("y", dy);
     }
 
-    function drawUndirectedLine(){
+    function drawUndirectedLine() {
         var line
         var lineCount = 1;
-        
-        if (!drawUnDirectedLineMode){
+
+        if (!drawUnDirectedLineMode) {
             clearToolState();
             drawLayer
                 .on("mousedown", mousedown)
@@ -688,11 +720,11 @@ function drawTopNodes(list) {
                 .on("mouseup", null);
             drawUnDirectedLineMode = false;
             drawLayer.selectAll(".node-multi")
-                .call(d3.drag().on("drag",draggedInMultiDraw));
+                .call(d3.drag().on("drag", draggedInMultiDraw));
             d3.select(this).classed("tool-active", false);
         }
-    
-        function mousedown(){
+
+        function mousedown() {
             let m = d3.mouse(this);
             // console.log("down", m)
             line = drawLayer.append("line")
@@ -702,65 +734,129 @@ function drawTopNodes(list) {
                 .attr("y2", m[1])
                 .attr("stroke", "black")
                 .attr("id", `ud-line${lineCount}`);
-                // line.attr("marker-end", "url(#triangleArrow)");
-                // 
+            // line.attr("marker-end", "url(#triangleArrow)");
+            // 
             drawLayer.on("mousemove", mousemove);
         }
-    
+
         function mousemove() {
             let m = d3.mouse(this);
             line.attr("x2", m[0])
                 .attr("y2", m[1]);
         }
-    
-        function mouseup(){
-            drawLayer.on("mousemove", null)
-            drawLayer.selectAll("circle")
-                .classed(`ud-from-${lineCount}`, function(d){return isInCircle(
-                    line.attr("x1"),
-                    line.attr("y1"),
-                    d3.select(this).attr("cx"),
-                    d3.select(this).attr("cy"),
-                    d3.select(this).attr("r"))})
-                .classed(`ud-to-${lineCount}`, function(d){return isInCircle(
-                    line.attr("x2"),
-                    line.attr("y2"),
-                    d3.select(this).attr("cx"),
-                    d3.select(this).attr("cy"),
-                    d3.select(this).attr("r"))})
-            
-            console.log(document.getElementsByClassName(`ud-from-${lineCount}`).length)
-            if ((document.getElementsByClassName(`ud-from-${lineCount}`).length != 0) && (document.getElementsByClassName(`ud-to-${lineCount}`).length != 0)){
-                line.attr("x1", drawLayer.select(`.ud-from-${lineCount}`).attr("cx"))
-                    .attr("y1", drawLayer.select(`.ud-from-${lineCount}`).attr("cy"))
-                    .attr("x2", drawLayer.select(`.ud-to-${lineCount}`).attr("cx"))
-                    .attr("y2", drawLayer.select(`.ud-to-${lineCount}`).attr("cy"))
-                    // .attr("stroke-width", 1.5)
-                
 
-                let fromNode = drawLayer.select(`.ud-from-${lineCount}`).datum();
-                let toNode = drawLayer.select(`.ud-to-${lineCount}`).datum();
-                console.log([fromNode, toNode]);
+        function mouseup() {
+            drawLayer.on("mousemove", null)
+
+            console.log(drawLayer.selectAll(".con-rect"));
+            // console.log(drawLayer.select("rect").attr("x"))
+            if (drawLayer.selectAll(".con-rect").size() > 1) {
+                drawLayer.selectAll(".con-rect")
+                    .classed(`ud-con-from-${lineCount}`, function (d) {
+                        return isInLogicContainer(
+                            parseFloat(line.attr("x1")),
+                            parseFloat(line.attr("y1")),
+                            parseFloat(d3.select(this).attr("x")),
+                            parseFloat(d3.select(this).attr("y")),
+                            parseFloat(d3.select(this).attr("width")),
+                            parseFloat(d3.select(this).attr("height"))
+                        )
+                    });
+
+                drawLayer.selectAll(".con-rect")
+                    .classed(`ud-con-to-${lineCount}`, function (d) {
+                        return isInLogicContainer(
+                            parseFloat(line.attr("x2")),
+                            parseFloat(line.attr("y2")),
+                            parseFloat(d3.select(this).attr("x")),
+                            parseFloat(d3.select(this).attr("y")),
+                            parseFloat(d3.select(this).attr("width")),
+                            parseFloat(d3.select(this).attr("height"))
+                        )
+                    });
+            }
+
+
+            if ((document.getElementsByClassName(`ud-con-from-${lineCount}`).length != 0) &&
+                (document.getElementsByClassName(`ud-con-to-${lineCount}`).length != 0)) {
+                let fromRect = drawLayer.select(`.ud-con-from-${lineCount}`);
+                let toRect = drawLayer.select(`.ud-con-to-${lineCount}`);
+                line.attr("x1", parseFloat(fromRect.attr("x")) + parseFloat(fromRect.attr("width")) / 2)
+                    .attr("y1", parseFloat(fromRect.attr("y")) + parseFloat(fromRect.attr("height")) / 2)
+                    .attr("x2", parseFloat(toRect.attr("x")) + parseFloat(toRect.attr("width")) / 2)
+                    .attr("y2", parseFloat(toRect.attr("y")) + parseFloat(toRect.attr("height")) / 2)
+                    .attr("stroke", "black")
+                    .transition().duration(100)
+                    .attr("stroke", "#999")
+
                 lineCount += 1;
+                line.lower();
             } else {
                 drawLayer.selectAll("circle")
-                    .classed(`ud-from-${lineCount}`, false)
-                    .classed(`ud-to-${lineCount}`, false);
-                line.remove();
+                    .classed(`ud-from-${lineCount}`, function (d) {
+                        return isInCircle(
+                            line.attr("x1"),
+                            line.attr("y1"),
+                            d3.select(this).attr("cx"),
+                            d3.select(this).attr("cy"),
+                            d3.select(this).attr("r"))
+                    })
+                    .classed(`ud-to-${lineCount}`, function (d) {
+                        return isInCircle(
+                            line.attr("x2"),
+                            line.attr("y2"),
+                            d3.select(this).attr("cx"),
+                            d3.select(this).attr("cy"),
+                            d3.select(this).attr("r"))
+                    })
+
+                console.log(document.getElementsByClassName(`ud-from-${lineCount}`).length)
+                if ((document.getElementsByClassName(`ud-from-${lineCount}`).length != 0) &&
+                    (document.getElementsByClassName(`ud-to-${lineCount}`).length != 0)) {
+                    line.attr("x1", drawLayer.select(`.ud-from-${lineCount}`).attr("cx"))
+                        .attr("y1", drawLayer.select(`.ud-from-${lineCount}`).attr("cy"))
+                        .attr("x2", drawLayer.select(`.ud-to-${lineCount}`).attr("cx"))
+                        .attr("y2", drawLayer.select(`.ud-to-${lineCount}`).attr("cy"))
+                        .attr("stroke", "black")
+                        .transition().duration(100)
+                        .attr("stroke", "#999")
+                    // .attr("stroke-width", 1.5)
+
+
+                    let fromNode = drawLayer.select(`.ud-from-${lineCount}`).datum();
+                    let toNode = drawLayer.select(`.ud-to-${lineCount}`).datum();
+                    console.log([fromNode, toNode]);
+                    lineCount += 1;
+                    line.lower();
+                } else {
+                    drawLayer.selectAll("circle")
+                        .classed(`ud-from-${lineCount}`, false)
+                        .classed(`ud-to-${lineCount}`, false);
+                    line.remove();
+                }
             }
-    
+
+
+
         }
-    
+
         function isInCircle(x, y, cx, cy, r) {
-            return ((cx-x) ** 2 + (cy-y) ** 2) <= r ** 2;
+            return ((cx - x) ** 2 + (cy - y) ** 2) <= r ** 2;
+        }
+
+        function isInLogicContainer(lineX, lineY, boxX, boxY, boxWitdth, boxHeight) {
+            console.log(lineX, lineY, boxX, boxY, boxWitdth, boxHeight)
+            return lineX > boxX && lineY > boxY && lineX < (boxX + boxWitdth) && lineY < (boxY + boxHeight)
         }
     }
 
-    function drawDirectedLine(){
+    function drawDirectedLine() {
         var line;
         var lineCount = 1;
         
-        if (!drawDirectedLineMode){
+        var startPoint = new Array();
+
+        if (!drawDirectedLineMode) {
             clearToolState();
             drawLayer
                 .on("mousedown", mousedown)
@@ -775,13 +871,14 @@ function drawTopNodes(list) {
                 .on("mouseup", null);
             drawDirectedLineMode = false;
             drawLayer.selectAll(".node-multi")
-                .call(d3.drag().on("drag",draggedInMultiDraw))
+                .call(d3.drag().on("drag", draggedInMultiDraw))
             d3.select(this).classed("tool-active", false)
         }
-    
-        function mousedown(){
+
+        function mousedown() {
+            // startPoint.length=0;
             let m = d3.mouse(this);
-            // console.log("down", m)
+
             line = drawLayer.append("line")
                 .attr("x1", m[0])
                 .attr("y1", m[1])
@@ -789,64 +886,141 @@ function drawTopNodes(list) {
                 .attr("y2", m[1])
                 .attr("stroke", "black")
                 .attr("id", `d-line${lineCount}`);
-                line.attr("marker-end", "url(#triangleArrow)");
-                // 
+            line.attr("marker-end", "url(#triangleArrow)");
+            // 
             drawLayer.on("mousemove", mousemove);
         }
-    
+
         function mousemove() {
             let m = d3.mouse(this);
             line.attr("x2", m[0])
                 .attr("y2", m[1]);
         }
-    
-        function mouseup(){
+
+        function mouseup() {
             drawLayer.on("mousemove", null)
-            drawLayer.selectAll("circle")
-                .classed(`d-from-${lineCount}`, function(d){return isInCircle(
-                    line.attr("x1"),
-                    line.attr("y1"),
-                    d3.select(this).attr("cx"),
-                    d3.select(this).attr("cy"),
-                    d3.select(this).attr("r"))})
-                .classed(`d-to-${lineCount}`, function(d){return isInCircle(
-                    line.attr("x2"),
-                    line.attr("y2"),
-                    d3.select(this).attr("cx"),
-                    d3.select(this).attr("cy"),
-                    d3.select(this).attr("r"))})
-            
-            console.log(document.getElementsByClassName(`d-from-${lineCount}`).length)
-            if ((document.getElementsByClassName(`d-from-${lineCount}`).length != 0) && (document.getElementsByClassName(`d-to-${lineCount}`).length != 0)){
-                line.attr("x1", drawLayer.select(`.d-from-${lineCount}`).attr("cx"))
-                    .attr("y1", drawLayer.select(`.d-from-${lineCount}`).attr("cy"))
-                    .attr("x2", drawLayer.select(`.d-to-${lineCount}`).attr("cx"))
-                    .attr("y2", drawLayer.select(`.d-to-${lineCount}`).attr("cy"))
-                    // .attr("stroke-width", 1.5)
+
+            if (drawLayer.selectAll(".con-rect").size() > 1) {
+                drawLayer.selectAll(".con-rect")
+                    .classed(`d-con-from-${lineCount}`, function (d) {
+                        return isInLogicContainer(
+                            parseFloat(line.attr("x1")),
+                            parseFloat(line.attr("y1")),
+                            parseFloat(d3.select(this).attr("x")),
+                            parseFloat(d3.select(this).attr("y")),
+                            parseFloat(d3.select(this).attr("width")),
+                            parseFloat(d3.select(this).attr("height"))
+                        )
+                    });
+
+                drawLayer.selectAll(".con-rect")
+                    .classed(`d-con-to-${lineCount}`, function (d) {
+                        return isInLogicContainer(
+                            parseFloat(line.attr("x2")),
+                            parseFloat(line.attr("y2")),
+                            parseFloat(d3.select(this).attr("x")),
+                            parseFloat(d3.select(this).attr("y")),
+                            parseFloat(d3.select(this).attr("width")),
+                            parseFloat(d3.select(this).attr("height"))
+                        )
+                    });
+            }
+
+            if ((document.getElementsByClassName(`d-con-from-${lineCount}`).length != 0) &&
+                (document.getElementsByClassName(`d-con-to-${lineCount}`).length != 0)) {
+
+                let fromRect = drawLayer.select(`.d-con-from-${lineCount}`);
+                let toRect = drawLayer.select(`.d-con-to-${lineCount}`);
+                let x1 = parseFloat(fromRect.attr("x")) + parseFloat(fromRect.attr("width")) / 2,
+                    y1 = parseFloat(fromRect.attr("y")) + parseFloat(fromRect.attr("height")) / 2,
+                    x2 = parseFloat(toRect.attr("x")) + parseFloat(toRect.attr("width")) / 2,
+                    y2 = parseFloat(toRect.attr("y")) + parseFloat(toRect.attr("height")) / 2;
+
+                let midX = x1 + (x2 - x1) / 2,
+                    midY = y1 + (y2 - y1) / 2;
+                let linePath = `M${x1},${y1} L${midX},${midY} L${x2},${y2}`
+
+                line.remove();
+                drawLayer.append("path")
+                    .attr("id", `d-line${lineCount}`)
+                    .attr("d", linePath)
+                    .attr("stroke", "black")
+                    .attr("marker-mid", "url(#triangleArrow)")
+                    .lower()
+                    .transition().duration(100)
+                    .attr("stroke", "#999")
+
                 lineCount += 1;
             } else {
                 drawLayer.selectAll("circle")
-                    .classed(`d-from-${lineCount}`, false)
-                    .classed(`d-to-${lineCount}`, false);
-                line.remove();
+                    .classed(`d-from-${lineCount}`, function (d) {
+                        return isInCircle(
+                            line.attr("x1"),
+                            line.attr("y1"),
+                            d3.select(this).attr("cx"),
+                            d3.select(this).attr("cy"),
+                            d3.select(this).attr("r"))
+                    })
+                    .classed(`d-to-${lineCount}`, function (d) {
+                        return isInCircle(
+                            line.attr("x2"),
+                            line.attr("y2"),
+                            d3.select(this).attr("cx"),
+                            d3.select(this).attr("cy"),
+                            d3.select(this).attr("r"))
+                    })
+
+                console.log(document.getElementsByClassName(`d-from-${lineCount}`).length)
+                if ((document.getElementsByClassName(`d-from-${lineCount}`).length != 0) && (document.getElementsByClassName(`d-to-${lineCount}`).length != 0)) {
+                    let x1 = parseFloat(drawLayer.select(`.d-from-${lineCount}`).attr("cx")),
+                        y1 = parseFloat(drawLayer.select(`.d-from-${lineCount}`).attr("cy")),
+                        x2 = parseFloat(drawLayer.select(`.d-to-${lineCount}`).attr("cx")),
+                        y2 = parseFloat(drawLayer.select(`.d-to-${lineCount}`).attr("cy"));
+
+                    let midX = x1 + (x2 - x1) / 2,
+                        midY = y1 + (y2 - y1) / 2;
+                    let linePath = `M${x1},${y1} L${midX},${midY} L${x2},${y2}`
+
+                    line.remove();
+                    drawLayer.append("path")
+                        .attr("id", `d-line${lineCount}`)
+                        .attr("d", linePath)
+                        .attr("stroke", "black")
+                        .attr("marker-mid", "url(#triangleArrow)")
+                        .lower()
+                        .transition().duration(100)
+                        .attr("stroke", "#999")
+                    // .attr("stroke-width", 1.5)
+                    lineCount += 1;
+                    // line.lower();
+                } else {
+                    drawLayer.selectAll("circle")
+                        .classed(`d-from-${lineCount}`, false)
+                        .classed(`d-to-${lineCount}`, false);
+                    line.remove();
+                }
+
             }
-    
         }
-    
+
         function isInCircle(x, y, cx, cy, r) {
-            return ((cx-x) ** 2 + (cy-y) ** 2) <= r ** 2;
+            return ((cx - x) ** 2 + (cy - y) ** 2) <= r ** 2;
+        }
+
+        function isInLogicContainer(lineX, lineY, boxX, boxY, boxWitdth, boxHeight) {
+            return lineX > boxX && lineY > boxY && lineX < (boxX + boxWitdth) && lineY < (boxY + boxHeight)
         }
     }
 
     //brush
     if (!graphExist) {
         brush.on("start", brushstart)
-        .on("brush", brushed)
-        .on("end", brushpopup);
-
+            .on("brush", brushed)
+            .on("end", brushpopup);
+        
         function brushstart() {
-            leftContainer.selectAll(".brush-menu").remove();
-            console.log("start")
+            leftContainer.selectAll(".brush-menu-container").remove();
+            // console.log("start")
         };
 
         function brushed() {
@@ -858,20 +1032,20 @@ function drawTopNodes(list) {
                         this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width,
                         this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)
                 })
-
             }
 
             function isInSelection(brush_coords, cx, cy) {
                 let x0 = brush_coords[0][0],
                     x1 = brush_coords[1][0],
-                    y0 = brush_coords[0][1]+topSpaceHeight,
-                    y1 = brush_coords[1][1]+topSpaceHeight;
+                    y0 = brush_coords[0][1] + topSpaceHeight,
+                    y1 = brush_coords[1][1] + topSpaceHeight;
                 return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
             }
         }
 
         function brushpopup() {
-            let selection = d3.event.selection;
+            var selection = d3.event.selection;
+            var selectedNodes = d3.selectAll(".selected")
             // console.log(selection)
             if (selection != null) {
                 let [
@@ -883,46 +1057,73 @@ function drawTopNodes(list) {
                     .style("position", "absolute")
                     .style("top", `${y0+topSpaceHeight}px`)
                     .style("left", `${x1}px`)
-                
-                let menuAnd = menuContainer
+
+                let menuPack = menuContainer
                     .append("button")
                     .attr("class", "brush-menu")
                     // .append("span")
-                    .html("AND")
-                
-                let menuOr =  menuContainer
-                    .append("button")
-                    .attr("class", "brush-menu")
-                    // .append("span")
-                    .html("OR")
+                    .html("PACK")
 
-            let selectedNodes = d3.selectAll(".selected")
-            
-            menuAnd.on("click", function(){
-                console.log(selectedNodes.data());
-                console.log(selectedNodes.data().length);
+                // let selectedNodes = d3.selectAll(".selected")
                 var lineList = new Array();
-                selectedNodes.each(function(d){
-                    lineList.push(d3.select(this).attr("class").replace(" selected", ""))
-                } )
-                console.log(lineList);
-                andList.push(lineList);
-                console.log(andList);
-                // console.log(selectedNodes, d => d.attr("class"));
-            })
+                var xPosList = new Array();
+                var yPosList = new Array();
+                selectedNodes.each(function (d) {
+                    lineList.push([d, d3.select(this).attr("class").replace(" selected", "")]);
+                    xPosList.push(parseFloat(d3.select(this).attr("cx")));
+                    yPosList.push(parseFloat(d3.select(this).attr("cy")));
+                })
+                //Calculate min rect surrounding the nodes
+                let rectPadding = 10;
+                var xPos = d3.min(xPosList) - rectPadding - (topNodeRadius + 5);
+                var yPos = d3.min(yPosList) - rectPadding - (topNodeRadius + 5);
+                var rectWidth = d3.max(xPosList) - d3.min(xPosList) + 2 * (rectPadding + (topNodeRadius + 5));
+                var rectHeight = d3.max(yPosList) - d3.min(yPosList) + 2 * (rectPadding + (topNodeRadius + 5));
 
-            menuOr.on("click", function(){
-                console.log(selectedNodes.data());
-                console.log(selectedNodes.data().length);
-                var lineList = new Array();
-                selectedNodes.each(function(d){
-                    lineList.push(d3.select(this).attr("class").replace(" selected", ""))
-                } )
-                console.log(lineList);
-                orList.push(lineList);
-                console.log(orList);
-                // console.log(selectedNodes, d => d.attr("class"));
-            })
+                menuPack.on("click", function () {
+                    console.log(selectedNodes.data());
+                    // console.log(selectedNodes.data().length);
+                    if (selectedNodes.size() > 1) {
+                        // console.log(lineList);
+                        // let xPos = d3.min(xPosList)
+
+                        let conContainer = drawLayer
+                            .append("rect")
+                            .attr("class", "con-rect")
+                            .attr("x", xPos).attr("y", yPos)
+                            .attr("height", rectHeight)
+                            .attr("width", rectWidth)
+                            .attr("stroke", "#393261")
+                            .datum(packCount)
+
+                        conContainer
+                            .lower()
+                            .transition().delay(150).duration(200)
+                            .attr("stroke", "#855B9C");
+
+                        drawLayer.selectAll(".selected")
+                            .transition().duration(300)
+                            .attr("fill", "#5F5985");
+                        packList.push([packCount, lineList]);
+                        console.log(packList);
+                        packCount += 1;
+                        clearBrushLayer();
+                    } else {
+                        clearBrushLayer();
+                    }
+
+                    
+                })
+            } else {
+                console.log("not enough nodes")
+                // brushLayer.call(brush.clear);
+                // drawLayer.selectAll("circle").classed("selected", false);
+            }
+            function clearBrushLayer() {
+                leftContainer.selectAll(".brush-menu-container").remove();
+                // brushLayer.selectAll("rect").remove();
+                brushLayer.call(brush.clear);
+                drawLayer.selectAll("circle").classed("selected", false)
             }
         }
 
@@ -937,7 +1138,7 @@ function drawTopNodes(list) {
                 // graphBg.on(".zoom", null);
                 brushLayer.attr("width", "100%")
                     .attr("height", "100%")
-                    // .attr("y", "30%")
+                // .attr("y", "30%")
                 brush(brushLayer);
                 console.log("select-multi!")
             } else {
@@ -946,10 +1147,10 @@ function drawTopNodes(list) {
                 brushLayer.on(".brush", null);
                 brushLayer.attr("width", 0)
                     .attr("height", 0)
-                    // .attr("y", 0)
+                // .attr("y", 0)
                 // graphBg.call(zoom).on("dblclick.zoom", null);
             }
-    }
+        }
     }
 
 };
@@ -1089,8 +1290,7 @@ function drawGraph(graphid, graph) {
     graphExist = true;
 
     const graphCenter = [workSpaceWidth / 2, workSpaceHeight / 2];
-    console.log(graphCenter[0], graphCenter[1])
-
+    // console.log(graphCenter[0], graphCenter[1])
     //Draw workspace background
     let graphBg = workSpace
         .append("g")
@@ -1274,8 +1474,8 @@ function drawGraph(graphid, graph) {
         function isInSelection(brush_coords, cx, cy) {
             let x0 = brush_coords[0][0],
                 x1 = brush_coords[1][0],
-                y0 = brush_coords[0][1]+topSpaceHeight,
-                y1 = brush_coords[1][1]+topSpaceHeight;
+                y0 = brush_coords[0][1] + topSpaceHeight,
+                y1 = brush_coords[1][1] + topSpaceHeight;
             return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
         }
     }
@@ -1288,28 +1488,28 @@ function drawGraph(graphid, graph) {
                 [x0, y0],
                 [x1, y1]
             ] = selection;
-            
+
             let menuContainer = leftContainer.append("div")
-            .attr("class", "brush-menu-container")
-            .style("position", "absolute")
-            .style("top", `${y0+topSpaceHeight}px`)
-            .style("left", `${x1}px`)
-        
+                .attr("class", "brush-menu-container")
+                .style("position", "absolute")
+                .style("top", `${y0+topSpaceHeight}px`)
+                .style("left", `${x1}px`)
+
             let menuAnd = menuContainer
                 .append("button")
                 .attr("class", "brush-menu")
                 // .append("span")
                 .html("AND")
-            
-            let menuOr =  menuContainer
+
+            let menuOr = menuContainer
                 .append("button")
                 .attr("class", "brush-menu")
                 // .append("span")
                 .html("OR")
-            
+
             let selectedNodes = d3.selectAll(".selected")
-            
-            menuAnd.on("click", function(){
+
+            menuAnd.on("click", function () {
                 console.log(selectedNodes);
             })
 
@@ -1328,7 +1528,7 @@ function drawGraph(graphid, graph) {
             graphBg.on(".zoom", null);
             brushLayer.attr("width", "100%")
                 .attr("height", "100%")
-                // .attr("y", "30%")
+            // .attr("y", "30%")
             brush(brushLayer);
             console.log("select!")
         } else {
