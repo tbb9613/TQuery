@@ -195,9 +195,12 @@ def Heatmap():
     # print(heatmapSend)
     return heatmapSend
 
-def TimeData():
-    timeTrans_read = pd.read_csv("timeseries1.csv").drop(columns = ["Unnamed: 0"])
+def TimeData(timeScale):
+    fileName = "timeseries_"+str(timeScale)+".csv"
+    timeTrans_read = pd.read_csv(fileName).drop(columns = ["Unnamed: 0"])
+    # print(timeTrans_read.head())
     timeTrans = timeTrans_read.to_json(orient = "records")
+    # print(timeTrans)
     return timeTrans
 
 def NodeList(listNmae):
@@ -230,7 +233,8 @@ def postheatmap():
 
 @app.route('/timetrans/', methods = ['GET', 'POST'])
 def timetrans():
-    return TimeData()
+    timeScale = request.get_json()["scale"]
+    return TimeData(timeScale)
 
 @app.route('/nodelist/', methods = ['GET', 'POST'])
 def getlist():

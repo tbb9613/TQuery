@@ -161,27 +161,54 @@ d3.select(".heatmap-button").on("click", drawHeatmap)
 
 
 //TIME SELECTOR
-function getTimeData() {
-    axios.get("http://127.0.0.1:5000/timetrans")
+function getTimeData(timeScale) {
+    axios.post("http://127.0.0.1:5000/timetrans",{
+            scale : timeScale
+        })
         .then(function (response) {
+            
             timeTrans = response.data;
             let time2 = response.data;
             // console.log(response.data);
+            let parse;
             let parse_s = d3.timeParse("%Y-%m-%d %H:%M:%S")
             let parse_d = d3.timeParse("%Y-%m-%d")
-            timeTrans.forEach(function (d, i) {
-                // console.log(d.date)
-                d.date = parse_d(d.date)
-            })
-            drawTimeSelector(timeTrans);
+            // console.log(timeScale, timeScale == "total" || timeScale == "year");
+            // console.log(timeTrans);
+            if(timeScale == "total" || timeScale == "year") {
+                timeTrans.forEach(function (d, i) {
+
+                    d.date = parse_d(d.date)
+                })
+            } else {
+                timeTrans.forEach(function (d, i) {
+                    d.date = parse_s(d.date)
+                })
+            }
+
+            drawTimeSelector(timeTrans, timeScale, 
+                document.getElementById("dataType").options[document.getElementById("dataType").options.selectedIndex].value);
         }).catch(function (error) {
             // handle error
             console.log(error);
         })
 }
-getTimeData();
 
-function drawTimeSelector(data) {
+document.getElementById("timePeriod").onchange = function(){
+    topSpace.selectAll("#timeSelector").remove();
+    getTimeData(this.options[this.options.selectedIndex].value);
+} 
+
+getTimeData("total");
+
+document.getElementById("dataType").onchange = function(){
+    topSpace.selectAll("#timeSelector").remove();
+    drawTimeSelector(timeTrans, 
+        document.getElementById("timePeriod").options[document.getElementById("timePeriod").options.selectedIndex].value, 
+        this.options[this.options.selectedIndex].value)
+}
+
+function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
     let selectorWidth = 0.7 * workSpaceWidth;
     let selectorHeight = 0.2 * topSpaceHeight;
@@ -192,6 +219,73 @@ function drawTimeSelector(data) {
         left: 30
     })
     // let data = timeTrans;
+    let dtype
+    switch(type) {
+        case "TTV":
+            dtype = "total_transaction";
+            break;
+        case "ATV":
+            dtype = "avg_transaction";
+            break;
+    }
+
+    d3.selectAll("#calendar").remove();
+    d3.selectAll("layui-laydate").remove();
+    let selectorDiv = d3.select("#timeSelectorDropdown");
+    selectorDiv.append("input").attr("id", "calendar")
+        .attr("type", "text")
+        .classed("mdui-textfield-input", true)
+        .attr("placeholder", "Select Date")
+        .raise();
+    
+    let timeFormat
+
+    switch(timeScale) {
+        case "total":
+            laydate.render({
+                elem: "#calendar",
+                lang: "en",
+                theme: "#393261",
+                type: 'datetime',
+                range: true
+            });
+            timeFormat = "%Y-%m-%d";
+            break;
+        case "year":
+            laydate.render({
+                elem: "#calendar",
+                lang: "en",
+                theme: "#393261",
+                type: 'year'
+            });
+            timeFormat = "%Y-%m-%d";
+            break;
+        case "month":
+            laydate.render({
+                elem: "#calendar",
+                lang: "en",
+                theme: "#393261",
+                type: 'month'
+            });
+            timeFormat = "%Y-%m-%d";
+            break;
+        case "week":
+            laydate.render({
+                elem: "#calendar",
+                lang: "en",
+                theme: "#393261",
+            });
+            timeFormat = "%c";
+            break;
+        case "day":
+            laydate.render({
+                elem: "#calendar",
+                lang: "en",
+                theme: "#393261",
+            });
+            timeFormat = "%c";
+            break;
+    }
 
     var areachart = topSpace.append("g")
         .attr("id", "timeSelector")
@@ -202,26 +296,30 @@ function drawTimeSelector(data) {
     let x = d3.scaleUtc()
         .domain(d3.extent(data, d => d.date))
         .range([0, selectorWidth])
-
+    
     let y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.data)]).nice()
+        .domain([0, d3.max(data, d => d[dtype])]).nice()
         .range([selectorHeight - selectorMargin.bottom, 0])
 
-    areachart.append("g")
+    let xAxis = areachart.append("g")
         .attr("transform", `translate(0, ${selectorHeight-selectorMargin.bottom})`)
         .attr("class", "timeselector-axis")
-        .call(d3.axisBottom(x).ticks(selectorWidth / 50).tickSize(3).tickSizeOuter(0)
-            .tickFormat(date => (d3.timeYear(date) < date) ?
-                d3.timeFormat('%b')(date) :
-                d3.timeFormat('%Y')(date))
-        )
 
-    areachart.append("g")
+    if (timeScale === "year" || timeScale === "total"){
+        xAxis.call(d3.axisBottom(x).ticks(selectorWidth / 50).tickSize(3).tickSizeOuter(0)
+        .tickFormat(date => (d3.timeYear(date) < date) ?
+            d3.timeFormat('%b')(date) :
+            d3.timeFormat('%Y')(date))
+        )
+    } else {
+        xAxis.call(d3.axisBottom(x).ticks(selectorWidth / 50).tickSize(3).tickSizeOuter(0))
+    }
+
+    let yAxis = areachart.append("g")
         .attr("class", "timeselector-axis")
         .attr("transform", `translate(${selectorWidth},0)`)
         .call(d3.axisRight(y).ticks(selectorHeight / 30).tickSize(0)
             .tickFormat(d3.format("~s")))
-
 
     areachart
         .append("g")
@@ -230,13 +328,11 @@ function drawTimeSelector(data) {
         .append("path")
         .attr("fill", "#85869E")
         .attr("opacity", .5)
-        // .attr("stroke", "#8996E9")
-        // .attr("stroke-width", 1)
         .attr("d", d3.area()
             .curve(d3.curveBasis)
             .x(d => x(d.date))
             .y0(y(0))
-            .y1(d => y(d.data))
+            .y1(d => y(d[dtype]))
         )
 
     const brush = d3.brushX()
@@ -318,13 +414,9 @@ function drawTimeSelector(data) {
         }
     };
 
-    let timeFormat = {
-        "day": "%Y-%m-%d",
-        "sec": "%c"
-    }
 
     function leftHandleOver() {
-        let format = d3.timeFormat(timeFormat["day"])
+        let format = d3.timeFormat(timeFormat)
         lefttooltip.style("opacity", 1)
             .html("Start: " + format(x.invert(timeSelection[0])))
             .style("left", (d3.mouse(this)[0]) + "px")
@@ -335,7 +427,7 @@ function drawTimeSelector(data) {
 
     function rightHandleOver() {
         // let selection = d3.brushSelection();
-        let format = d3.timeFormat(timeFormat["day"])
+        let format = d3.timeFormat(timeFormat)
         righttooltip.style("opacity", 1)
             .html("End: " + format(x.invert(timeSelection[1])))
             .style("left", (d3.mouse(this)[0]) + "px")
@@ -456,8 +548,8 @@ function drawTopNodes(list) {
             drawTopNodes(nodeList);
             d3.select(this).classed("multi-nodes-active", false);
             //reset array
-            udList.length = 0
-            dList.length = 0
+            // udList.length = 0
+            // dList.length = 0
             packList.length = 0
             packCount = 1;
         }
@@ -1372,7 +1464,7 @@ function drawGraph(graphid, graph) {
             .attr("x", "2.5%")
             .attr("width", "95%")
             .attr("height", staCardHeight)
-            .attr("fill", "#CCC")
+            .attr("fill", "#EEE")
             .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
 
         staSpace.attr("height", 300 + staCardList.length * (30 + staCardHeight))
@@ -1499,13 +1591,7 @@ function drawGraph(graphid, graph) {
                 .append("button")
                 .attr("class", "brush-menu")
                 // .append("span")
-                .html("AND")
-
-            let menuOr = menuContainer
-                .append("button")
-                .attr("class", "brush-menu")
-                // .append("span")
-                .html("OR")
+                .html("PACK")
 
             let selectedNodes = d3.selectAll(".selected")
 
@@ -1562,7 +1648,6 @@ function drawGraph(graphid, graph) {
             console.log("clicked!")
         }
     } else if (graphid === "graph-second") {
-
         d3.select(".add-graph")
             .classed("hide", true);
 
@@ -2172,6 +2257,10 @@ function drawGraph(graphid, graph) {
         staSpace.selectAll(".sampleBar").remove();
         drawsamplepie("#sta1");
         drawsamplebar("#sta2");
+        drawsamplepie("#sta3");
+        drawsamplepie("#sta4");
+        drawsamplebar("#sta5");
+        drawsamplebar("#sta6");
     }
 
     //draw sample pie chart
@@ -2190,7 +2279,7 @@ function drawGraph(graphid, graph) {
             }
         ];
 
-        let samplePieColorScale = d3.schemeAccent;
+        let samplePieColorScale = d3.schemeTableau10;
 
         let samplePie = staSpace.select(id).append("g")
             .attr("class", "samplePie")
@@ -2205,10 +2294,21 @@ function drawGraph(graphid, graph) {
             .data(spConverter(fakeData))
             .enter()
             .append("path")
-            .attr('transform', `translate(${staSpaceWidth/2}, ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/2)})`)
+            .attr('transform', `translate(${staSpaceWidth/2}, 
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/2)})`)
             .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+        
+        staSpace.select(id)
+            .append("g")
+            .attr("class", "samplePie")
+            .attr('transform', `translate(${ staSpaceWidth / 5},
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
+            .append("text")
+            .text(d => d.category +" "+ id)
+            .attr("x", 10)
+            .attr("y", 10)
 
         function dragstarted(d) {
             let boundingPos = this.getBoundingClientRect();
@@ -2253,7 +2353,7 @@ function drawGraph(graphid, graph) {
             }
             globalDragLayer.selectAll("path").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
-            samplePie.remove();
+            staSpace.select(id).selectAll("g").remove();
             drawsamplepie(id);
         }
     }
@@ -2274,7 +2374,8 @@ function drawGraph(graphid, graph) {
         ];
         let sampleBar = staSpace.select(id).append("g")
             .attr("class", "sampleBar")
-            .attr('transform', `translate(${ staSpaceWidth / 4}, ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/4)})`)
+            .attr('transform', `translate(${ staSpaceWidth / 4},
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/4)})`)
 
         let barWidth = staSpaceWidth / 2
         let barHeight = staCardHeight / 2
@@ -2294,8 +2395,18 @@ function drawGraph(graphid, graph) {
             .attr("y", d => yScale(d.label))
             .attr("width", d => xScale(d.value))
             .attr("height", yScale.bandwidth())
-            .attr("fill", "#4BC1C1")
+            .attr("fill", "#1771D8")
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+
+        staSpace.select(id)
+            .append("g")
+            .attr("class", "sampleBar")
+            .attr('transform', `translate(${ staSpaceWidth / 5},
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
+            .append("text")
+            .text(d => d.category +" "+ id)
+            .attr("x", 10)
+            .attr("y", 10)
 
         function dragstarted(d) {
             //Draw a same path on drag layer
@@ -2318,7 +2429,6 @@ function drawGraph(graphid, graph) {
             dpy = d3.event.pageY;
             globalDragLayer.selectAll("rect")
                 .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
-
         }
 
         function dragended(d) {
@@ -2336,7 +2446,7 @@ function drawGraph(graphid, graph) {
             }
             globalDragLayer.selectAll("rect").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
-            sampleBar.remove();
+            staSpace.select(id).selectAll("g").remove();
             // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
             drawsamplebar(id);
         }

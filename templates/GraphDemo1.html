@@ -7,8 +7,6 @@
   <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
   <script src="https://unpkg.com/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
-  <!-- <script src="https://d3js.org/d3-hierarchy.v1.min.js"></script> -->
-  <!-- <script src="https://d3js.org/d3-dsv.v1.min.js"></script> -->
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
     integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -20,6 +18,11 @@
     crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://kit.fontawesome.com/9c1ae4a15d.js" crossorigin="anonymous"></script>
+  <script src="/static/laydate/laydate.js"></script>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/mdui/0.4.3/css/mdui.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/mdui/0.4.3/js/mdui.min.js"></script>
+
+
   <style>
     html,
     body {
@@ -432,29 +435,20 @@
     }
 
     .add-node-list {
-      outline: none;
-      border: #3C2E93 1px solid;
-      background-color: transparent;
-      color: #393261;
-      height: 30px;
-      float: right;
-      margin: 20px 15px;
-      border-radius: 3px;
-      font-size: 14px;
-      padding: 0 auto;
-      display: block;
+      margin: 20px 0;
+      /* background-color: #eeeeee; */
+      border: #CCC 1px solid;
+      color: #3C2E93;
     }
 
-    .add-node-list:hover {
-      color: #4F4688;
-      box-shadow: 1px 1px 10px #eeeeee;
-    }
-
-    .add-node-list:active {
+    /* .add-node-list:hover {
+      margin: 20px 0;
       background-color: #3C2E93;
       color: white;
-      /* box-shadow: inset 0px 1px black; */
-    }
+    } */
+
+
+
 
     .nodelist-edit {
       display: inline-block;
@@ -492,16 +486,13 @@
       width: 97%;
     }
 
-    /* .multi-nodes:hover, .draw-undirected-line:hover, .draw-directed-line:hover {
-      background-color: darkgrey;
-      box-shadow: aliceblue;
-    } */
+
     .draw-undirected-line, .draw-directed-line {
       width: 30%;
     }
 
     .multi-nodes-active, .tool-active {
-      background-color: #393261;
+      background-color: #4F4688;
     }
 
     .select-mode {
@@ -510,7 +501,7 @@
 
 
     .select-mode-active {
-      background-color: #393261;
+      background-color: #4F4688;
     }
 
     .selected {
@@ -546,15 +537,36 @@
       background-color: #655AAF;
     }
 
+    #timeSelectorDropdown {
+      position: absolute;
+      left: 54%;
+      top: 2%;
+      width: 10%;
+    }
+
+    #calendar {
+      margin-top: 5px;
+      width: 80%;
+      border-radius: 2px;
+      font-size: 14px;
+      height: 24px;
+      color:#666666;
+
+    }
+
+    .mdui-select{
+      font-size: 14px;
+      padding-bottom: 0;
+      height: 24px;
+    }
 
   </style>
 </head>
 
-<body>
+<body class="mdui-theme-accent-deep-purple">
   <div id="mainContainer">
     <svg id="globalDrag"></svg>
     <div class="noclick hide">
-
     </div>
     <div id="leftContainer">
 
@@ -563,6 +575,20 @@
       <button class="add-graph"><i class="fas fa-columns"></i></button>
 
       <div id="topContainer">
+        <div id="timeSelectorDropdown">
+          <select class = "mdui-select" mdui-select="options" name="timePeriod" id="timePeriod">
+            <option value="total">Total</option>
+            <option value="year">Year</option>
+            <option value="month">Month</option>
+            <option value="week">Week</option>
+            <option value="day">Day</option>
+          </select>
+          <select class = "mdui-select" mdui-select="options" name="data" id="dataType">
+            <option value="TTV">TTV</option>
+            <option value="ATV">ATV</option>
+          </select>
+          <!-- <input type="text" id = "calendar" placeholder="Choose date"> -->
+        </div>
         <div id="topNodesTab">
           <button class="toptab">Industry</button>
           <button class="toptab toptab-active">MCC</button>
@@ -596,7 +622,7 @@
         <button class="button-close">
           <i class="fas fa-times"></i>
         </button>
-       
+
         <h3>Node List</h3>
         <div>
           <table class="pure-table pure-table-horizontal nodelist-table">
@@ -627,20 +653,20 @@
               </tr>
             </tbody>
           </table>
-          <button class="add-node-list">Add new</button>
+          <button class="mdui-btn mdui-ripple add-node-list">Add new</button>
         </div>
 
 
         <div class="nodelist-edit hide">
           
           <span>SEARCH BY</span>
-          <select>
-            <option value="name">merchant name</option>
+          <select class = "mdui-select" mdui-select="options">
+            <option value="name">Merchant Name</option>
             <option value="MCC">MCC</option>
           </select>
           
           <input class="nodelist-input">
-          <button class="add-node-list">SEARCH</button>
+          <button class="mdui-btn mdui-ripple add-node-list">SEARCH</button>
         </div>
 
 
@@ -672,7 +698,8 @@
 
     </div>
   </div>
+  <!-- <script src="{{ url_for('static',filename='laydate/laydate.js') }}"></script> -->
+  <!-- <script src="{{ url_for('static',filename='js/Graph0.js') }}"></script> -->
+  <script src="/static/js/Graph0.js"></script>
 
-  <script src="{{ url_for('static',filename='js/Graph0.js') }}">
-  </script>
 </body>
