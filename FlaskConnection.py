@@ -1,5 +1,5 @@
 import pandas as pd
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from datetime import timedelta
 import json
 
@@ -20,9 +20,6 @@ def queryNode(typeMCC, time):
     timePoint = time
 
     # nodeList = route.iloc[:,timePoint].value_counts().index.to_list()
-    # print(nodeList) #Node List
-
-        # print("type: ", typeMCC1)
 
     # typeMCC = "Cafe" #Choose Node
 
@@ -59,9 +56,6 @@ def queryNode(typeMCC, time):
     nodeData = {"links":zip(source, target), "sequence":sequence}
     # print(len(source-target), len(sequence), len(ids))
     nodeMap = pd.DataFrame(data=nodeData).sort_values(by = ['links'])
-    # nodeMap.to_csv("nodeMap.csv")
-    # print("***********")
-
     #Reduce dumplication and calculate size
     linkList = []
 
@@ -105,28 +99,37 @@ def queryNode(typeMCC, time):
     QueryNodeMap = newNodeMap.to_json(orient = "records")
     return QueryNodeMap
 
-def packQuery(typeMCC, time):
-
+def queryNode_c(typeMCC, time):
     route = pd.read_csv("route.csv",index_col=0)
+
     timePoint = time
 
     MCCQueryRoute = route[route.iloc[:,timePoint] == typeMCC] #Query
-    # print(MCCQueryRoute)
+    # print(MCCQueryRoute.head())
 
     #Generate primary source-target dataframe
     source = []
     target = []
     sequence = []
+    nodeName = []
+    routeID = []
+    # nodeLocation = []
+    nodeSequence = []
     # ids = []
+
     for i in range(len(MCCQueryRoute.columns)):
         singleSequence = i - timePoint
-        
+        # print(MCCQueryRoute.iloc[:,i].index)
         if singleSequence != 0:
-            for j in range(len(MCCQueryRoute.iloc[:,i])):
+            for j in MCCQueryRoute.iloc[:,i].index:
+                routeID.append(j)
                 sequence.append(singleSequence)
                 # ids.append(j+1)
             for location in MCCQueryRoute.iloc[:,i]:
+                
                 target.append(str(singleSequence) + location)
+                nodeName.append(location)
+                nodeSequence.append(singleSequence)
             if singleSequence < 0:
                 for location in MCCQueryRoute.iloc[:,i+1]:
                     source.append(str(singleSequence+1) + location)
@@ -137,14 +140,20 @@ def packQuery(typeMCC, time):
             source.append(str(singleSequence) + typeMCC)
             target.append(str(singleSequence) + typeMCC)
             sequence.append(singleSequence)
+            nodeName.append(location)
+            nodeSequence.append(singleSequence)
+            routeID.append("start")
             # ids.append(0)
 
+    # print(np.unique(target))
 
-    nodeData = {"links":zip(source, target), "sequence":sequence}
+    linkData = {"links":zip(source, target), "sequence":sequence}
+    nodeData = {"target": target,"place":nodeName, "sequence":nodeSequence, "route": routeID}
     # print(len(source-target), len(sequence), len(ids))
-    nodeMap = pd.DataFrame(data=nodeData).sort_values(by = ['links'])
-    # nodeMap.to_csv("nodeMap.csv")
-    # print("***********")
+    nodeMap = pd.DataFrame(data=linkData).sort_values(by = ['links'])
+    nodeSelf = pd.DataFrame(data=nodeData).sort_values(by = ['target']).drop_duplicates(["target"]).reset_index(drop=True)
+    
+    # print (nodeSelf)
 
     #Reduce dumplication and calculate size
     linkList = []
@@ -162,7 +171,7 @@ def packQuery(typeMCC, time):
     countNodeMap = newNodeMap.groupby(['sequence','source']).count().reset_index().rename(columns = {'target': 'sublink_count'}).drop(columns = ["count"])
     # print(countNodeMap.head())
     newNodeMap = pd.merge(newNodeMap, countNodeMap, on = ["source", "sequence"])
-    
+    # print(newNodeMap.head())
     # calculated for each source how many links will draw from this source
     sub_id = []
     counter = 0
@@ -182,12 +191,17 @@ def packQuery(typeMCC, time):
         subIdCounter += 1
         counter += 1
     newNodeMap["sub_id"] = sub_id    
+    # print(newNodeMap.head())
 
-    newNodeMap.to_csv("sequenceData2.csv")
-    # newNodeMap = newNodeMap.reset_index()
-    # QueryNodeMap = newNodeMap[newNodeMap["sequence"].isin([0,1,-1])].to_json(orient = "records")
-    QueryNodeMap = newNodeMap.to_json(orient = "records")
-    return QueryNodeMap
+    # QueryLink = newNodeMap.to_json(orient = "records")
+    # QueryNodeSelf = nodeSelf.to_json(orient = "records")
+
+    QueryLink = newNodeMap.to_dict('records')
+    QueryNodeSelf = nodeSelf.to_dict('records')
+    # returnDict = {"link": QueryLink, "node": QueryNodeSelf}
+    # returnthing = ()
+    return jsonify(link = QueryLink, node = QueryNodeSelf)
+
 
 def Heatmap():
     heatmap = pd.read_csv("heatmapProbMatrix.csv", index_col=0)
@@ -224,6 +238,16 @@ def receive_query_data():
     getTime = datagetjson['time']
     # print(datagetjson, getName, getTime)
     QueryNodeMapOut = queryNode(getName, getTime)
+    # print(QueryNodeMapOut)
+    return QueryNodeMapOut
+
+@app.route('/receivedatac/', methods=['GET','POST'])
+def receive_query_data_c():
+    datagetjson = request.get_json(force=True)
+    getName = datagetjson['name']
+    getTime = datagetjson['time']
+    # print(datagetjson, getName, getTime)
+    QueryNodeMapOut = queryNode_c(getName, getTime)
     # print(QueryNodeMapOut)
     return QueryNodeMapOut
 

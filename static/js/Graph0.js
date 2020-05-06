@@ -3,6 +3,10 @@
 // define data
 var nodeMap //nodemap data
 var subNodeMap
+
+var nodeMap_c
+var subNodeMap_c
+
 var probHeatmap //heatmap data
 var queryNode
 var timeTrans // time selector data 
@@ -607,14 +611,29 @@ function drawTopNodes(list) {
 
     }
 
+    function postQueryC(d, t) {
+        queryNode = d;
+        // console.log(d);
+        axios.post('http://127.0.0.1:5000/receivedatac', {
+                name: queryNode,
+                time: t
+            })
+            .then(function (response) { // if success then update data
+                nodeMap_c = response.data
+            })
+    }
+
     function createQuery(d) {
-        postQuery(d, 4);
+        // postQuery(d, 4);
+        postQueryC(d, 4);
         postSubQuery(7);
         // console.log(postQuery(d, 4));
         topSpace.selectAll(".topnodes").remove();
         drawTopNodes(nodeList)
         setTimeout(() => {
-            drawGraph("graph-first", nodeMap);
+            // drawGraph("graph-first", nodeMap);
+            console.log(nodeMap_c);
+            drawGraph_c("graph-first", nodeMap_c);
         }, 200);
     }
 
@@ -1534,8 +1553,6 @@ function drawGraph(graphid, graph) {
 
         console.log("scroll!", sTop);
     }
-
-
     //brush - select
 
     brush.on("start", brushstart)
@@ -1984,7 +2001,7 @@ function drawGraph(graphid, graph) {
 
     let rseq = 2;
     let lseq = 2;
-    let maxseq = 3;
+    let maxseq = 4;
 
     function afterplus() {
         if (rseq <= maxseq) {
@@ -2086,7 +2103,6 @@ function drawGraph(graphid, graph) {
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
-
             linkRightplus[seq].filter(
                 l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
@@ -2098,7 +2114,6 @@ function drawGraph(graphid, graph) {
                     l => l.source == d.target
                 ).attr("x1", d.x).attr("y1", d.y);
             }
-
             drawsta();
 
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
@@ -2322,6 +2337,1091 @@ function drawGraph(graphid, graph) {
                 .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
                 .attr("stroke", "white")
 
+
+            d3.select(this)
+                .attr("opacity", 0)
+        }
+
+        function dragged(d) {
+            d.x = d3.event.x, d.y = d3.event.y;
+            d3.select(this)
+                .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
+            dpx = d3.event.pageX;
+            dpy = d3.event.pageY;
+            globalDragLayer.selectAll("path")
+                .attr("transform", "translate(" + event.pageX + "," + event.pageY + ") scale(1.2)")
+
+        }
+
+        function dragended(d) {
+            let endXPos = event.pageX,
+                endYPos = event.pageY;
+            if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
+                endXPos > conditionBoxPos.x &&
+                endYPos < conditionBoxPos.y + conditionBoxPos.height &&
+                endYPos > conditionBoxPos.y) {
+                conditionCount += 1;
+                conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                    .attr("opacity", 1).attr("fill", "#CACACA");
+                conditionBox.select("rect").attr("opacity", .8)
+                    .attr("fill", "#40496C");
+            }
+            globalDragLayer.selectAll("path").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
+            staSpace.select(id).selectAll("g").remove();
+            drawsamplepie(id);
+        }
+    }
+
+    function drawsamplebar(id) {
+        let fakeData = [{
+                "label": "one",
+                "value": 20
+            },
+            {
+                "label": "two",
+                "value": 50
+            },
+            {
+                "label": "three",
+                "value": 30
+            }
+        ];
+        let sampleBar = staSpace.select(id).append("g")
+            .attr("class", "sampleBar")
+            .attr('transform', `translate(${ staSpaceWidth / 4},
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/4)})`)
+
+        let barWidth = staSpaceWidth / 2
+        let barHeight = staCardHeight / 2
+
+        let xScale = d3.scaleLinear()
+            .domain([0, d3.max(fakeData, d => d.value)])
+            .range([0, barWidth]);
+
+        let yScale = d3.scaleBand()
+            // .rangeRoundBands([barHeight, 0], .1)
+            .domain(fakeData.map(d => d.label))
+            .range([0, barHeight])
+            .padding(.3);
+
+        sampleBar.selectAll("rect").data(fakeData)
+            .enter().append("rect")
+            .attr("y", d => yScale(d.label))
+            .attr("width", d => xScale(d.value))
+            .attr("height", yScale.bandwidth())
+            .attr("fill", "#1771D8")
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+
+        staSpace.select(id)
+            .append("g")
+            .attr("class", "sampleBar")
+            .attr('transform', `translate(${ staSpaceWidth / 5},
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
+            .append("text")
+            .text(d => d.category +" "+ id)
+            .attr("x", 10)
+            .attr("y", 10)
+
+        function dragstarted(d) {
+            //Draw a same path on drag layer
+            globalDragLayer
+                .attr("height", "100%")
+                .attr("width", "100%")
+                .append("rect")
+                .attr("fill", d3.select(this).attr("fill"))
+                .attr("width", d3.select(this).attr("width"))
+                .attr("height", d3.select(this).attr("height"))
+                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
+                .attr("stroke", "white")
+
+            d3.select(this)
+                .attr("opacity", 0)
+        }
+
+        function dragged(d) {
+            dpx = d3.event.pageX;
+            dpy = d3.event.pageY;
+            globalDragLayer.selectAll("rect")
+                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
+        }
+
+        function dragended(d) {
+            let endXPos = event.pageX,
+                endYPos = event.pageY;
+            if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
+                endXPos > conditionBoxPos.x &&
+                endYPos < conditionBoxPos.y + conditionBoxPos.height &&
+                endYPos > conditionBoxPos.y) {
+                conditionCount += 1;
+                conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                    .attr("opacity", 1).attr("fill", "#CACACA");
+                conditionBox.select("rect").attr("opacity", .8)
+                    .attr("fill", "#40496C");
+            }
+            globalDragLayer.selectAll("rect").remove();
+            globalDragLayer.attr("width", 0).attr("height", 0);
+            staSpace.select(id).selectAll("g").remove();
+            // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
+            drawsamplebar(id);
+        }
+
+    }
+    // });
+}
+
+function drawGraph_c(graphid, graph) {
+
+    let graphRightPlusExist = false;
+    let graphLeftPlusExist = false;
+
+    staSpace.selectAll("g").remove();
+
+    graphExist = true;
+
+    const graphCenter = [workSpaceWidth / 2, workSpaceHeight / 2];
+    // console.log(graphCenter[0], graphCenter[1])
+    //Draw workspace background
+    let graphBg = workSpace
+        .append("g")
+        .attr("id", graphid)
+    // .attr("y", "30%");
+
+    graphBg
+        .append("rect")
+        .classed("graph-background", true)
+        .attr("fill", "#CCC")
+        .attr("opacity", .25)
+        .attr("width", "100%")
+        .attr("height", "100%")
+    // .attr("y", "30%");
+
+    let graphContainer = graphBg.append("g")
+        .attr("id", "graphContainer");
+
+    //Create zoom behavior
+    var zoom = d3.zoom()
+        .scaleExtent([0.5, 1.5])
+        .on("zoom", zoom_actions);
+
+    function zoom_actions() {
+        graphContainer.attr("transform", d3.event.transform)
+    }
+
+    // zoom(graphBg);
+    graphBg.call(zoom).on("dblclick.zoom", null);
+
+    //display side tab menu
+    d3.select("#staTab").classed("hide", false)
+    //draw sta cards
+    let staCardHeight = 2 * staSpaceWidth / 3;
+
+    function drawStaCards() {
+        //Create sta cards
+        const staCardList = [{
+            "category": "general",
+            "type": "pie",
+            "name": "sta1"
+        }, {
+            "category": "general",
+            "type": "bar",
+            "name": "sta2"
+        }, {
+            "category": "business",
+            "type": "pie",
+            "name": "sta3"
+        }, {
+            "category": "business",
+            "type": "bar",
+            "name": "sta4"
+        }, {
+            "category": "consumer",
+            "type": "pie",
+            "name": "sta5"
+        }, {
+            "category": "consumer",
+            "type": "bar",
+            "name": "sta6"
+        }]
+
+        //Create background   
+        var staCards = staSpace.selectAll(".stacard")
+            .data(staCardList).enter()
+            .append("g")
+            .classed("stacard", true)
+            .attr("class", d => (d.category + " " + d.type))
+            .attr("id", d => d.name)
+            .attr("width", "100%")
+            .attr("height", staCardHeight)
+            // .attr("fill", "#CCC")
+            .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
+
+        staCards
+            .append("rect")
+            .attr("class", "stacard-bg")
+            .attr("x", "2.5%")
+            .attr("width", "95%")
+            .attr("height", staCardHeight)
+            .attr("fill", "#EEE")
+            .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
+
+        staSpace.attr("height", 300 + staCardList.length * (30 + staCardHeight))
+    }
+
+    drawStaCards();
+    var supplierHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
+    var customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
+
+    d3.selectAll(".sta-button")
+        .on("click", clickStaTab)
+    var isTabClicked = false;
+
+    function clickStaTab() {
+        isTabClicked = true;
+        let id = d3.select(this).attr("id");
+        if (id === "G") {
+            staContainer.node().scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+            d3.select("#G").classed("sta-button-active", true);
+            d3.select("#S").classed("sta-button-active", false);
+            d3.select("#C").classed("sta-button-active", false);
+        } else if (id === "S") {
+            staContainer.node().scrollTo({
+                top: supplierHeight,
+                behavior: "smooth"
+            })
+            d3.select("#G").classed("sta-button-active", false);
+            d3.select("#S").classed("sta-button-active", true);
+            d3.select("#C").classed("sta-button-active", false);
+        } else if (id === "C") {
+            staContainer.node().scrollTo({
+                top: customerHeight,
+                behavior: "smooth"
+            })
+            d3.select("#G").classed("sta-button-active", false);
+            d3.select("#S").classed("sta-button-active", false);
+            d3.select("#C").classed("sta-button-active", true);
+        }
+        setTimeout(() => {
+            isTabClicked = false;
+            checkScroll();
+        }, 1500)
+
+    }
+    staContainer.node().onscroll = checkScroll;
+
+    function checkScroll() {
+        let sTop = staContainer.node().scrollTop;
+        if (!isTabClicked) {
+            if (sTop < supplierHeight) {
+                d3.select("#G").classed("sta-button-active", true);
+                d3.select("#S").classed("sta-button-active", false);
+                d3.select("#C").classed("sta-button-active", false);
+            } else if (sTop >= supplierHeight && sTop < customerHeight) {
+                d3.select("#G").classed("sta-button-active", false);
+                d3.select("#S").classed("sta-button-active", true);
+                d3.select("#C").classed("sta-button-active", false);
+            } else {
+                d3.select("#G").classed("sta-button-active", false);
+                d3.select("#S").classed("sta-button-active", false);
+                d3.select("#C").classed("sta-button-active", true);
+            }
+        }
+
+        console.log("scroll!", sTop);
+    }
+    //brush - select
+
+    brush.on("start", brushstart)
+        .on("brush", brushed)
+        .on("end", brushpopup);
+
+    function brushstart() {
+        leftContainer.selectAll(".brush-menu").remove();
+        console.log("start")
+    };
+
+    function brushed() {
+        let selection = d3.event.selection;
+        if (selection != null) {
+            let [
+                [x0, y0],
+                [x1, y1]
+            ] = selection;
+            var nodes = workSpace.selectAll("circle")
+            nodes.classed("selected", function (d) {
+                return isInSelection(selection,
+                    this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width,
+                    this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)
+            })
+
+        }
+
+        function isInSelection(brush_coords, cx, cy) {
+            let x0 = brush_coords[0][0],
+                x1 = brush_coords[1][0],
+                y0 = brush_coords[0][1] + topSpaceHeight,
+                y1 = brush_coords[1][1] + topSpaceHeight;
+            return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+        }
+    }
+
+    function brushpopup() {
+        let selection = d3.event.selection;
+
+        if (selection != null) {
+            let [
+                [x0, y0],
+                [x1, y1]
+            ] = selection;
+
+            let menuContainer = leftContainer.append("div")
+                .attr("class", "brush-menu-container")
+                .style("position", "absolute")
+                .style("top", `${y0+topSpaceHeight}px`)
+                .style("left", `${x1}px`)
+
+            let menuAnd = menuContainer
+                .append("button")
+                .attr("class", "brush-menu")
+                // .append("span")
+                .html("PACK")
+
+            let selectedNodes = d3.selectAll(".selected")
+
+            menuAnd.on("click", function () {
+                console.log(selectedNodes);
+            })
+
+        }
+    }
+
+    // var isSelectMode = false;
+    let selectModeButton = d3.select(".select-mode")
+    selectModeButton.on("click", selectMode)
+
+    function selectMode() {
+        if (!isSelectMode) {
+            clearToolState();
+            selectModeButton.classed("tool-active", true);
+            isSelectMode = true;
+            graphBg.on(".zoom", null);
+            brushLayer.attr("width", "100%")
+                .attr("height", "100%")
+            // .attr("y", "30%")
+            brush(brushLayer);
+            console.log("select!")
+        } else {
+            selectModeButton.classed("tool-active", false);
+            isSelectMode = false;
+            brushLayer.on(".brush", null);
+            brushLayer.attr("width", 0)
+                .attr("height", 0)
+                .attr("y", 0)
+            graphBg.call(zoom).on("dblclick.zoom", null);
+        }
+    }
+
+    //add graoh judgement
+    if (graphid === "graph-first") {
+        d3.select(".add-graph")
+            .on("click", addGraph)
+
+        function addGraph() {
+            graphBg.attr("width", "50%")
+            graphBg.selectAll(".graph-background")
+                .attr("width", "50%");
+            graphBg.selectAll(".after-controller")
+                .attr("x", "45%")
+
+            zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
+            zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight / 2])
+
+            drawGraph("graph-second", subNodeMap)
+
+            console.log("clicked!")
+        }
+    } else if (graphid === "graph-second") {
+        d3.select(".add-graph")
+            .classed("hide", true);
+
+        graphBg.attr("width", "50%")
+        graphBg.selectAll(".graph-background")
+            .attr("width", "50%")
+            .attr("x", "50%");
+        const scalePoint = [0, 0]
+        zoom.transform(graphBg, d3.zoomIdentity.translate(workSpaceWidth / 4, 0))
+        zoom.scaleBy(graphBg, 0.7, [3 * workSpaceWidth / 4, workSpaceHeight / 2])
+
+        workSpace.append("g")
+            .append("line")
+            .attr("x1", graphCenter[0])
+            .attr("y1", 0.15 * workSpaceHeight)
+            .attr("x2", graphCenter[0])
+            .attr("y2", 0.85 * workSpaceHeight)
+            .attr("stroke", "black")
+            .attr("stroke-width", "3px");
+    }
+
+    //Pie around center node
+    //Calculate pie chart data
+    let nodeRightPieData = graph.link.filter(d => d.sequence == 1);
+    let nodeLeftPieData = graph.link.filter(d => d.sequence == -1);
+    let centerNodePieData = graph.link.filter(d => d.sequence == 0)
+    let nodePieStartAngle = 20;
+    let nodePieEndAngle = 160;
+    let rightCountSum = d3.sum(nodeRightPieData, d => d.count); //here count = frequency
+    let leftCountSum = d3.sum(nodeLeftPieData, d => d.count);
+    //define pie around node
+    let pieColorScale = d3.schemeCategory10; //define color scale
+
+    let arc = d3.arc()
+        .innerRadius(20)
+        .outerRadius(50);
+
+    let rightdraw = d3.pie()
+        .value(d => d.count)
+        .sort(null)
+        .startAngle(nodePieStartAngle * (Math.PI / 180))
+        .endAngle(nodePieEndAngle * (Math.PI / 180))
+        .padAngle(0.01);
+
+    let leftdraw = d3.pie()
+        .value(d => d.count)
+        .sort(null)
+        .startAngle(-nodePieStartAngle * (Math.PI / 180))
+        .endAngle(-nodePieEndAngle * (Math.PI / 180))
+        .padAngle(0.01);
+
+    let rpieData = rightdraw(nodeRightPieData);
+    let lpieData = leftdraw(nodeLeftPieData);
+    let cpieData = rightdraw(centerNodePieData); // format the central node
+
+    // Layout position calculator - make the links and nodes fit the pie graph
+    function y1PosCalculator(xPosOffset, startRadian, endRadian) {
+        //convert radian to degree
+        let startDegree = startRadian * 180 / Math.PI;
+        let endDegree = endRadian * 180 / Math.PI;
+        let degreeDiff = endDegree - startDegree;
+        //
+        let yPosOffset = 0;
+        if (endDegree <= 90) {
+            yPosOffset = -xPosOffset * Math.sin(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
+        } else if (endDegree > 90 && startDegree <= 90) {
+            if ((90 - startDegree - degreeDiff / 2) > 0) {
+                yPosOffset = -xPosOffset * Math.sin(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
+            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
+                yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
+            }
+        } else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
+        }
+        return yPosOffset;
+    }
+
+    function x1PosCalculator(xPosOffset, startRadian, endRadian) {
+        //convert radian to degree
+        let startDegree = startRadian * 180 / Math.PI;
+        let endDegree = endRadian * 180 / Math.PI;
+        let degreeDiff = endDegree - startDegree;
+        //
+        let yPosOffset = 0;
+        if (endDegree <= 90) {
+            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
+        } else if (endDegree > 90 && startDegree <= 90) {
+            if ((90 - startDegree - degreeDiff / 2) > 0) {
+                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
+            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
+                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
+            }
+        } else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
+        }
+        return yPosOffset;
+
+    }
+
+    function y2PosCalculator(xPosOffset, startRadian, endRadian) {
+        //convert radian to degree
+        let startDegree = startRadian * 180 / Math.PI;
+        let endDegree = endRadian * 180 / Math.PI;
+        let degreeDiff = endDegree - startDegree;
+        //
+        let yPosOffset = 0;
+        if (endDegree <= 90) {
+            yPosOffset = -xPosOffset * Math.tan(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
+        } else if (endDegree > 90 && startDegree <= 90) {
+            if ((90 - startDegree - degreeDiff / 2) > 0) {
+                yPosOffset = -xPosOffset * Math.tan(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
+            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
+                yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
+            }
+        } else if (startDegree > 90) {
+            yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
+        }
+        return yPosOffset;
+    }
+
+    // Draw links
+    let link = graphContainer.append('g')
+        .attr("id", "link")
+
+    let linkRight = link.append("g")
+        .attr("class", "link")
+        .selectAll("line")
+        .data(rpieData)
+        .enter().append("line")
+        .attr("x1", d => graphCenter[0] + x1PosCalculator(50, d.startAngle, d.endAngle))
+        .attr("y1", d => graphCenter[1] + y1PosCalculator(50, d.startAngle, d.endAngle))
+        .attr("x2", d => graphCenter[0] + d.data.sequence * 100)
+        .attr("y2", d => graphCenter[1] + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
+
+    let linkLeft = link.append("g")
+        .attr("class", "link")
+        .selectAll("line")
+        .data(lpieData)
+        .enter().append("line")
+        .attr("x1", d => graphCenter[0] + x1PosCalculator(-50, -d.startAngle, -d.endAngle))
+        .attr("y1", d => graphCenter[1] + y1PosCalculator(50, -d.startAngle, -d.endAngle))
+        .attr("x2", d => graphCenter[0] + d.data.sequence * 100)
+        .attr("y2", d => graphCenter[1] + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
+
+    let pieNode = graphContainer.append("g")
+        .attr("id", "pieNode")
+        .attr('transform', `translate(${graphCenter[0]}, ${graphCenter[1]})`);
+
+    let pieRight = pieNode.append("g");
+    let pieDiv = leftContainer.append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    function pierightMouseover(d, i) { //show the frequency sta when hover on pie segment
+        d3.select(this).transition()
+            .duration('50')
+            .attr('opacity', '.85')
+        pieDiv.transition()
+            .duration(50)
+            .style("opacity", 1);
+        pieDiv.html("Proportion: " + (d.data.count / rightCountSum).toFixed(2))
+            .style("left", (d3.event.pageX + 10) + "px")
+            .style("top", (d3.event.pageY - 15) + "px");
+    }
+
+    function pieleftMouseover(d, i) { //show the frequency sta when hover on pie segment
+        d3.select(this).transition()
+            .duration('50')
+            .attr('opacity', '.85')
+        pieDiv.transition()
+            .duration(50)
+            .style("opacity", 1);
+        pieDiv.html("Proportion: " + (d.data.count / leftCountSum).toFixed(2))
+            .style("left", (d3.event.pageX + 10) + "px")
+            .style("top", (d3.event.pageY - 15) + "px");
+    }
+
+    function pieMouseout(d, i) {
+        d3.select(this).transition()
+            .duration('50')
+            .attr('opacity', '1')
+        pieDiv.transition()
+            .duration('50')
+            .style("opacity", 0);
+    }
+
+    pieRight.selectAll("path")
+        .data(rightdraw(nodeRightPieData))
+        .enter()
+        .append("path")
+        .attr("fill", (d, i) => pieColorScale[i])
+        .attr("d", arc)
+        .on('mouseover', pierightMouseover)
+        .on('mouseout', pieMouseout);
+
+    let pieLeft = pieNode.append("g"); // draw left half of the piechart
+
+    pieLeft.selectAll("path")
+        .data(leftdraw(nodeLeftPieData))
+        .enter()
+        .append("path")
+        .attr("fill", (d, i) => pieColorScale[i])
+        .attr("d", arc)
+        .on('mouseover', pieleftMouseover)
+        .on('mouseout', pieMouseout);
+
+    //Draw nodes
+    let node = graphContainer.append("g")
+        .attr("id", "nodes");
+
+    let nodeRight = node.append("g")
+        .attr("class", "node")
+        .selectAll("circle")
+        .data(rpieData)
+        .enter().append("circle")
+        .attr("r", 20)
+        .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
+        .attr("cy", d => graphCenter[1] + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle))
+        .call(d3.drag().on("drag", dragged))
+        .on("click", clicked);
+
+    let nodeLeft = node.append("g")
+        .attr("class", "node")
+        .selectAll("circle")
+        .data(lpieData)
+        .enter().append("circle")
+        .attr("r", 20)
+        .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
+        .attr("cy", d => graphCenter[1] + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
+        .call(d3.drag().on("drag", dragged))
+        .on("click", clicked);
+
+    let centernode = node.append("g")
+        .attr("class", "node")
+        .attr("id", "queryNode")
+        .selectAll("circle")
+        .data(cpieData)
+        .enter().append("circle")
+        .attr("r", 30)
+        .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
+        .attr("cy", graphCenter[1])
+        .on("click", clicked);
+
+    let linkRightplus = new Array();
+    let nodeRightplus = new Array();
+    let linkLeftplus = new Array();
+    let nodeLeftplus = new Array();
+
+    function dragged(d) {
+        console.log(event.pageX)
+        // console.log(d);
+        graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
+        d.x = d3.event.x, d.y = d3.event.y;
+        d3.select(this).attr("stroke", "#18569C");
+        d3.select(this).attr("cx", d.x).attr("cy", d.y);
+        // console.log(d.data.sequence);
+        linkRight.filter(
+            l => l.data.source == d.data.target
+        ).attr("x1", d.x).attr("y1", d.y);
+        linkRight.filter(
+            l => l.data.target == d.data.target
+        ).attr("x2", d.x).attr("y2", d.y);
+        linkLeft.filter(
+            l => l.data.source == d.data.target
+        ).attr("x1", d.x).attr("y1", d.y);
+        linkLeft.filter(
+            l => l.data.target == d.data.target
+        ).attr("x2", d.x).attr("y2", d.y);
+
+        if (graphRightPlusExist) {
+            linkRightplus[2].filter(
+                l => l.source == d.data.target
+            ).attr("x1", d.x).attr("y1", d.y);
+        }
+
+        if (graphLeftPlusExist) {
+            linkLeftplus[2].filter(
+                l => l.source == d.data.target
+            ).attr("x1", d.x).attr("y1", d.y);
+        }
+
+        // console.log(d.id);
+        drawsta();
+        text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
+    }
+    //Click node event
+    function clicked(d) {
+        drawsta();
+        text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
+        graphContainer.selectAll("circle").attr("stroke", "#fff")
+        d3.select(this).attr("stroke", "#18569C")
+    }
+
+    //Add steps control
+    graphBg.append("g")
+        .on("click", afterplus)
+        .append('text')
+        .attr("class", "after-controller")
+        .text("➕")
+        .attr("x", "95%")
+        .attr("y", "48%")
+
+    graphBg.append("g")
+        .on("click", afterminus)
+        .append('text')
+        .attr("class", "after-controller")
+        .text("➖")
+        .attr("x", "95%")
+        .attr("y", "54%")
+
+    graphBg.append("g")
+        .on("click", beforeplus)
+        .append('text')
+        .attr("class", "before-controller")
+        .text("➕")
+        .attr("x", "5%")
+        .attr("y", "48%")
+
+    graphBg.append("g")
+        .on("click", beforeminus)
+        .append('text')
+        .attr("class", "before-controller")
+        .text("➖")
+        .attr("x", "5%")
+        .attr("y", "54%")
+
+    if (graphid === "graph-second") {
+        graphBg.selectAll(".before-controller")
+            .attr("x", "55%")
+    }
+
+    let rseq = 2;
+    let lseq = 2;
+    let maxseq = 4;
+
+    function afterplus() {
+        if (rseq <= maxseq) {
+            drawRightplus(rseq);
+        }
+
+        if (rseq < maxseq + 1) {
+            rseq += 1;
+        }
+    }
+
+    function beforeplus() {
+        if (lseq <= maxseq) {
+            drawLeftplus(lseq);
+            if (lseq < maxseq + 1) {
+                lseq += 1;
+            }
+        }
+    }
+
+    function afterminus() {
+        d3.selectAll(`#seq${rseq-1}`).remove();
+        if (rseq > 2) {
+            rseq -= 1
+        }
+
+    }
+
+    function beforeminus() {
+        d3.selectAll(`#seq${-lseq+1}`).remove();
+        if (lseq > 2) {
+            lseq -= 1
+        }
+    }
+
+    function drawRightplus(seq) {
+
+        graphRightPlusExist = true;
+
+        //Calculate vertical layout
+        function LayoutScaler(subID, subC) {
+            let scaler = d3.scaleLinear()
+                .domain([-32, 32])
+                .range([0.6, subC + 0.4]);
+            return scaler.invert(subID);
+        }
+        if (seq === 2) {
+            linkRightplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${seq}`)
+                .selectAll("line")
+                .data(graph.link.filter(d => d.sequence == seq))
+                .enter().append("line")
+                .attr("x1", d => nodeRight.filter(n => n.data.target == d.source).attr("cx"))
+                .attr("y1", d => nodeRight.filter(n => n.data.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 80)
+                .attr("y2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+
+            nodeRightplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${seq}`)
+                .selectAll("circle")
+                .data(graph.node.filter(d => d.sequence == seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
+                .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+        } else {
+
+            linkRightplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${seq}`)
+                .selectAll("line")
+                .data(graph.link.filter(d => d.sequence == seq))
+                .enter().append("line")
+                .attr("x1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
+                .attr("y1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2")) + 80)
+                .attr("y2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+
+
+            nodeRightplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${seq}`)
+                .selectAll("circle")
+                .data(graph.node.filter(d => d.sequence == seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
+                .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+            
+            linkRightplus[seq]
+                .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
+        }
+
+
+        function dragged(d) {
+            graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
+            d.x = d3.event.x, d.y = d3.event.y;
+            d3.select(this).attr("stroke", "#18569C");
+            d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            linkRightplus[seq].filter(
+                l => l.source == d.target
+            ).attr("x1", d.x).attr("y1", d.y);
+            linkRightplus[seq].filter(
+                l => l.target == d.target
+            ).attr("x2", d.x).attr("y2", d.y);
+            if (seq < maxseq) {
+                linkRightplus[seq + 1].filter(
+                    l => l.source == d.target
+                ).attr("x1", d.x).attr("y1", d.y);
+            }
+            drawsta();
+
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+        }
+
+        function clicked(d) {
+            console.log("clicked");
+            drawsta();
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+            graphContainer.selectAll("circle").attr("stroke", "#fff")
+            d3.select(this).attr("stroke", "#18569C")
+        }
+    }
+
+    function drawLeftplus(seq) {
+
+        graphLeftPlusExist = true;
+
+        //Calculate vertical layout
+        function LayoutScaler(subID, subC) {
+            let scaler = d3.scaleLinear()
+                .domain([-32, 32])
+                .range([0.6, subC + 0.4]);
+            return scaler.invert(subID);
+        }
+        if (seq == 2) {
+            linkLeftplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${-seq}`)
+                .selectAll("line")
+                .data(graph.link.filter(d => d.sequence == -seq))
+                .enter().append("line")
+                .attr("x1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cx"))
+                .attr("y1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 80)
+                .attr("y2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+            
+            nodeLeftplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${-seq}`)
+                .selectAll("circle")
+                .data(graph.node.filter(d => d.sequence == -seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
+                .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+            
+            linkLeftplus[seq]
+                .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
+        } else {
+            linkLeftplus[seq] = link.append("g")
+                .attr("class", "link")
+                .attr("id", `seq${-seq}`)
+                .selectAll("line")
+                .data(graph.link.filter(d => d.sequence == -seq))
+                .enter().append("line")
+                .attr("x1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
+                .attr("y1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2")) - 80)
+                .attr("y2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+
+            nodeLeftplus[seq] = node.append("g")
+                .attr("class", "node")
+                .attr("id", `seq${-seq}`)
+                .selectAll("circle")
+                .data(graph.node.filter(d => d.sequence == -seq))
+                .enter().append("circle")
+                .attr("r", 10)
+                .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
+                .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .call(d3.drag().on("drag", dragged))
+                .on("click", clicked);
+
+            linkLeftplus[seq]
+                .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
+        }
+
+        function dragged(d) {
+            // console.log(d);
+            graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
+            d.x = d3.event.x, d.y = d3.event.y;
+            d3.select(this).attr("stroke", "#18569C");
+            d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            // console.log(link.selectAll(`seq${seq}`), linkRightplus[seq])
+            linkLeftplus[seq].filter(
+                l => l.source == d.target
+            ).attr("x1", d.x).attr("y1", d.y);
+            linkLeftplus[seq].filter(
+                l => l.target == d.target
+            ).attr("x2", d.x).attr("y2", d.y);
+            if (seq < maxseq) {
+                linkLeftplus[seq + 1].filter(
+                    l => l.source == d.target
+                ).attr("x1", d.x).attr("y1", d.y);
+            }
+
+            drawsta();
+
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+        }
+
+        function clicked(d) {
+            console.log("clicked");
+            d3.selectAll(".samplePie").remove();
+            drawsta();
+            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+            graphContainer.selectAll("circle").attr("stroke", "#fff")
+            d3.select(this).attr("stroke", "#18569C")
+        }
+    }
+    //IF HAVE TIME TRY TO USE FORCE GRAPH
+    function drawRightplusForce(seq) {
+        let simulation = d3.forceSimulation();
+
+    }
+
+    workSpace.selectAll("#conditionBox").remove();
+
+    let conditionBox = graphBg.append("g")
+        .attr("id", "conditionBox")
+
+    if (graphid === "graph-first") {
+        conditionCount = 0;
+    }
+
+    function initializeConditionBox() {
+        conditionBox.append("rect")
+            .attr("x", "45%")
+            .attr("y", "90%")
+            .attr("height", "7%")
+            .attr("width", "10%")
+            .attr("fill", "#808080")
+            .attr("opacity", .5)
+
+        conditionBox.append("text")
+            .attr("x", "50%")
+            .attr("y", "93.5%")
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .text(`Conditions(${conditionCount})`)
+            .attr("fill", "#2B2B2B")
+
+        if (conditionCount === 0) {
+            conditionBox.selectAll("text").attr("opacity", .5)
+        } else {
+            conditionBox.selectAll("text").attr("opacity", .5)
+                .attr("opacity", 1).attr("fill", "#CACACA");
+            conditionBox.select("rect").attr("opacity", .8)
+                .attr("fill", "#40496C");
+        }
+    }
+
+    initializeConditionBox();
+
+    let conditionBoxPos = conditionBox.node().getBoundingClientRect();
+
+    function drawsta() {
+        console.log("draw");
+        staSpace.selectAll(".samplePie").remove();
+        staSpace.selectAll(".sampleBar").remove();
+        drawsamplepie("#sta1");
+        drawsamplebar("#sta2");
+        drawsamplepie("#sta3");
+        drawsamplepie("#sta4");
+        drawsamplebar("#sta5");
+        drawsamplebar("#sta6");
+    }
+
+    //draw sample pie chart
+    function drawsamplepie(id) {
+        let fakeData = [{
+                "label": "one",
+                "value": 20
+            },
+            {
+                "label": "two",
+                "value": 50
+            },
+            {
+                "label": "three",
+                "value": 30
+            }
+        ];
+
+        let samplePieColorScale = d3.schemeTableau10;
+
+        let samplePie = staSpace.select(id).append("g")
+            .attr("class", "samplePie")
+
+        let arcSample = d3.arc()
+            .outerRadius(75)
+            .innerRadius(0)
+
+        let spConverter = d3.pie().value(d => d.value)
+
+        samplePie.selectAll("path")
+            .data(spConverter(fakeData))
+            .enter()
+            .append("path")
+            .attr('transform', `translate(${staSpaceWidth/2}, 
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/2)})`)
+            .attr("fill", (d, i) => samplePieColorScale[i])
+            .attr("d", arcSample)
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+        
+        staSpace.select(id)
+            .append("g")
+            .attr("class", "samplePie")
+            .attr('transform', `translate(${ staSpaceWidth / 5},
+                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
+            .append("text")
+            .text(d => d.category +" "+ id)
+            .attr("x", 10)
+            .attr("y", 10)
+
+        function dragstarted(d) {
+            let boundingPos = this.getBoundingClientRect();
+            //Draw a same path on drag layer
+            globalDragLayer
+                .attr("height", "100%")
+                .attr("width", "100%")
+                .append("path")
+                .attr("fill", d3.select(this).attr("fill"))
+                .attr("d", d3.select(this).attr("d"))
+                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
+                .attr("stroke", "white")
 
             d3.select(this)
                 .attr("opacity", 0)
