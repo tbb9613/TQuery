@@ -2470,6 +2470,8 @@ function drawGraph(graphid, graph) {
     // });
 }
 
+
+
 function drawGraph_c(graphid, graph) {
 
     let graphRightPlusExist = false;
@@ -2767,223 +2769,74 @@ function drawGraph_c(graphid, graph) {
 
     //Pie around center node
     //Calculate pie chart data
-    let nodeRightPieData = graph.link.filter(d => d.sequence == 1);
-    let nodeLeftPieData = graph.link.filter(d => d.sequence == -1);
-    let centerNodePieData = graph.link.filter(d => d.sequence == 0)
-    let nodePieStartAngle = 20;
-    let nodePieEndAngle = 160;
-    let rightCountSum = d3.sum(nodeRightPieData, d => d.count); //here count = frequency
-    let leftCountSum = d3.sum(nodeLeftPieData, d => d.count);
-    //define pie around node
-    let pieColorScale = d3.schemeCategory10; //define color scale
-
-    let arc = d3.arc()
-        .innerRadius(20)
-        .outerRadius(50);
-
-    let rightdraw = d3.pie()
-        .value(d => d.count)
-        .sort(null)
-        .startAngle(nodePieStartAngle * (Math.PI / 180))
-        .endAngle(nodePieEndAngle * (Math.PI / 180))
-        .padAngle(0.01);
-
-    let leftdraw = d3.pie()
-        .value(d => d.count)
-        .sort(null)
-        .startAngle(-nodePieStartAngle * (Math.PI / 180))
-        .endAngle(-nodePieEndAngle * (Math.PI / 180))
-        .padAngle(0.01);
-
-    let rpieData = rightdraw(nodeRightPieData);
-    let lpieData = leftdraw(nodeLeftPieData);
-    let cpieData = rightdraw(centerNodePieData); // format the central node
-
-    // Layout position calculator - make the links and nodes fit the pie graph
-    function y1PosCalculator(xPosOffset, startRadian, endRadian) {
-        //convert radian to degree
-        let startDegree = startRadian * 180 / Math.PI;
-        let endDegree = endRadian * 180 / Math.PI;
-        let degreeDiff = endDegree - startDegree;
-        //
-        let yPosOffset = 0;
-        if (endDegree <= 90) {
-            yPosOffset = -xPosOffset * Math.sin(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
-        } else if (endDegree > 90 && startDegree <= 90) {
-            if ((90 - startDegree - degreeDiff / 2) > 0) {
-                yPosOffset = -xPosOffset * Math.sin(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
-            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
-                yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
-            }
-        } else if (startDegree > 90) {
-            yPosOffset = xPosOffset * Math.sin(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
-        }
-        return yPosOffset;
+    //Draw links & nodes
+    function MainLayoutScaler(subID, subC) {
+        let scaler = d3.scaleLinear()
+            .domain([-workSpaceHeight/4, workSpaceHeight/4])
+            .range([0, subC-1]);
+        return scaler.invert(subID);
     }
 
-    function x1PosCalculator(xPosOffset, startRadian, endRadian) {
-        //convert radian to degree
-        let startDegree = startRadian * 180 / Math.PI;
-        let endDegree = endRadian * 180 / Math.PI;
-        let degreeDiff = endDegree - startDegree;
-        //
-        let yPosOffset = 0;
-        if (endDegree <= 90) {
-            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
-        } else if (endDegree > 90 && startDegree <= 90) {
-            if ((90 - startDegree - degreeDiff / 2) > 0) {
-                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
-            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
-                yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
-            }
-        } else if (startDegree > 90) {
-            yPosOffset = xPosOffset * Math.cos(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
-        }
-        return yPosOffset;
-
-    }
-
-    function y2PosCalculator(xPosOffset, startRadian, endRadian) {
-        //convert radian to degree
-        let startDegree = startRadian * 180 / Math.PI;
-        let endDegree = endRadian * 180 / Math.PI;
-        let degreeDiff = endDegree - startDegree;
-        //
-        let yPosOffset = 0;
-        if (endDegree <= 90) {
-            yPosOffset = -xPosOffset * Math.tan(Math.PI / 180 * (degreeDiff / 2 + (90 - endDegree)));
-        } else if (endDegree > 90 && startDegree <= 90) {
-            if ((90 - startDegree - degreeDiff / 2) > 0) {
-                yPosOffset = -xPosOffset * Math.tan(Math.PI / 180 * (90 - startDegree - degreeDiff / 2));
-            } else if ((90 - startDegree - degreeDiff / 2) < 0) {
-                yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (-(90 - startDegree - degreeDiff / 2)));
-            }
-        } else if (startDegree > 90) {
-            yPosOffset = xPosOffset * Math.tan(Math.PI / 180 * (startDegree - 90 + degreeDiff / 2))
-        }
-        return yPosOffset;
-    }
-
-    // Draw links
     let link = graphContainer.append('g')
-        .attr("id", "link")
+    .attr("id", "link")
 
     let linkRight = link.append("g")
         .attr("class", "link")
         .selectAll("line")
-        .data(rpieData)
+        .data(graph.link.filter(d => d.sequence == 1))
         .enter().append("line")
-        .attr("x1", d => graphCenter[0] + x1PosCalculator(50, d.startAngle, d.endAngle))
-        .attr("y1", d => graphCenter[1] + y1PosCalculator(50, d.startAngle, d.endAngle))
-        .attr("x2", d => graphCenter[0] + d.data.sequence * 100)
-        .attr("y2", d => graphCenter[1] + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle));
+        .attr("x1", d => graphCenter[0])
+        .attr("y1", d => graphCenter[1])
+        .attr("x2", d => graphCenter[0] + d.sequence * 100)
+        .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
 
     let linkLeft = link.append("g")
         .attr("class", "link")
         .selectAll("line")
-        .data(lpieData)
+        .data(graph.link.filter(d => d.sequence == -1))
         .enter().append("line")
-        .attr("x1", d => graphCenter[0] + x1PosCalculator(-50, -d.startAngle, -d.endAngle))
-        .attr("y1", d => graphCenter[1] + y1PosCalculator(50, -d.startAngle, -d.endAngle))
-        .attr("x2", d => graphCenter[0] + d.data.sequence * 100)
-        .attr("y2", d => graphCenter[1] + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle));
+        .attr("x1", d => graphCenter[0])
+        .attr("y1", d => graphCenter[1])
+        .attr("x2", d => graphCenter[0] + d.sequence * 100)
+        .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
 
-    let pieNode = graphContainer.append("g")
-        .attr("id", "pieNode")
-        .attr('transform', `translate(${graphCenter[0]}, ${graphCenter[1]})`);
-
-    let pieRight = pieNode.append("g");
-    let pieDiv = leftContainer.append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0);
-
-    function pierightMouseover(d, i) { //show the frequency sta when hover on pie segment
-        d3.select(this).transition()
-            .duration('50')
-            .attr('opacity', '.85')
-        pieDiv.transition()
-            .duration(50)
-            .style("opacity", 1);
-        pieDiv.html("Proportion: " + (d.data.count / rightCountSum).toFixed(2))
-            .style("left", (d3.event.pageX + 10) + "px")
-            .style("top", (d3.event.pageY - 15) + "px");
-    }
-
-    function pieleftMouseover(d, i) { //show the frequency sta when hover on pie segment
-        d3.select(this).transition()
-            .duration('50')
-            .attr('opacity', '.85')
-        pieDiv.transition()
-            .duration(50)
-            .style("opacity", 1);
-        pieDiv.html("Proportion: " + (d.data.count / leftCountSum).toFixed(2))
-            .style("left", (d3.event.pageX + 10) + "px")
-            .style("top", (d3.event.pageY - 15) + "px");
-    }
-
-    function pieMouseout(d, i) {
-        d3.select(this).transition()
-            .duration('50')
-            .attr('opacity', '1')
-        pieDiv.transition()
-            .duration('50')
-            .style("opacity", 0);
-    }
-
-    pieRight.selectAll("path")
-        .data(rightdraw(nodeRightPieData))
-        .enter()
-        .append("path")
-        .attr("fill", (d, i) => pieColorScale[i])
-        .attr("d", arc)
-        .on('mouseover', pierightMouseover)
-        .on('mouseout', pieMouseout);
-
-    let pieLeft = pieNode.append("g"); // draw left half of the piechart
-
-    pieLeft.selectAll("path")
-        .data(leftdraw(nodeLeftPieData))
-        .enter()
-        .append("path")
-        .attr("fill", (d, i) => pieColorScale[i])
-        .attr("d", arc)
-        .on('mouseover', pieleftMouseover)
-        .on('mouseout', pieMouseout);
-
-    //Draw nodes
     let node = graphContainer.append("g")
         .attr("id", "nodes");
 
     let nodeRight = node.append("g")
         .attr("class", "node")
         .selectAll("circle")
-        .data(rpieData)
+        .data(graph.node.filter(d => d.sequence == 1))
         .enter().append("circle")
         .attr("r", 20)
-        .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
-        .attr("cy", d => graphCenter[1] + y2PosCalculator(d.data.sequence * 100, d.startAngle, d.endAngle))
+        .attr("cx", d => linkRight.filter(l => l.target == d.target).attr("x2"))
+        .attr("cy", d => linkRight.filter(l => l.target == d.target).attr("y2"))
         .call(d3.drag().on("drag", dragged))
-        .on("click", clicked);
+        .on("click", clicked)
+        .on("mouseover", NodeMouseOver)
+        .on("mouseleave", NodeMouseLeave);
 
     let nodeLeft = node.append("g")
         .attr("class", "node")
         .selectAll("circle")
-        .data(lpieData)
+        .data(graph.node.filter(d => d.sequence == -1))
         .enter().append("circle")
         .attr("r", 20)
-        .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
-        .attr("cy", d => graphCenter[1] + y2PosCalculator(-d.data.sequence * 100, -d.startAngle, -d.endAngle))
+        .attr("cx", d => linkLeft.filter(l => l.target == d.target).attr("x2"))
+        .attr("cy", d => linkLeft.filter(l => l.target == d.target).attr("y2"))
         .call(d3.drag().on("drag", dragged))
-        .on("click", clicked);
+        .on("click", clicked)
+        .on("mouseover", NodeMouseOver)
+        .on("mouseleave", NodeMouseLeave);
 
     let centernode = node.append("g")
         .attr("class", "node")
         .attr("id", "queryNode")
         .selectAll("circle")
-        .data(cpieData)
+        .data(graph.node.filter(d => d.sequence == 0))
         .enter().append("circle")
         .attr("r", 30)
-        .attr("cx", d => graphCenter[0] + d.data.sequence * 100)
+        .attr("cx", d => graphCenter[0] + d.sequence * 100)
         .attr("cy", graphCenter[1])
         .on("click", clicked);
 
@@ -3001,38 +2854,38 @@ function drawGraph_c(graphid, graph) {
         d3.select(this).attr("cx", d.x).attr("cy", d.y);
         // console.log(d.data.sequence);
         linkRight.filter(
-            l => l.data.source == d.data.target
+            l => l.source == d.target
         ).attr("x1", d.x).attr("y1", d.y);
         linkRight.filter(
-            l => l.data.target == d.data.target
+            l => l.target == drawDirectedLineMode.target
         ).attr("x2", d.x).attr("y2", d.y);
         linkLeft.filter(
-            l => l.data.source == d.data.target
+            l => l.source == d.target
         ).attr("x1", d.x).attr("y1", d.y);
         linkLeft.filter(
-            l => l.data.target == d.data.target
+            l => l.target == d.target
         ).attr("x2", d.x).attr("y2", d.y);
 
         if (graphRightPlusExist) {
             linkRightplus[2].filter(
-                l => l.source == d.data.target
+                l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
         }
 
         if (graphLeftPlusExist) {
             linkLeftplus[2].filter(
-                l => l.source == d.data.target
+                l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
         }
 
         // console.log(d.id);
         drawsta();
-        text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
+        text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
     }
     //Click node event
     function clicked(d) {
         drawsta();
-        text.text('Place: ' + d.data.target.slice(1) + "  |  Frequecy: " + d.data.count)
+        text.text('Place: ' + d.location + "  |  Frequecy: " + d.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
     }
@@ -3131,10 +2984,10 @@ function drawGraph_c(graphid, graph) {
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == seq))
                 .enter().append("line")
-                .attr("x1", d => nodeRight.filter(n => n.data.target == d.source).attr("cx"))
-                .attr("y1", d => nodeRight.filter(n => n.data.target == d.source).attr("cy"))
-                .attr("x2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cx")) + 80)
-                .attr("y2", d => parseFloat(nodeRight.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("x1", d => nodeRight.filter(n => n.target == d.source).attr("cx"))
+                .attr("y1", d => nodeRight.filter(n => n.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cx")) + 80)
+                .attr("y2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeRightplus[seq] = node.append("g")
                 .attr("class", "node")
@@ -3146,7 +2999,9 @@ function drawGraph_c(graphid, graph) {
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
                 .call(d3.drag().on("drag", dragged))
-                .on("click", clicked);
+                .on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mouseleave", NodeMouseLeave);
         } else {
 
             linkRightplus[seq] = link.append("g")
@@ -3171,7 +3026,9 @@ function drawGraph_c(graphid, graph) {
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
                 .call(d3.drag().on("drag", dragged))
-                .on("click", clicked);
+                .on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mouseleave", NodeMouseLeave);
             
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
@@ -3189,7 +3046,7 @@ function drawGraph_c(graphid, graph) {
             linkRightplus[seq].filter(
                 l => l.target == d.target
             ).attr("x2", d.x).attr("y2", d.y);
-            if (seq < maxseq) {
+            if (linkRightplus[seq + 1] != undefined) {
                 linkRightplus[seq + 1].filter(
                     l => l.source == d.target
                 ).attr("x1", d.x).attr("y1", d.y);
@@ -3206,6 +3063,8 @@ function drawGraph_c(graphid, graph) {
             graphContainer.selectAll("circle").attr("stroke", "#fff")
             d3.select(this).attr("stroke", "#18569C")
         }
+
+
     }
 
     function drawLeftplus(seq) {
@@ -3226,10 +3085,10 @@ function drawGraph_c(graphid, graph) {
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == -seq))
                 .enter().append("line")
-                .attr("x1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cx"))
-                .attr("y1", d => nodeLeft.filter(n => n.data.target == d.source).attr("cy"))
-                .attr("x2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cx")) - 80)
-                .attr("y2", d => parseFloat(nodeLeft.filter(n => n.data.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("x1", d => nodeLeft.filter(n => n.target == d.source).attr("cx"))
+                .attr("y1", d => nodeLeft.filter(n => n.target == d.source).attr("cy"))
+                .attr("x2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cx")) - 80)
+                .attr("y2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
             
             nodeLeftplus[seq] = node.append("g")
                 .attr("class", "node")
@@ -3241,7 +3100,9 @@ function drawGraph_c(graphid, graph) {
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
                 .call(d3.drag().on("drag", dragged))
-                .on("click", clicked);
+                .on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mouseleave", NodeMouseLeave);
             
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
@@ -3267,7 +3128,9 @@ function drawGraph_c(graphid, graph) {
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
                 .call(d3.drag().on("drag", dragged))
-                .on("click", clicked);
+                .on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mouseleave", NodeMouseLeave);
 
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
@@ -3286,7 +3149,7 @@ function drawGraph_c(graphid, graph) {
             linkLeftplus[seq].filter(
                 l => l.target == d.target
             ).attr("x2", d.x).attr("y2", d.y);
-            if (seq < maxseq) {
+            if (seq < lseq && linkLeftplus[seq + 1] != undefined) {
                 linkLeftplus[seq + 1].filter(
                     l => l.source == d.target
                 ).attr("x1", d.x).attr("y1", d.y);
@@ -3305,6 +3168,19 @@ function drawGraph_c(graphid, graph) {
             graphContainer.selectAll("circle").attr("stroke", "#fff")
             d3.select(this).attr("stroke", "#18569C")
         }
+    }
+
+    function NodeMouseOver(d){
+
+        console.log(d);
+
+
+    }
+
+    function NodeMouseLeave(d){
+        node.selectAll("circle").classed("this-route", false);
+        link.selectAll("line").classed("this-route", false);
+
     }
     //IF HAVE TIME TRY TO USE FORCE GRAPH
     function drawRightplusForce(seq) {

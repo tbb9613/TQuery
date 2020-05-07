@@ -191,8 +191,8 @@ def queryNode_c(typeMCC, time):
         subIdCounter += 1
         counter += 1
     newNodeMap["sub_id"] = sub_id    
-    # print(newNodeMap.head())
-
+    
+    newNodeMap = newNodeMap.merge(nodeSelf, on=["target", "sequence"])
     # QueryLink = newNodeMap.to_json(orient = "records")
     # QueryNodeSelf = nodeSelf.to_json(orient = "records")
 
