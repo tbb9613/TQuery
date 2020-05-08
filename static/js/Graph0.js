@@ -33,6 +33,7 @@ var workSpaceWidth = 0.7 * width;
 var staSpaceWidth = 0.3 * width
 
 var graphExist = false;
+var secondGraphExist = false;
 var conditionCount = 0;
 
 window.onresize = function () {
@@ -166,11 +167,11 @@ d3.select(".heatmap-button").on("click", drawHeatmap)
 
 //TIME SELECTOR
 function getTimeData(timeScale) {
-    axios.post("http://127.0.0.1:5000/timetrans",{
-            scale : timeScale
+    axios.post("http://127.0.0.1:5000/timetrans", {
+            scale: timeScale
         })
         .then(function (response) {
-            
+
             timeTrans = response.data;
             let time2 = response.data;
             // console.log(response.data);
@@ -179,7 +180,7 @@ function getTimeData(timeScale) {
             let parse_d = d3.timeParse("%Y-%m-%d")
             // console.log(timeScale, timeScale == "total" || timeScale == "year");
             // console.log(timeTrans);
-            if(timeScale == "total" || timeScale == "year") {
+            if (timeScale == "total" || timeScale == "year") {
                 timeTrans.forEach(function (d, i) {
 
                     d.date = parse_d(d.date)
@@ -190,7 +191,7 @@ function getTimeData(timeScale) {
                 })
             }
 
-            drawTimeSelector(timeTrans, timeScale, 
+            drawTimeSelector(timeTrans, timeScale,
                 document.getElementById("dataType").options[document.getElementById("dataType").options.selectedIndex].value);
         }).catch(function (error) {
             // handle error
@@ -198,53 +199,28 @@ function getTimeData(timeScale) {
         })
 }
 
-document.getElementById("timePeriod").onchange = function(){
+document.getElementById("timePeriod").onchange = function () {
     topSpace.selectAll("#timeSelector").remove();
+    
     getTimeData(this.options[this.options.selectedIndex].value);
-} 
+    console.log(secondGraphExist)
+    if(secondGraphExist){
+        d3.selectAll(".brush-child").classed("hide", false);
+    }
+}
 
 getTimeData("total");
 
-document.getElementById("dataType").onchange = function(){
+var timeFormat = "%Y-%m-%d";
+document.getElementById("dataType").onchange = function (e) {
     topSpace.selectAll("#timeSelector").remove();
-    drawTimeSelector(timeTrans, 
-        document.getElementById("timePeriod").options[document.getElementById("timePeriod").options.selectedIndex].value, 
-        this.options[this.options.selectedIndex].value)
-}
+    let timeScale = document.getElementById("timePeriod").options[document.getElementById("timePeriod").options.selectedIndex].value;
 
-function drawTimeSelector(data, timeScale, type) {
-    // getTimeData();
-    let selectorWidth = 0.7 * workSpaceWidth;
-    let selectorHeight = 0.2 * topSpaceHeight;
-    let selectorMargin = ({
-        top: 20,
-        right: 20,
-        bottom: 30,
-        left: 30
-    })
-    // let data = timeTrans;
-    let dtype
-    switch(type) {
-        case "TTV":
-            dtype = "total_transaction";
-            break;
-        case "ATV":
-            dtype = "avg_transaction";
-            break;
-    }
+    drawTimeSelector(timeTrans,
+        timeScale,
+        this.options[this.options.selectedIndex].value);
 
-    d3.selectAll("#calendar").remove();
-    d3.selectAll("layui-laydate").remove();
-    let selectorDiv = d3.select("#timeSelectorDropdown");
-    selectorDiv.append("input").attr("id", "calendar")
-        .attr("type", "text")
-        .classed("mdui-textfield-input", true)
-        .attr("placeholder", "Select Date")
-        .raise();
-    
-    let timeFormat
-
-    switch(timeScale) {
+    switch (timeScale) {
         case "total":
             laydate.render({
                 elem: "#calendar",
@@ -289,7 +265,45 @@ function drawTimeSelector(data, timeScale, type) {
             });
             timeFormat = "%c";
             break;
+    };
+
+    if(secondGraphExist){
+        d3.selectAll(".brush-child").classed("hide", false);
     }
+}
+
+
+
+function drawTimeSelector(data, timeScale, type) {
+    // getTimeData();
+    let selectorWidth = 0.7 * workSpaceWidth;
+    let selectorHeight = 0.2 * topSpaceHeight;
+    let selectorMargin = ({
+        top: 20,
+        right: 20,
+        bottom: 30,
+        left: 30
+    })
+    // let data = timeTrans;
+    let dtype
+    switch (type) {
+        case "TTV":
+            dtype = "total_transaction";
+            break;
+        case "ATV":
+            dtype = "avg_transaction";
+            break;
+    }
+
+    d3.selectAll("#calendar").remove();
+    d3.selectAll("layui-laydate").remove();
+    let selectorDiv = d3.select("#timeSelectorDropdown");
+    selectorDiv.append("input").attr("id", "calendar")
+        .attr("type", "text")
+        .classed("mdui-textfield-input", true)
+        .attr("placeholder", "Select Date")
+        .raise();
+
 
     var areachart = topSpace.append("g")
         .attr("id", "timeSelector")
@@ -300,7 +314,7 @@ function drawTimeSelector(data, timeScale, type) {
     let x = d3.scaleUtc()
         .domain(d3.extent(data, d => d.date))
         .range([0, selectorWidth])
-    
+
     let y = d3.scaleLinear()
         .domain([0, d3.max(data, d => d[dtype])]).nice()
         .range([selectorHeight - selectorMargin.bottom, 0])
@@ -309,11 +323,11 @@ function drawTimeSelector(data, timeScale, type) {
         .attr("transform", `translate(0, ${selectorHeight-selectorMargin.bottom})`)
         .attr("class", "timeselector-axis")
 
-    if (timeScale === "year" || timeScale === "total"){
+    if (timeScale === "year" || timeScale === "total") {
         xAxis.call(d3.axisBottom(x).ticks(selectorWidth / 50).tickSize(3).tickSizeOuter(0)
-        .tickFormat(date => (d3.timeYear(date) < date) ?
-            d3.timeFormat('%b')(date) :
-            d3.timeFormat('%Y')(date))
+            .tickFormat(date => (d3.timeYear(date) < date) ?
+                d3.timeFormat('%b')(date) :
+                d3.timeFormat('%Y')(date))
         )
     } else {
         xAxis.call(d3.axisBottom(x).ticks(selectorWidth / 50).tickSize(3).tickSizeOuter(0))
@@ -339,104 +353,215 @@ function drawTimeSelector(data, timeScale, type) {
             .y1(d => y(d[dtype]))
         )
 
-    const brush = d3.brushX()
-        .extent([
-            [0, 0],
-            [selectorWidth, selectorHeight - 30]
-        ])
-        .on("start brush end", brushmoved);
+    //Brush
+    function callFirstBrush() {
+        const brushParent = d3.brushX()
+            .extent([
+                [0, 0],
+                [selectorWidth, selectorHeight - 30]
+            ])
+            .on("start brush end", brushmoved);
 
-    let gBrush = areachart.append("g")
-        .attr("class", "brush")
+        let gBrushFirst = areachart.append("g")
+            .attr("class", "brush-parent")
+
+        // style brush resize handle
+
+        let brushResizePath = function (d) {
+            let e = +(d.type == "e"),
+                x = e ? 1 : -1,
+                y = (selectorHeight - 30) / 2;
+            return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
+        }
+
+        var handle = gBrushFirst.selectAll(".handle-custom")
+            .data([{
+                type: "w"
+            }, {
+                type: "e"
+            }])
+            .enter().append("path")
+            .attr("class", "handle-custom")
+            // .attr("stroke", "#999")
+            .attr("fill", "#393261")
+            .attr("cursor", "ew-resize")
+            .attr("d", brushResizePath)
 
 
-    // style brush resize handle
+        gBrushFirst.call(brushParent)
+            .call(brushParent.move, [200, 300]);
+        // console.log(handle);
 
-    let brushResizePath = function (d) {
-        let e = +(d.type == "e"),
-            x = e ? 1 : -1,
-            y = (selectorHeight - 30) / 2;
-        return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
+        let lefttooltip = topContainer
+            .append("div")
+            .classed("tooltip-handle", true)
+            .style("opacity", 0)
+        // .attr("class", "tooltip")
+
+        let righttooltip = topContainer
+            .append("div")
+            .classed("tooltip-handle", true)
+            .style("opacity", 0)
+        // .attr("class", "tooltip")
+
+        gBrushFirst.selectAll(".handle--w")
+            .on("mouseover", leftHandleOver)
+            .on("mouseout", function () {
+                lefttooltip.style("opacity", 0)
+            });
+
+        gBrushFirst.selectAll(".handle--e")
+            .on("mouseover", rightHandleOver)
+            .on("mouseout", function () {
+                righttooltip.style("opacity", 0)
+            });;
+
+        gBrushFirst.selectAll(".selection")
+            .attr("fill", "white")
+            .attr("stroke", "#393261")
+        
+        areachart.select(".overlay").remove()
+        
+        function brushmoved() {
+            timeSelection = d3.event.selection;
+            // const [x0, x1] = s.map(x.invert);
+            if (timeSelection == null) {
+                handle.attr("display", "none");
+            } else {
+                // lefttooltip.style("opacity", 1)
+                handle.attr("display", null).attr("transform", (d, i) => "translate(" + [timeSelection[i], -(selectorHeight - 30) / 4] + ")");
+            }
+        };
+
+        function leftHandleOver() {
+            let format = d3.timeFormat(timeFormat)
+            lefttooltip.style("opacity", 1)
+                .html("Start: " + format(x.invert(timeSelection[0])))
+                .style("left", (d3.mouse(this)[0]) + "px")
+                .style("top", "20px")
+            // let selection = d3.brushSelection();
+            // console.log("start",x.invert(timeSelection[0]));
+        };
+
+        function rightHandleOver() {
+            // let selection = d3.brushSelection();
+            let format = d3.timeFormat(timeFormat)
+            righttooltip.style("opacity", 1)
+                .html("End: " + format(x.invert(timeSelection[1])))
+                .style("left", (d3.mouse(this)[0]) + "px")
+                .style("top", "20px")
+        };
+    }
+    function callSecondBrush() {
+        // let selectorWidth = 0.7 * workSpaceWidth;
+        // let selectorHeight = 0.2 * topSpaceHeight;
+        // let areachart = d3.select("#timeSelector")
+
+        const brushChild = d3.brushX()
+            .extent([
+                [0, 0],
+                [selectorWidth, selectorHeight - 30]
+            ])
+            .on("start brush end", brushmoved);
+
+        let gBrushSecond = areachart.append("g")
+            .attr("class", "brush-child")
+
+        // style brush resize handle
+
+        let brushResizePath = function (d) {
+            let e = +(d.type == "e"),
+                x = e ? 1 : -1,
+                y = (selectorHeight - 30) / 2;
+            return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
+        }
+
+        var handle = gBrushSecond.selectAll(".handle-custom")
+            .data([{
+                type: "w"
+            }, {
+                type: "e"
+            }])
+            .enter().append("path")
+            .attr("class", "handle-custom")
+            // .attr("stroke", "#999")
+            .attr("fill", "#C56C00")
+            .attr("cursor", "ew-resize")
+            .attr("d", brushResizePath)
+
+        gBrushSecond.call(brushChild)
+            .call(brushChild.move, [400, 500]);
+        // console.log(handle);
+
+        let lefttooltip = topContainer
+            .append("div")
+            .classed("tooltip-handle-child", true)
+            .style("opacity", 0)
+        // .attr("class", "tooltip")
+
+        let righttooltip = topContainer
+            .append("div")
+            .classed("tooltip-handle-child", true)
+            .style("opacity", 0)
+        // .attr("class", "tooltip")
+
+        gBrushSecond.selectAll(".handle--w")
+            .on("mouseover", leftHandleOver)
+            .on("mouseout", function () {
+                lefttooltip.style("opacity", 0)
+            });
+
+        gBrushSecond.selectAll(".handle--e")
+            .on("mouseover", rightHandleOver)
+            .on("mouseout", function () {
+                righttooltip.style("opacity", 0)
+            });;
+
+        gBrushSecond.selectAll(".selection")
+            .attr("fill", "white")
+            .attr("stroke", "#C56C00")
+
+        function brushmoved() {
+            timeSelectionSecond = d3.event.selection;
+            // const [x0, x1] = s.map(x.invert);
+            if (timeSelectionSecond == null) {
+                handle.attr("display", "none");
+            } else {
+                // lefttooltip.style("opacity", 1)
+                handle.attr("display", null).attr("transform", (d, i) => "translate(" + [timeSelectionSecond[i], -(selectorHeight - 30) / 4] + ")");
+            }
+        };
+
+        function leftHandleOver() {
+            let format = d3.timeFormat(timeFormat)
+            lefttooltip.style("opacity", 1)
+                .html("Start: " + format(x.invert(timeSelectionSecond[0])))
+                .style("left", (d3.mouse(this)[0]) + "px")
+                .style("top", "20px")
+            // let selection = d3.brushSelection();
+            // console.log("start",x.invert(timeSelection[0]));
+        };
+
+        function rightHandleOver() {
+            // let selection = d3.brushSelection();
+            let format = d3.timeFormat(timeFormat)
+            righttooltip.style("opacity", 1)
+                .html("End: " + format(x.invert(timeSelectionSecond[1])))
+                .style("left", (d3.mouse(this)[0]) + "px")
+                .style("top", "20px")
+        };
+
+        areachart.select(".overlay").remove();
     }
 
-    var handle = gBrush.selectAll(".handle-custom")
-        .data([{
-            type: "w"
-        }, {
-            type: "e"
-        }])
-        .enter().append("path")
-        .attr("class", "handle-custom")
-        // .attr("stroke", "#999")
-        .attr("fill", "#393261")
-        .attr("cursor", "ew-resize")
-        .attr("d", brushResizePath)
+    callFirstBrush();
+    callSecondBrush();
+    if(!secondGraphExist){
+        d3.selectAll(".brush-child").classed("hide", true);
+    }
+    
+    // console.log(d3.selectAll(".brush-child").classed("hide"))
 
-
-    gBrush.call(brush)
-        .call(brush.move, [200, 300]);
-    // console.log(handle);
-
-
-
-    let lefttooltip = topContainer
-        .append("div")
-        .classed("tooltip-handle", true)
-        .style("opacity", 0)
-    // .attr("class", "tooltip")
-
-    let righttooltip = topContainer
-        .append("div")
-        .classed("tooltip-handle", true)
-        .style("opacity", 0)
-    // .attr("class", "tooltip")
-
-    gBrush.selectAll(".handle--w")
-        .on("mouseover", leftHandleOver)
-        .on("mouseout", function () {
-            lefttooltip.style("opacity", 0)
-        });
-
-    gBrush.selectAll(".handle--e")
-        .on("mouseover", rightHandleOver)
-        .on("mouseout", function () {
-            righttooltip.style("opacity", 0)
-        });;
-
-    gBrush.selectAll(".selection")
-        .attr("fill", "white")
-        .attr("stroke", "#393261")
-
-    function brushmoved() {
-        timeSelection = d3.event.selection;
-        // const [x0, x1] = s.map(x.invert);
-        if (timeSelection == null) {
-            handle.attr("display", "none");
-        } else {
-            // lefttooltip.style("opacity", 1)
-            handle.attr("display", null).attr("transform", (d, i) => "translate(" + [timeSelection[i], -(selectorHeight - 30) / 4] + ")");
-        }
-    };
-
-
-    function leftHandleOver() {
-        let format = d3.timeFormat(timeFormat)
-        lefttooltip.style("opacity", 1)
-            .html("Start: " + format(x.invert(timeSelection[0])))
-            .style("left", (d3.mouse(this)[0]) + "px")
-            .style("top", "20px")
-        // let selection = d3.brushSelection();
-        // console.log("start",x.invert(timeSelection[0]));
-    };
-
-    function rightHandleOver() {
-        // let selection = d3.brushSelection();
-        let format = d3.timeFormat(timeFormat)
-        righttooltip.style("opacity", 1)
-            .html("End: " + format(x.invert(timeSelection[1])))
-            .style("left", (d3.mouse(this)[0]) + "px")
-            .style("top", "20px")
-    };
 
 }
 
@@ -584,8 +709,6 @@ function drawTopNodes(list) {
     // getHeatmap()
 
     //Data exchange
-
-
     function createQuery(d) {
         // postQuery(d, 4);
         postQuery(d, 4);
@@ -597,10 +720,11 @@ function drawTopNodes(list) {
             // drawGraph("graph-first", nodeMap);
             console.log(nodeMap_c);
             drawGraph("graph-first", nodeMap_c);
+            secondGraphExist = false;
         }, 200);
     }
 
-    function packedQuery(){
+    function packedQuery() {
         clearToolState();
         isMultiMode = false;
         drawLayer.attr("height", 0).attr("width", 0);
@@ -614,7 +738,7 @@ function drawTopNodes(list) {
         //reset array
         packCount = 1;
         drawLayer.selectAll("rect").each(
-            function(d){
+            function (d) {
                 packLinkList.push([d, d3.select(this).attr("class").replace(" con-rect", "")]);
             }
         )
@@ -927,7 +1051,7 @@ function drawTopNodes(list) {
     function drawDirectedLine() {
         var line;
         var lineCount = 1;
-        
+
         var startPoint = new Array();
 
         if (!drawDirectedLineMode) {
@@ -1091,7 +1215,7 @@ function drawTopNodes(list) {
         brush.on("start", brushstart)
             .on("brush", brushed)
             .on("end", brushpopup);
-        
+
         function brushstart() {
             leftContainer.selectAll(".brush-menu-container").remove();
             // console.log("start")
@@ -1186,13 +1310,14 @@ function drawTopNodes(list) {
                         clearBrushLayer();
                     }
 
-                    
+
                 })
             } else {
                 console.log("not enough nodes")
                 // brushLayer.call(brush.clear);
                 // drawLayer.selectAll("circle").classed("selected", false);
             }
+
             function clearBrushLayer() {
                 leftContainer.selectAll(".brush-menu-container").remove();
                 // brushLayer.selectAll("rect").remove();
@@ -1380,6 +1505,8 @@ function drawGraph(graphid, graph) {
     staSpace.selectAll("g").remove();
 
     graphExist = true;
+    
+    d3.selectAll(".brush-child").classed("hide", true);
 
     const graphCenter = [workSpaceWidth / 2, workSpaceHeight / 2];
     // console.log(graphCenter[0], graphCenter[1])
@@ -1626,12 +1753,14 @@ function drawGraph(graphid, graph) {
         }
     }
 
-    //add graoh judgement
+    //add graph
     if (graphid === "graph-first") {
         d3.select(".add-graph")
             .on("click", addGraph)
 
         function addGraph() {
+            secondGraphExist = true;
+
             graphBg.attr("width", "50%")
             graphBg.selectAll(".graph-background")
                 .attr("width", "50%");
@@ -1642,8 +1771,11 @@ function drawGraph(graphid, graph) {
             zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight / 2])
 
             drawGraph("graph-second", subNodeMap)
-
+            // callSecondBrush();
             console.log("clicked!")
+
+            //Display second brush
+            d3.selectAll(".brush-child").classed("hide", false)
         }
     } else if (graphid === "graph-second") {
         d3.select(".add-graph")
@@ -1672,21 +1804,21 @@ function drawGraph(graphid, graph) {
     //Draw links & nodes
     function MainLayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
-            .range([-workSpaceHeight/4, workSpaceHeight/4])
-            .domain([0, subC-1]);
+            .range([-workSpaceHeight / 4, workSpaceHeight / 4])
+            .domain([0, subC - 1]);
         return scaler(subID);
     }
 
-    
+
     let linkScaler = d3.scaleLinear()
-        .range([1,5])
+        .range([1, 5])
         .domain([1, d3.max(graph.link, d => d.count)])
 
     let rightCountSum = d3.sum(graph.link.filter(d => d.sequence == 1), d => d.count)
     let leftCountSum = d3.sum(graph.link.filter(d => d.sequence == -1), d => d.count)
 
     let link = graphContainer.append('g')
-    .attr("id", "link")
+        .attr("id", "link")
 
     let linkRight = link.append("g")
         .selectAll("line")
@@ -1697,8 +1829,8 @@ function drawGraph(graphid, graph) {
         .attr("x1", d => graphCenter[0])
         .attr("y1", d => graphCenter[1])
         .attr("x2", d => graphCenter[0] + d.sequence * 100)
-        .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
-    
+        .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, d.sublink_count));
+
     var txtOffset = -20
 
     let linkLeft = link.append("g")
@@ -1710,7 +1842,7 @@ function drawGraph(graphid, graph) {
         .attr("x1", d => graphCenter[0])
         .attr("y1", d => graphCenter[1])
         .attr("x2", d => graphCenter[0] + d.sequence * 100)
-        .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
+        .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, d.sublink_count));
 
     let rightText = link.append("g")
         .selectAll("text")
@@ -1718,18 +1850,18 @@ function drawGraph(graphid, graph) {
         .append("text")
         .attr("class", "link-text")
         .attr("x", d => 0.5 * (graphCenter[0] + graphCenter[0] + d.sequence * 100))
-        .attr("y", (d,i) => txtOffset + 0.5 * (graphCenter[1] + graphCenter[1]  + MainLayoutScaler(i, d.sublink_count)))
-        .text(d => d.count*10)
+        .attr("y", (d, i) => txtOffset + 0.5 * (graphCenter[1] + graphCenter[1] + MainLayoutScaler(i, d.sublink_count)))
+        .text(d => d.count * 10)
         .classed("text-hide", true)
 
-    let leftText =link.append("g")
+    let leftText = link.append("g")
         .selectAll("text")
         .data(graph.link.filter(d => d.sequence == -1)).enter()
         .append("text")
         .attr("class", "link-text")
         .attr("x", d => 0.5 * (graphCenter[0] + graphCenter[0] + d.sequence * 100))
-         .attr("y", (d,i) => txtOffset + 0.5 * (graphCenter[1] + graphCenter[1]  + MainLayoutScaler(i, d.sublink_count)))
-        .text(d => d.count*10)
+        .attr("y", (d, i) => txtOffset + 0.5 * (graphCenter[1] + graphCenter[1] + MainLayoutScaler(i, d.sublink_count)))
+        .text(d => d.count * 10)
         .classed("text-hide", true)
 
     let node = graphContainer.append("g")
@@ -1905,7 +2037,7 @@ function drawGraph(graphid, graph) {
         //Calculate vertical layout
         if (seq === 2) {
             linkRightplus[seq] = link.append("g")
-                
+
                 .attr("id", `seq${seq}`)
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == seq))
@@ -1917,7 +2049,7 @@ function drawGraph(graphid, graph) {
                 .attr("y2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeRightplus[seq] = node.append("g")
-                
+
                 .attr("id", `seq${seq}`)
                 .selectAll("circle")
                 .data(graph.node.filter(d => d.sequence == seq))
@@ -1930,8 +2062,8 @@ function drawGraph(graphid, graph) {
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mouseleave", NodeMouseLeave);
-            
-                linkRightplus[seq]
+
+            linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
         } else {
 
@@ -1960,7 +2092,7 @@ function drawGraph(graphid, graph) {
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mouseleave", NodeMouseLeave);
-            
+
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
         }
@@ -1972,10 +2104,10 @@ function drawGraph(graphid, graph) {
             .attr("x", d => 0.5 * (
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
-            .attr("y", (d,i) => txtOffset/2 + 0.5 * (
+            .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
-            .text(d => d.count*10)
+            .text(d => d.count * 10)
             .classed("text-hide", true)
 
         function dragged(d) {
@@ -2027,7 +2159,7 @@ function drawGraph(graphid, graph) {
                 .attr("y1", d => nodeLeft.filter(n => n.target == d.source).attr("cy"))
                 .attr("x2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cx")) - 80)
                 .attr("y2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
-            
+
             nodeLeftplus[seq] = node.append("g")
                 .attr("id", `seq${-seq}`)
                 .selectAll("circle")
@@ -2041,7 +2173,7 @@ function drawGraph(graphid, graph) {
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mouseleave", NodeMouseLeave);
-            
+
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
         } else {
@@ -2082,10 +2214,10 @@ function drawGraph(graphid, graph) {
             .attr("x", d => 0.5 * (
                 parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
                 parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
-            .attr("y", (d,i) => txtOffset/2 + 0.5 * (
+            .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
                 parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
                 parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
-            .text(d => d.count*10)
+            .text(d => d.count * 10)
             .classed("text-hide", true)
 
         function dragged(d) {
@@ -2125,39 +2257,39 @@ function drawGraph(graphid, graph) {
     function LayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
             .range([-30, 30])
-            .domain([0.4, subC+0.6]);
+            .domain([0.4, subC + 0.6]);
         return scaler(subID);
     }
 
-    function NodeMouseOver(d){
+    function NodeMouseOver(d) {
         node.selectAll("circle").filter(n => n.sequence !== 0).classed("not-this-route", true)
         link.selectAll("line").classed("not-this-route", true)
         link.selectAll("text").classed("not-this-route", true)
 
-        d.route.forEach(function(r){
+        d.route.forEach(function (r) {
             // console.log(r)
-                node.selectAll("circle").filter(".not-this-route")
-                    .classed("this-route", n => isInRoute(r, n.route))
-                node.selectAll("circle").filter(".this-route")
-                    .classed("not-this-route", !(n => isInRoute(r, n.route)))
-                link.selectAll("line").filter(".not-this-route")
-                    .classed("this-route", l => isInRoute(r, l.route))
-                link.selectAll("line").filter(".this-route")
-                    .classed("not-this-route", !(l => isInRoute(r, l.route)))
+            node.selectAll("circle").filter(".not-this-route")
+                .classed("this-route", n => isInRoute(r, n.route))
+            node.selectAll("circle").filter(".this-route")
+                .classed("not-this-route", !(n => isInRoute(r, n.route)))
+            link.selectAll("line").filter(".not-this-route")
+                .classed("this-route", l => isInRoute(r, l.route))
+            link.selectAll("line").filter(".this-route")
+                .classed("not-this-route", !(l => isInRoute(r, l.route)))
 
-                link.selectAll("text").filter(".not-this-route")
-                    .classed("this-route", (l => isInRoute(r, l.route)))
-                link.selectAll("text").filter(".this-route")
-                    .classed("not-this-route", !(l => isInRoute(r, l.route)))
-                // link.selectAll("text").each(l => console.log(l.route))
-                // link.selectAll("text").filter(".hide").each(console.log(l => isInRoute(r, l.route)))
-            })
+            link.selectAll("text").filter(".not-this-route")
+                .classed("this-route", (l => isInRoute(r, l.route)))
+            link.selectAll("text").filter(".this-route")
+                .classed("not-this-route", !(l => isInRoute(r, l.route)))
+            // link.selectAll("text").each(l => console.log(l.route))
+            // link.selectAll("text").filter(".hide").each(console.log(l => isInRoute(r, l.route)))
+        })
 
         node.selectAll("circle").filter(n => n.sequence === 0).classed("this-route", true)
         // console.log(node.selectAll("circle").filter(".this-route"))
-        
-        function isInRoute(single, group){
-            
+
+        function isInRoute(single, group) {
+
             if (group.indexOf(single) !== -1) {
                 // console.log(single, group, true);
                 return true
@@ -2170,7 +2302,7 @@ function drawGraph(graphid, graph) {
 
     }
 
-    function NodeMouseLeave(d){
+    function NodeMouseLeave(d) {
         node.selectAll("circle").classed("this-route", false);
         node.selectAll("circle").classed("not-this-route", false);
         link.selectAll("line").classed("this-route", false);
@@ -2273,14 +2405,14 @@ function drawGraph(graphid, graph) {
             .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
-        
+
         staSpace.select(id)
             .append("g")
             .attr("class", "samplePie")
             .attr('transform', `translate(${ staSpaceWidth / 5},
                 ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
             .append("text")
-            .text(d => d.category +" "+ id)
+            .text(d => d.category + " " + id)
             .attr("x", 10)
             .attr("y", 10)
 
@@ -2377,7 +2509,7 @@ function drawGraph(graphid, graph) {
             .attr('transform', `translate(${ staSpaceWidth / 5},
                 ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
             .append("text")
-            .text(d => d.category +" "+ id)
+            .text(d => d.category + " " + id)
             .attr("x", 10)
             .attr("y", 10)
 
