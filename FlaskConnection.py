@@ -162,24 +162,20 @@ def queryNode_c(typeMCC, time):
         for rname in nodeSelf.groupby(["target"]).get_group(t)['route']:
             routeSubGroup.append(rname)
         routeGroup.append(routeSubGroup)
-    # print(nodeSelf.groupby(["target"]))
-    # print (len(routeGroup))
+
     nodeSelf = nodeSelf.drop_duplicates(["target"])
     nodeSelf["route"] = routeGroup
     nodeSelf['atv'] = np.random.randint(5,100,size=(len(routeGroup)))
-    
+
     # print(nodeSelf)
 
     #Link route
-   
     for t in nodeSelf_m['links'].unique():
         routeSubGroup = []
         # print(nodeSelf.groupby(["links"]).get_group(t))
         for rname in nodeSelf_m.groupby(["links"]).get_group(t)['route']:
             routeSubGroup.append(rname)
         lrouteGroup.append(routeSubGroup)
-    # print(nodeSelf.groupby(["links"]))
-    # print (len(routeGroup))
     nodeSelf_m = nodeSelf_m.drop_duplicates(["links"])
     # print(nodeSelf_m.shape, len(routeSubGroup))
     nodeSelf_m["route"] = lrouteGroup
@@ -201,7 +197,6 @@ def queryNode_c(typeMCC, time):
     newNodeMap = pd.DataFrame(linkList, columns=["sequence", "links", "source_count", "count"])
     #count different links per node
     countNodeMap = newNodeMap.groupby(['sequence','source_count']).count().reset_index().rename(columns = {'links': 'sublink_count'}).drop(columns = ["count"])
-    print(countNodeMap)
     newNodeMap = pd.merge(newNodeMap, countNodeMap, on = ["source_count", "sequence"])
 
     # calculated for each source how many links will draw from this source
@@ -218,7 +213,7 @@ def queryNode_c(typeMCC, time):
             else:
                 subIdCounter = 1
                 sub_id.append(subIdCounter)        
-        print(source, lastSource, subIdCounter)
+        # print(source, lastSource, subIdCounter)
         lastSource = source
         subIdCounter += 1
         counter += 1

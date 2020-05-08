@@ -115,7 +115,6 @@ def queryNode_c(typeMCC, time):
     # returnthing = ()
     return print(newNodeMap)
 
-
 queryNode_c("Theatre", 3)
 
 def generateTimeSeries():

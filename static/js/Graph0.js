@@ -1363,7 +1363,7 @@ function postSubQuery(t) {
         .then(function (response) { // if success then update data
             subNodeMap = response.data;
         })
-    // titletext.text("Routes of people who go to " + queryNode);
+    titletext.text("Routes of people who go to " + queryNode);
 
 }
 
@@ -1944,14 +1944,15 @@ function drawGraph(graphid, graph) {
 
         // console.log(d.id);
         drawsta();
-        text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+        text.text('Place: ' + d.place)
     }
     //Click node event
     function clicked(d) {
         drawsta();
-        text.text('Place: ' + d.place + "  |  Frequecy: " + d.count)
-        graphContainer.selectAll("circle").attr("stroke", "#fff")
-        d3.select(this).attr("stroke", "#18569C")
+        text.text('Place: ' + d.place )
+        // graphContainer.selectAll("circle").attr("stroke", "#fff")
+        graphContainer.selectAll("circle").classed("clicked", false);
+            d3.select(this).classed("clicked", true)
     }
 
     //Add steps control
@@ -2135,8 +2136,8 @@ function drawGraph(graphid, graph) {
             console.log("clicked");
             drawsta();
             text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
-            graphContainer.selectAll("circle").attr("stroke", "#fff")
-            d3.select(this).attr("stroke", "#18569C")
+            graphContainer.selectAll("circle").classed("clicked", false);
+            d3.select(this).classed("clicked", true)
         }
 
 
@@ -2241,16 +2242,16 @@ function drawGraph(graphid, graph) {
 
             drawsta();
 
-            text.text('Place: ' + d.place + "  |  Frequecy: " + d.count)
+            text.text('Place: ' + d.place)
         }
 
         function clicked(d) {
             console.log("clicked");
             d3.selectAll(".samplePie").remove();
             drawsta();
-            text.text('Place: ' + d.place + "  |  Frequecy: " + d.count)
-            graphContainer.selectAll("circle").attr("stroke", "#fff")
-            d3.select(this).attr("stroke", "#18569C")
+            text.text('Place: ' + d.place)
+            graphContainer.selectAll("circle").classed("clicked", false);
+            d3.select(this).classed("clicked", true)
         }
     }
 

@@ -99,7 +99,7 @@
     .node {
       stroke: #fff;
       stroke-width: 2px;
-      fill: slategray;
+      fill: rgb(145, 163, 182);
     }
 
     .link {
@@ -579,9 +579,7 @@
 
 
     circle.this-route{
-      
       fill: #655AAF;
-
     }
 
     line.this-route {
@@ -598,6 +596,19 @@
 
     text.this-route{
       display: block;
+    }
+
+    circle.clicked{
+      /* fill: white !important; */
+      /* stroke: #0093FF !important; */
+      stroke-width: 2.5 !important;
+      animation: circle-clicked-animation 3s linear infinite;
+    }
+
+    @keyframes circle-clicked-animation {
+      0% {stroke: #FB644C;}
+      50% {stroke: rgba(251, 149, 76, 0.555);}
+      100% {stroke: #FB644C;}
     }
 
     .text-hide{
