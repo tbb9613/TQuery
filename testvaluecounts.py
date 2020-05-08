@@ -7,9 +7,8 @@ def queryNode_c(typeMCC, time):
 
     timePoint = time
 
-
     MCCQueryRoute = route[route.iloc[:,timePoint] == typeMCC] #Query
-    print(MCCQueryRoute.head())
+    # print(MCCQueryRoute.head())
 
     #Generate primary source-target dataframe
     source = []
@@ -19,11 +18,12 @@ def queryNode_c(typeMCC, time):
     routeID = []
     # nodeLocation = []
     nodeSequence = []
+    routeGroup = []
     # ids = []
 
     for i in range(len(MCCQueryRoute.columns)):
         singleSequence = i - timePoint
-        print(MCCQueryRoute.iloc[:,i].index)
+        # print(MCCQueryRoute.iloc[:,i].index)
         if singleSequence != 0:
             for j in MCCQueryRoute.iloc[:,i].index:
                 routeID.append(j)
@@ -52,13 +52,22 @@ def queryNode_c(typeMCC, time):
     # print(np.unique(target))
 
     linkData = {"links":zip(source, target), "sequence":sequence}
-    nodeData = {"tname": target, "place":nodeName, "sequence":nodeSequence, "route": routeID}
+    nodeData = {"links":zip(source, target), "target": target,"place":nodeName, "sequence":nodeSequence, "route": routeID}
     # print(len(source-target), len(sequence), len(ids))
     nodeMap = pd.DataFrame(data=linkData).sort_values(by = ['links'])
-    nodeSelf = pd.DataFrame(data=nodeData).sort_values(by = ['tname']).drop_duplicates().reset_index(drop=True)
-    
-    print (nodeSelf)
-
+    nodeSelf = pd.DataFrame(data=nodeData).sort_values(by = ['target']).reset_index(drop=True)
+    print(nodeSelf)
+    for t in nodeSelf['links'].unique():
+        routeSubGroup = []
+        print(nodeSelf.groupby(["links"]).get_group(t))
+        for rname in nodeSelf.groupby(["links"]).get_group(t)['route']:
+            routeSubGroup.append(rname)
+        routeGroup.append(routeSubGroup)
+    print(nodeSelf.groupby(["links"]))
+    # print (len(routeGroup))
+    nodeSelf = nodeSelf.drop_duplicates(["links"])
+    nodeSelf["route"] = routeGroup
+    print(nodeSelf)
     #Reduce dumplication and calculate size
     linkList = []
 
@@ -95,12 +104,16 @@ def queryNode_c(typeMCC, time):
         subIdCounter += 1
         counter += 1
     newNodeMap["sub_id"] = sub_id    
-    print(newNodeMap.head())
+    
+    newNodeMap = newNodeMap.merge(nodeSelf, on=["target", "sequence"])
+    # QueryLink = newNodeMap.to_json(orient = "records")
+    # QueryNodeSelf = nodeSelf.to_json(orient = "records")
 
-    QueryLink = newNodeMap.to_json(orient = "records")
-    QueryNodeSelf = nodeSelf.to_json(orient = "records")
+    QueryLink = newNodeMap.to_dict('records')
+    QueryNodeSelf = nodeSelf.to_dict('records')
+    # returnDict = {"link": QueryLink, "node": QueryNodeSelf}
+    # returnthing = ()
+    return print(newNodeMap)
 
-    returnDict = {"link": QueryLink, "node": QueryNodeSelf}
-    return returnDict
 
-queryNode_c("Cinema", 3)
+queryNode_c("Theatre", 3)

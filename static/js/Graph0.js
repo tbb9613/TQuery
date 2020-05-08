@@ -565,7 +565,6 @@ function drawTopNodes(list) {
         node.call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragendedMulti));
     }
 
-
     node
         .append("circle")
         .attr("cx", xPosition)
@@ -620,6 +619,7 @@ function drawTopNodes(list) {
             })
             .then(function (response) { // if success then update data
                 nodeMap_c = response.data
+                console.log(nodeMap_c)
             })
     }
 
@@ -1376,7 +1376,6 @@ function drawHeatmap(d) {
                 .on("mouseleave", heatmapMouseleave)
         }, 300);
 
-
         isHeatmapActive = true;
 
     } else {
@@ -1385,9 +1384,7 @@ function drawHeatmap(d) {
         heatmapContainer.selectAll("svg").remove();
         heatmapContainer.classed("heatmap-container-active", false);
         d3.select(this).select("path").attr("fill", "#4F4688")
-
     }
-
 }
 // drawGraph();
 
@@ -2772,42 +2769,74 @@ function drawGraph_c(graphid, graph) {
     //Draw links & nodes
     function MainLayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
-            .domain([-workSpaceHeight/4, workSpaceHeight/4])
-            .range([0, subC-1]);
-        return scaler.invert(subID);
+            .range([-workSpaceHeight/4, workSpaceHeight/4])
+            .domain([0, subC-1]);
+        return scaler(subID);
     }
+
+    
+    let linkScaler = d3.scaleLinear()
+        .range([1,5])
+        .domain([1, d3.max(graph.link, d => d.count)])
+
+    let rightCountSum = d3.sum(graph.link.filter(d => d.sequence == 1), d => d.count)
+    let leftCountSum = d3.sum(graph.link.filter(d => d.sequence == -1), d => d.count)
 
     let link = graphContainer.append('g')
     .attr("id", "link")
 
     let linkRight = link.append("g")
-        .attr("class", "link")
         .selectAll("line")
         .data(graph.link.filter(d => d.sequence == 1))
         .enter().append("line")
+        .attr("class", "link")
+        .attr("stroke-width", d => linkScaler(d.count))
+        .attr("x1", d => graphCenter[0])
+        .attr("y1", d => graphCenter[1])
+        .attr("x2", d => graphCenter[0] + d.sequence * 100)
+        .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
+    
+
+
+    let linkLeft = link.append("g")
+        .selectAll("line")
+        .data(graph.link.filter(d => d.sequence == -1))
+        .enter().append("line")
+        .attr("class", "link")
+        .attr("stroke-width", d => linkScaler(d.count))
         .attr("x1", d => graphCenter[0])
         .attr("y1", d => graphCenter[1])
         .attr("x2", d => graphCenter[0] + d.sequence * 100)
         .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
 
-    let linkLeft = link.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph.link.filter(d => d.sequence == -1))
-        .enter().append("line")
-        .attr("x1", d => graphCenter[0])
-        .attr("y1", d => graphCenter[1])
-        .attr("x2", d => graphCenter[0] + d.sequence * 100)
-        .attr("y2", (d,i) => graphCenter[1]  + MainLayoutScaler(i, d.sublink_count));
+    let rightText = link.append("g")
+        .selectAll("text")
+        .data(graph.link.filter(d => d.sequence == 1)).enter()
+        .append("text")
+        .attr("class", "link-text")
+        .attr("x", d => 0.5 * (graphCenter[0] + graphCenter[0] + d.sequence * 100))
+        .attr("y", (d,i) => -10 + 0.5 * (graphCenter[1] + graphCenter[1]  + MainLayoutScaler(i, d.sublink_count)))
+        .text(d => d.count*10)
+        .classed("text-hide", true)
+
+    let leftText =link.append("g")
+        .selectAll("text")
+        .data(graph.link.filter(d => d.sequence == -1)).enter()
+        .append("text")
+        .attr("class", "link-text")
+        .attr("x", d => 0.5 * (graphCenter[0] + graphCenter[0] + d.sequence * 100))
+        .attr("y", (d,i) => -10 + 0.5 * (graphCenter[1] + graphCenter[1]  + MainLayoutScaler(i, d.sublink_count)))
+        .text(d => d.count*10)
+        .classed("text-hide", true)
 
     let node = graphContainer.append("g")
         .attr("id", "nodes");
 
     let nodeRight = node.append("g")
-        .attr("class", "node")
         .selectAll("circle")
         .data(graph.node.filter(d => d.sequence == 1))
         .enter().append("circle")
+        .attr("class", "node")
         .attr("r", 20)
         .attr("cx", d => linkRight.filter(l => l.target == d.target).attr("x2"))
         .attr("cy", d => linkRight.filter(l => l.target == d.target).attr("y2"))
@@ -2817,10 +2846,10 @@ function drawGraph_c(graphid, graph) {
         .on("mouseleave", NodeMouseLeave);
 
     let nodeLeft = node.append("g")
-        .attr("class", "node")
         .selectAll("circle")
         .data(graph.node.filter(d => d.sequence == -1))
         .enter().append("circle")
+        .attr("class", "node")
         .attr("r", 20)
         .attr("cx", d => linkLeft.filter(l => l.target == d.target).attr("x2"))
         .attr("cy", d => linkLeft.filter(l => l.target == d.target).attr("y2"))
@@ -2830,11 +2859,11 @@ function drawGraph_c(graphid, graph) {
         .on("mouseleave", NodeMouseLeave);
 
     let centernode = node.append("g")
-        .attr("class", "node")
         .attr("id", "queryNode")
         .selectAll("circle")
         .data(graph.node.filter(d => d.sequence == 0))
         .enter().append("circle")
+        .attr("class", "node")
         .attr("r", 30)
         .attr("cx", d => graphCenter[0] + d.sequence * 100)
         .attr("cy", graphCenter[1])
@@ -2885,7 +2914,7 @@ function drawGraph_c(graphid, graph) {
     //Click node event
     function clicked(d) {
         drawsta();
-        text.text('Place: ' + d.location + "  |  Frequecy: " + d.count)
+        text.text('Place: ' + d.place + "  |  Frequecy: " + d.count)
         graphContainer.selectAll("circle").attr("stroke", "#fff")
         d3.select(this).attr("stroke", "#18569C")
     }
@@ -2971,30 +3000,26 @@ function drawGraph_c(graphid, graph) {
         graphRightPlusExist = true;
 
         //Calculate vertical layout
-        function LayoutScaler(subID, subC) {
-            let scaler = d3.scaleLinear()
-                .domain([-32, 32])
-                .range([0.6, subC + 0.4]);
-            return scaler.invert(subID);
-        }
         if (seq === 2) {
             linkRightplus[seq] = link.append("g")
-                .attr("class", "link")
+                
                 .attr("id", `seq${seq}`)
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == seq))
                 .enter().append("line")
+                .attr("class", "link")
                 .attr("x1", d => nodeRight.filter(n => n.target == d.source).attr("cx"))
                 .attr("y1", d => nodeRight.filter(n => n.target == d.source).attr("cy"))
                 .attr("x2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cx")) + 80)
                 .attr("y2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeRightplus[seq] = node.append("g")
-                .attr("class", "node")
+                
                 .attr("id", `seq${seq}`)
                 .selectAll("circle")
                 .data(graph.node.filter(d => d.sequence == seq))
                 .enter().append("circle")
+                .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
@@ -3002,14 +3027,18 @@ function drawGraph_c(graphid, graph) {
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mouseleave", NodeMouseLeave);
+            
+                linkRightplus[seq]
+                .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
         } else {
 
             linkRightplus[seq] = link.append("g")
-                .attr("class", "link")
+                
                 .attr("id", `seq${seq}`)
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == seq))
                 .enter().append("line")
+                .attr("class", "link")
                 .attr("x1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
                 .attr("y1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2")) + 80)
@@ -3017,11 +3046,11 @@ function drawGraph_c(graphid, graph) {
 
 
             nodeRightplus[seq] = node.append("g")
-                .attr("class", "node")
                 .attr("id", `seq${seq}`)
                 .selectAll("circle")
                 .data(graph.node.filter(d => d.sequence == seq))
                 .enter().append("circle")
+                .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
@@ -3072,30 +3101,25 @@ function drawGraph_c(graphid, graph) {
         graphLeftPlusExist = true;
 
         //Calculate vertical layout
-        function LayoutScaler(subID, subC) {
-            let scaler = d3.scaleLinear()
-                .domain([-32, 32])
-                .range([0.6, subC + 0.4]);
-            return scaler.invert(subID);
-        }
+
         if (seq == 2) {
             linkLeftplus[seq] = link.append("g")
-                .attr("class", "link")
                 .attr("id", `seq${-seq}`)
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == -seq))
                 .enter().append("line")
+                .attr("class", "link")
                 .attr("x1", d => nodeLeft.filter(n => n.target == d.source).attr("cx"))
                 .attr("y1", d => nodeLeft.filter(n => n.target == d.source).attr("cy"))
                 .attr("x2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cx")) - 80)
                 .attr("y2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
             
             nodeLeftplus[seq] = node.append("g")
-                .attr("class", "node")
                 .attr("id", `seq${-seq}`)
                 .selectAll("circle")
                 .data(graph.node.filter(d => d.sequence == -seq))
                 .enter().append("circle")
+                .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
@@ -3108,22 +3132,22 @@ function drawGraph_c(graphid, graph) {
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
         } else {
             linkLeftplus[seq] = link.append("g")
-                .attr("class", "link")
                 .attr("id", `seq${-seq}`)
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == -seq))
                 .enter().append("line")
+                .attr("class", "link")
                 .attr("x1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
                 .attr("y1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2")) - 80)
                 .attr("y2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeLeftplus[seq] = node.append("g")
-                .attr("class", "node")
                 .attr("id", `seq${-seq}`)
                 .selectAll("circle")
                 .data(graph.node.filter(d => d.sequence == -seq))
                 .enter().append("circle")
+                .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
@@ -3170,16 +3194,60 @@ function drawGraph_c(graphid, graph) {
         }
     }
 
-    function NodeMouseOver(d){
+    function LayoutScaler(subID, subC) {
+        let scaler = d3.scaleLinear()
+            .range([-30, 30])
+            .domain([0.4, subC+0.6]);
+        return scaler(subID);
+    }
 
-        console.log(d);
+    function NodeMouseOver(d){
+        node.selectAll("circle").filter(n => n.sequence !== 0).classed("not-this-route", true)
+        link.selectAll("line").classed("not-this-route", true)
+        link.selectAll("text").filter(".hide")
+                    .classed("hide",true)
+
+
+        d.route.forEach(function(r){
+            // console.log(r)
+                node.selectAll("circle").filter(".not-this-route")
+                    .classed("this-route", n => isInRoute(r, n.route))
+                node.selectAll("circle").filter(".this-route")
+                    .classed("not-this-route", !(n => isInRoute(r, n.route)))
+                link.selectAll("line").filter(".not-this-route")
+                    .classed("this-route", l => isInRoute(r, l.route))
+                link.selectAll("line").filter(".this-route")
+                    .classed("not-this-route", !(l => isInRoute(r, l.route)))
+
+                link.selectAll("text").filter(".text-hide")
+                    .classed("text-display", (l => isInRoute(r, l.route)))
+                // link.selectAll("text").each(l => console.log(l.route))
+                // link.selectAll("text").filter(".hide").each(console.log(l => isInRoute(r, l.route)))
+            })
+
+        node.selectAll("circle").filter(n => n.sequence === 0).classed("this-route", true)
+        // console.log(node.selectAll("circle").filter(".this-route"))
+        
+        function isInRoute(single, group){
+            
+            if (group.indexOf(single) !== -1) {
+                // console.log(single, group, true);
+                return true
+            } else {
+                // console.log(single, group, false);
+                return false
+            }
+        }
 
 
     }
 
     function NodeMouseLeave(d){
         node.selectAll("circle").classed("this-route", false);
+        node.selectAll("circle").classed("not-this-route", false);
         link.selectAll("line").classed("this-route", false);
+        link.selectAll("line").classed("not-this-route", false)
+        link.selectAll("text").classed("text-display", false)
 
     }
     //IF HAVE TIME TRY TO USE FORCE GRAPH

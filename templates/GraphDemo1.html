@@ -300,9 +300,16 @@
     }
 
     .after-controller,
-    .before-controller {
+    .before-controller
+     {
       text-anchor: middle;
       alignment-baseline: middle;
+    }
+
+    .link-text {
+      alignment-baseline: top;
+      text-anchor: middle;
+      fill:#393261;
     }
 
     .brush-menu {
@@ -562,14 +569,33 @@
 
 
 
-    .this-route{
-      stroke:#4F4688;
+    circle.this-route{
+      
       fill: #655AAF;
-      stroke-width: 2;
+
     }
 
-    .not-this-route{
+    line.this-route {
+      stroke:#4F4688;
+    }
+
+    circle.not-this-route{
+      fill: rgba(162, 178, 194, 0.75);
+    }
+
+    line.not-this-route{
       opacity: .3;
+    }
+
+    .text-hide{
+      display: none;
+      /* opacity:0; */
+    }
+
+    .text-display{
+      display: block;
+      
+      /* opacity:1; */
     }
 
   </style>
