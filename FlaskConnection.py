@@ -166,7 +166,9 @@ def queryNode_c(typeMCC, time):
     # print (len(routeGroup))
     nodeSelf = nodeSelf.drop_duplicates(["target"])
     nodeSelf["route"] = routeGroup
-    print(nodeSelf)
+    nodeSelf['atv'] = np.random.randint(5,100,size=(len(routeGroup)))
+    
+    # print(nodeSelf)
 
     #Link route
    

@@ -117,3 +117,11 @@ def queryNode_c(typeMCC, time):
 
 
 queryNode_c("Theatre", 3)
+
+def generateTimeSeries():
+    date_rng = pd.date_range(start='4/30/2020', end='5/1/2020', freq='5min')
+    # dfgb = df.groupby(['sequence','source']).count().reset_index().rename(columns = {'target': 'valueCount'}).drop(columns = ['count', 'id',"sequence","Unnamed: 0"])
+    df = pd.DataFrame(date_rng, columns=['date'])
+    df['total_transaction'] = np.random.randint(5000,10000,size=(len(date_rng)))
+    df['avg_transaction'] = np.random.randint(500,1000,size=(len(date_rng)))
+    df.to_csv("timeseries_day.csv")
