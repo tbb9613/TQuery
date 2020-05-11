@@ -1,6 +1,7 @@
 //axios.<method> will now provide autocomplete and parameter typings
 
 // define data
+var nodeList //top node list
 var nodeMap //nodemap data
 var subNodeMap
 
@@ -17,10 +18,13 @@ var isSelectMode = false;
 var drawDirectedLineMode = false;
 var drawUnDirectedLineMode = false;
 //define list to store node pairs
-
-// var dList = new Array(); // directed pair list
 var packList = new Array(); // [pack id, [[node id, node class], [node id, node class], ...]]
-var packLinkList = new Array(); // undirected pair list
+var packLinkList = new Array(); 
+
+var linkmapList = new Array();// linkmaplist
+var packLinkMap = new Array();
+var packNodes = new Array();
+// var udList = new Array();// undirected pair list
 var packCount = 1;
 
 var mainContainer = document.getElementById("mainContainer");
@@ -51,25 +55,19 @@ function getSize() {
 }
 
 var globalDragLayer = d3.select("#globalDrag")
-    .attr("x", 0)
-    .attr("y", 0)
+    .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
-    .attr("height", 0)
-    .attr("width", 0)
+    .attr("height", 0).attr("width", 0)
 
 var brushLayer = d3.select("#brushLayer")
-    .attr("x", 0)
-    .attr("y", 0)
+    .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
-    .attr("height", 0)
-    .attr("width", 0)
+    .attr("height", 0).attr("width", 0)
 
 var drawLayer = d3.select("#drawLayer")
-    .attr("x", 0)
-    .attr("y", 0)
+    .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
-    .attr("height", 0)
-    .attr("width", 0)
+    .attr("height", 0).attr("width", 0)
 
 //append arrow
 drawLayer.append("svg:defs").append("svg:marker")
@@ -104,7 +102,6 @@ topSpace.append("g")
     .attr("height", "100%");
 
 var workSpace = workContainer.append("svg")
-    // .append("g")
     .attr("id", "work")
     .attr("width", "100%")
     .attr("height", "100%");
@@ -157,7 +154,7 @@ var brush = d3.brush()
         [workSpaceWidth, workSpaceHeight]
     ])
 
-drawTopNodes(initialNodeList);
+// drawTopNodes(initialNodeList);
 getHeatmap();
 
 let isHeatmapActive = false;
@@ -272,7 +269,17 @@ document.getElementById("dataType").onchange = function (e) {
     }
 }
 
-
+function getNodeList(name) {
+    axios.post('http://127.0.0.1:5000/nodelist', {
+            name: name
+        })
+        .then(function (response) { // if success then update data
+            nodeList = response.data;
+            drawTopNodes(nodeList);
+        })
+    // return nodeList;
+}
+getNodeList("Restaurant");
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
@@ -355,12 +362,16 @@ function drawTimeSelector(data, timeScale, type) {
 
     //Brush
     function callFirstBrush() {
+
+        var isBrushInitialized
+
         const brushParent = d3.brushX()
             .extent([
                 [0, 0],
                 [selectorWidth, selectorHeight - 30]
             ])
-            .on("start brush end", brushmoved);
+            .on("start brush", brushmoved)
+            .on("end", brushend);
 
         let gBrushFirst = areachart.append("g")
             .attr("class", "brush-parent")
@@ -390,6 +401,8 @@ function drawTimeSelector(data, timeScale, type) {
 
         gBrushFirst.call(brushParent)
             .call(brushParent.move, [200, 300]);
+        
+        
         // console.log(handle);
 
         let lefttooltip = topContainer
@@ -422,7 +435,7 @@ function drawTimeSelector(data, timeScale, type) {
         
         areachart.select(".overlay").remove()
         
-        function brushmoved() {
+        function brushmoved() { 
             timeSelection = d3.event.selection;
             // const [x0, x1] = s.map(x.invert);
             if (timeSelection == null) {
@@ -432,6 +445,25 @@ function drawTimeSelector(data, timeScale, type) {
                 handle.attr("display", null).attr("transform", (d, i) => "translate(" + [timeSelection[i], -(selectorHeight - 30) / 4] + ")");
             }
         };
+
+        function brushend(){
+            if (graphExist===true  && secondGraphExist === false){
+                workSpace.selectAll("g").remove();
+                leftContainer.selectAll(".tooltip").remove();
+                graphLeftPlusExist = false;
+                graphRightPlusExist = false;
+
+                const [x0, x1] = d3.event.selection;
+                console.log(x0,x1)
+                var randomConverter = d3.scaleLinear()
+                    .range([1,10])
+                    .domain([0, selectorWidth])
+                    
+                createQuery(queryNode, Math.floor(randomConverter(x1)), "single");
+                console.log(randomConverter(x1));
+            }
+            
+        }
 
         function leftHandleOver() {
             let format = d3.timeFormat(timeFormat)
@@ -451,6 +483,8 @@ function drawTimeSelector(data, timeScale, type) {
                 .style("left", (d3.mouse(this)[0]) + "px")
                 .style("top", "20px")
         };
+
+
     }
     function callSecondBrush() {
         // let selectorWidth = 0.7 * workSpaceWidth;
@@ -599,19 +633,6 @@ function topNodeTab() {
 }
 topNodeTab();
 
-
-function getNodeList(name) {
-    axios.post('http://127.0.0.1:5000/nodelist', {
-            name: name
-        })
-        .then(function (response) { // if success then update data
-            let nodeList = response.data;
-            drawTopNodes(nodeList);
-        })
-
-    // return nodeList;
-}
-
 function clearToolState() {
     brushLayer.on(".brush", null);
     brushLayer.attr("width", 0)
@@ -625,7 +646,6 @@ function clearToolState() {
     isSelectMode = false;
     drawDirectedLineMode = false;
     drawUnDirectedLineMode = false;
-
 }
 
 function drawTopNodes(list) {
@@ -648,6 +668,7 @@ function drawTopNodes(list) {
         .attr("y", "50%");
 
 
+    //multinodes
     d3.select(".multi-nodes").on("click", function () {
         if (!isMultiMode) {
             console.log("multi-mode")
@@ -664,23 +685,31 @@ function drawTopNodes(list) {
             workContainer.append("button")
                 .classed("build-query-btn", true)
                 .html("Create Query")
-                .on("click", packedQuery)
+                .on("click", packedQuery);
+            d3.select("#multiNodeText").selectAll("p").remove();
+            d3.select("#multiNodeText").classed("hide", false);
         } else {
             clearToolState();
             isMultiMode = false;
             drawLayer.attr("height", 0).attr("width", 0);
             drawLayer.selectAll("circle").remove();
+            drawLayer.selectAll("rect").remove();
             drawLayer.selectAll("line").remove();
+            drawLayer.selectAll("path").remove();
             workSpace.selectAll("g").remove();
             workContainer.selectAll("button").remove();
             node.remove();
             drawTopNodes(nodeList);
             d3.select(this).classed("multi-nodes-active", false);
+            d3.select(".draw-undirected-line").on("click", null);
+            d3.select(".draw-directed-line").on("click", null);
             //reset array
-            // udList.length = 0
-            // dList.length = 0
-            packList.length = 0
+            packList.length = 0;
+            linkmapList.length = 0;
+            packLinkMap.length = 0;
             packCount = 1;
+            d3.select("#multiNodeText").selectAll("p").remove();
+            d3.select("#multiNodeText").classed("hide", true);
         }
     })
 
@@ -709,41 +738,81 @@ function drawTopNodes(list) {
     // getHeatmap()
 
     //Data exchange
-    function createQuery(d) {
-        // postQuery(d, 4);
-        postQuery(d, 4);
-        postSubQuery(7);
-        // console.log(postQuery(d, 4));
-        topSpace.selectAll(".topnodes").remove();
-        drawTopNodes(nodeList)
-        setTimeout(() => {
-            // drawGraph("graph-first", nodeMap);
-            console.log(nodeMap_c);
-            drawGraph("graph-first", nodeMap_c);
-            secondGraphExist = false;
-        }, 200);
-    }
-
     function packedQuery() {
+        // console.log(nodeList);
+        // console.log(linkmapList);
+        console.log(packList);
+        console.log(packLinkMap);
+        console.log(packNodes);
+
+        if(packLinkMap.length < 2){
+            //draw node map
+            const width = 300, height = 200;
+            var svg = d3.select("#multiNodePreview").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            var simulation = d3.forceSimulation()
+                .force("link", d3.forceLink().id(function(d) { return d.id; }))
+                .force("charge", d3.forceManyBody())
+                .force("center", d3.forceCenter(width / 2, height / 2));
+            var link = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(packLinkMap[0])
+                .enter().append("line");
+        
+            var node = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("circle")
+                .data(packNodes)
+                .enter().append("circle")
+                .attr("r", 2.5);
+
+            simulation
+                .nodes(packNodes)
+                .on("tick", ticked);
+          
+            simulation.force("link")
+                .links(packLinkMap[0]);
+
+            function ticked() {
+                link
+                    .attr("x1", function(d) { return d.source.x; })
+                    .attr("y1", function(d) { return d.source.y; })
+                    .attr("x2", function(d) { return d.target.x; })
+                    .attr("y2", function(d) { return d.target.y; });
+            
+                node
+                    .attr("cx", function(d) { return d.x; })
+                    .attr("cy", function(d) { return d.y; });
+                }
+        } else {
+            //draw pack
+
+        }
+
+        // packList.length = 0;
+        // linkmapList.length = 0;
+        // packLinkMap.length = 0;
+        // pack
         clearToolState();
         isMultiMode = false;
         drawLayer.attr("height", 0).attr("width", 0);
         drawLayer.selectAll("circle").remove();
+        drawLayer.selectAll("rect").remove();
         drawLayer.selectAll("line").remove();
-        workSpace.selectAll("g").remove();
+        drawLayer.selectAll("path").remove();
         workContainer.selectAll("button").remove();
         node.remove();
         drawTopNodes(nodeList);
         d3.select(this).classed("multi-nodes-active", false);
         //reset array
         packCount = 1;
-        drawLayer.selectAll("rect").each(
-            function (d) {
-                packLinkList.push([d, d3.select(this).attr("class").replace(" con-rect", "")]);
-            }
-        )
-        console.log(packLinkList);
-        createQuery("Theatre");
+
+        createQuery("Theatre", 4, "packed");
+        d3.select("#multiNodeText").selectAll("p").remove();
+        d3.select("#multiNodeText").classed("hide", true);
     }
     //drag top nodes
     function dragstarted(d) {
@@ -810,11 +879,11 @@ function drawTopNodes(list) {
                 nodeList = nodeList.filter((d, i) => d !== thisNode) // filter this node id, remove from top nodes
                 console.log(nodeList)
                 if (graphExist == false) {
-                    createQuery(d);
+                    createQuery(d, 4, "single");
                 } else {
                     workSpace.selectAll("g").remove();
                     leftContainer.selectAll(".tooltip").remove();
-                    createQuery(d);
+                    createQuery(d, 4, "single");
                     graphLeftPlusExist = false;
                     graphRightPlusExist = false;
                 }
@@ -945,9 +1014,6 @@ function drawTopNodes(list) {
 
         function mouseup() {
             drawLayer.on("mousemove", null)
-
-            console.log(drawLayer.selectAll(".con-rect"));
-            // console.log(drawLayer.select("rect").attr("x"))
             if (drawLayer.selectAll(".con-rect").size() > 1) {
                 drawLayer.selectAll(".con-rect")
                     .classed(`ud-con-from-${lineCount}`, function (d) {
@@ -973,7 +1039,6 @@ function drawTopNodes(list) {
                         )
                     });
             }
-
 
             if ((document.getElementsByClassName(`ud-con-from-${lineCount}`).length != 0) &&
                 (document.getElementsByClassName(`ud-con-to-${lineCount}`).length != 0)) {
@@ -1020,10 +1085,21 @@ function drawTopNodes(list) {
                         .attr("stroke", "#999")
                     // .attr("stroke-width", 1.5)
 
-
                     let fromNode = drawLayer.select(`.ud-from-${lineCount}`).datum();
                     let toNode = drawLayer.select(`.ud-to-${lineCount}`).datum();
-                    console.log([fromNode, toNode]);
+                    
+                    console.log(`${fromNode} to ${toNode}`);
+                    d3.select("#multiNodeText").append("p")
+                        .lower()
+                        .html(`${fromNode} to ${toNode}  OR  ${toNode} to ${fromNode}`)
+                    linkmapList.push(
+                        {
+                            "source": fromNode,
+                            "target": toNode,
+                            "type": "undirected"
+                        }
+                    )
+                    console.log(linkmapList);
                     lineCount += 1;
                     line.lower();
                 } else {
@@ -1043,7 +1119,6 @@ function drawTopNodes(list) {
         }
 
         function isInLogicContainer(lineX, lineY, boxX, boxY, boxWitdth, boxHeight) {
-            console.log(lineX, lineY, boxX, boxY, boxWitdth, boxHeight)
             return lineX > boxX && lineY > boxY && lineX < (boxX + boxWitdth) && lineY < (boxY + boxHeight)
         }
     }
@@ -1187,17 +1262,28 @@ function drawTopNodes(list) {
                         .attr("marker-mid", "url(#triangleArrow)")
                         .lower()
                         .transition().duration(100)
-                        .attr("stroke", "#999")
-                    // .attr("stroke-width", 1.5)
+                        .attr("stroke", "#999");
+                    let fromNode = drawLayer.select(`.d-from-${lineCount}`).datum();
+                    let toNode = drawLayer.select(`.d-to-${lineCount}`).datum();
+                    d3.select("#multiNodeText").append("p")
+                        .lower()
+                        .html(`${fromNode} to ${toNode}`)
+                    //push to linkmaplist for drawing
+                    linkmapList.push(
+                        {
+                            "source": fromNode,
+                            "target": toNode,
+                            "type": "directed"
+                        }
+                    )
+                    console.log(linkmapList);
                     lineCount += 1;
-                    // line.lower();
                 } else {
                     drawLayer.selectAll("circle")
                         .classed(`d-from-${lineCount}`, false)
                         .classed(`d-to-${lineCount}`, false);
                     line.remove();
                 }
-
             }
         }
 
@@ -1259,7 +1345,6 @@ function drawTopNodes(list) {
                 let menuPack = menuContainer
                     .append("button")
                     .attr("class", "brush-menu")
-                    // .append("span")
                     .html("PACK")
 
                 // let selectedNodes = d3.selectAll(".selected")
@@ -1277,45 +1362,49 @@ function drawTopNodes(list) {
                 var yPos = d3.min(yPosList) - rectPadding - (topNodeRadius + 5);
                 var rectWidth = d3.max(xPosList) - d3.min(xPosList) + 2 * (rectPadding + (topNodeRadius + 5));
                 var rectHeight = d3.max(yPosList) - d3.min(yPosList) + 2 * (rectPadding + (topNodeRadius + 5));
-
-                menuPack.on("click", function () {
-                    console.log(selectedNodes.data());
-                    // console.log(selectedNodes.data().length);
-                    if (selectedNodes.size() > 1) {
-                        // console.log(lineList);
-                        // let xPos = d3.min(xPosList)
-
-                        let conContainer = drawLayer
-                            .append("rect")
-                            .attr("class", "con-rect")
-                            .attr("x", xPos).attr("y", yPos)
-                            .attr("height", rectHeight)
-                            .attr("width", rectWidth)
-                            .attr("stroke", "#393261")
-                            .datum(packCount)
-
-                        conContainer
-                            .lower()
-                            .transition().delay(150).duration(200)
-                            .attr("stroke", "#855B9C");
-
-                        drawLayer.selectAll(".selected")
-                            .transition().duration(300)
-                            .attr("fill", "#5F5985");
-                        packList.push([packCount, lineList]);
-                        console.log(packList);
-                        packCount += 1;
-                        clearBrushLayer();
-                    } else {
-                        clearBrushLayer();
-                    }
-
-
-                })
+                menuPack.on("click", packClick);
             } else {
                 console.log("not enough nodes")
                 // brushLayer.call(brush.clear);
                 // drawLayer.selectAll("circle").classed("selected", false);
+            }
+
+            function packClick(){
+                console.log(selectedNodes.data());
+                // console.log(selectedNodes.data().length);
+                if (selectedNodes.size() > 1) {
+                    console.log("packclick");
+                    let conContainer = drawLayer
+                        .append("rect")
+                        .attr("class", "con-rect")
+                        .attr("x", xPos).attr("y", yPos)
+                        .attr("height", rectHeight)
+                        .attr("width", rectWidth)
+                        .attr("stroke", "#393261")
+                        .datum(packCount);
+                    conContainer
+                        .lower()
+                        .transition().delay(150).duration(200)
+                        .attr("stroke", "#855B9C");
+                    drawLayer.selectAll(".selected")
+                        .transition().duration(300)
+                        .attr("fill", "#5F5985");
+                    packList.push([packCount, lineList]);
+                    // console.log(packList);
+                    packLinkMap.push(linkmapList);
+                    selectedNodes.data().forEach(d => packNodes.push({"id":d}))
+                    
+                    // console.log(packNodes);
+                    // linkmapList.length = 0;
+                    d3.select("#multiNodeText").append("p")
+                        .lower()
+                        .html(`PACK${packCount}: ${selectedNodes.data()}`)
+                    packCount += 1;
+                    clearBrushLayer();
+                } else {
+                    clearBrushLayer();
+                }
+                }
             }
 
             function clearBrushLayer() {
@@ -1334,37 +1423,42 @@ function drawTopNodes(list) {
                 clearToolState();
                 selectModeButton.classed("tool-active", true);
                 isSelectMode = true;
-                // graphBg.on(".zoom", null);
                 brushLayer.attr("width", "100%")
                     .attr("height", "100%")
-                // .attr("y", "30%")
                 brush(brushLayer);
                 console.log("select-multi!")
             } else {
+                clearToolState();
                 selectModeButton.classed("tool-active", false);
                 isSelectMode = false;
                 brushLayer.on(".brush", null);
                 brushLayer.attr("width", 0)
                     .attr("height", 0)
-                // .attr("y", 0)
-                // graphBg.call(zoom).on("dblclick.zoom", null);
+                
             }
         }
-    }
-
 };
 
-
-function postSubQuery(t) {
-    axios.post('http://127.0.0.1:5000/receivedatac', {
-            name: queryNode,
-            time: t
-        })
-        .then(function (response) { // if success then update data
-            subNodeMap = response.data;
-        })
-    titletext.text("Routes of people who go to " + queryNode);
-
+function createQuery(d, timePoint, type) {
+    // postQuery(d, 4);
+    console.log(d)
+    postQuery(d, timePoint);
+    postSubQuery(timePoint+3);
+    // console.log(postQuery(d, 4));
+    topSpace.selectAll(".topnodes").remove();
+    drawTopNodes(nodeList)
+    setTimeout(() => {
+        // drawGraph("graph-first", nodeMap);
+        console.log(nodeMap_c);
+        drawGraph("graph-first", nodeMap_c, type);
+        secondGraphExist = false;
+    }, 200);
+    if (type === "single"){
+        titletext.text("Routes of people who go to " + queryNode);
+    } else {
+        titletext.text("Packed Query");
+    }
+    
 }
 
 function postQuery(d, t) {
@@ -1379,6 +1473,19 @@ function postQuery(d, t) {
             console.log(nodeMap_c)
         })
 }
+
+function postSubQuery(t) {
+    axios.post('http://127.0.0.1:5000/receivedatac', {
+            name: queryNode,
+            time: t
+        })
+        .then(function (response) { // if success then update data
+            subNodeMap = response.data;
+        })
+
+}
+
+
 // drawLine("directed");
 
 function getHeatmap() {
@@ -1494,10 +1601,7 @@ function drawHeatmap(d) {
 // drawGraph();
 
 
-
-
-
-function drawGraph(graphid, graph) {
+function drawGraph(graphid, graph, type) {
 
     let graphRightPlusExist = false;
     let graphLeftPlusExist = false;
@@ -1658,8 +1762,7 @@ function drawGraph(graphid, graph) {
                 d3.select("#C").classed("sta-button-active", true);
             }
         }
-
-        console.log("scroll!", sTop);
+        // console.log("scroll!", sTop);
     }
     //brush - select
 
@@ -1880,6 +1983,17 @@ function drawGraph(graphid, graph) {
         .on("mouseover", NodeMouseOver)
         .on("mouseleave", NodeMouseLeave);
 
+    let nodeTxtOffset = 27
+
+    let textRight = node.append("g")
+        .selectAll("text")
+        .data(graph.node.filter(d => d.sequence == 1))
+        .enter().append("text")
+        .attr("class", "node-text")
+        .attr("x", d => linkRight.filter(l => l.target == d.target).attr("x2"))
+        .attr("y", d => parseFloat(linkRight.filter(l => l.target == d.target).attr("y2"))+nodeTxtOffset)
+        .text(d => d.place.slice(0, 3))
+
     let nodeLeft = node.append("g")
         .selectAll("circle")
         .data(graph.node.filter(d => d.sequence == -1))
@@ -1892,8 +2006,18 @@ function drawGraph(graphid, graph) {
         .on("click", clicked)
         .on("mouseover", NodeMouseOver)
         .on("mouseleave", NodeMouseLeave);
+    
+    let textLeft = node.append("g")
+        .selectAll("text")
+        .data(graph.node.filter(d => d.sequence == -1))
+        .enter().append("text")
+        .attr("class", "node-text")
+        .attr("x", d => linkLeft.filter(l => l.target == d.target).attr("x2"))
+        .attr("y", d => parseFloat(linkLeft.filter(l => l.target == d.target).attr("y2"))+nodeTxtOffset)
+        .text(d => d.place.slice(0, 3))
 
-    let centernode = node.append("g")
+    if(type === "single"){
+        let centernode = node.append("g")
         .attr("id", "queryNode")
         .selectAll("circle")
         .data(graph.node.filter(d => d.sequence == 0))
@@ -1903,6 +2027,49 @@ function drawGraph(graphid, graph) {
         .attr("cx", d => graphCenter[0] + d.sequence * 100)
         .attr("cy", graphCenter[1])
         .on("click", clicked);
+    
+        let textCenter = node.append("g")
+            .selectAll("text")
+            .data(graph.node.filter(d => d.sequence == 0))
+            .enter().append("text")
+            .attr("class", "node-text")
+            .attr("x", d => graphCenter[0] + d.sequence * 100)
+            .attr("y", graphCenter[1]+nodeTxtOffset+15)
+            .text(d => d.place.slice(0, 3))
+            .style("font-size", "14px")
+    } else {
+        let centernode = node.append("g")
+            .attr("id", "queryNode")
+            .selectAll("circle")
+            .data(graph.node.filter(d => d.sequence == 0))
+            .enter().append("circle")
+            .attr("class", "node-multi-center")
+            .attr("r", 30)
+            .attr("cx", d => graphCenter[0] + d.sequence * 100)
+            .attr("cy", graphCenter[1])
+            .on("click", clicked);
+    
+        let textCenter = node.append("g")
+            .selectAll("text")
+            // .data(graph.node.filter(d => d.sequence == 0))
+            // .enter().append("text")
+            .attr("class", "node-text")
+            .attr("x", d => graphCenter[0] + d.sequence * 100)
+            .attr("y", graphCenter[1]+nodeTxtOffset+15)
+            .text("pack")
+            .style("font-size", "14px")
+        centernode.on("mouseover", packedMouseOver)
+            .on("mouseleave", packedMouseLeave);
+        function packedMouseOver(){
+            console.log(packList);
+        }
+
+        function packedMouseLeave(){
+
+        }
+
+    }
+    
 
     let linkRightplus = new Array();
     let nodeRightplus = new Array();
@@ -1916,12 +2083,14 @@ function drawGraph(graphid, graph) {
         d.x = d3.event.x, d.y = d3.event.y;
         d3.select(this).attr("stroke", "#18569C");
         d3.select(this).attr("cx", d.x).attr("cy", d.y);
+        node.selectAll("text").filter(t => t.target === d.target)
+            .attr("x", d.x).attr("y", d.y+nodeTxtOffset);
         // console.log(d.data.sequence);
         linkRight.filter(
             l => l.source == d.target
         ).attr("x1", d.x).attr("y1", d.y);
         linkRight.filter(
-            l => l.target == drawDirectedLineMode.target
+            l => l.target == d.target
         ).attr("x2", d.x).attr("y2", d.y);
         linkLeft.filter(
             l => l.source == d.target
@@ -1929,6 +2098,13 @@ function drawGraph(graphid, graph) {
         linkLeft.filter(
             l => l.target == d.target
         ).attr("x2", d.x).attr("y2", d.y);
+        link.selectAll("text").filter(t => t.target === d.target)
+        .attr("x", t => 0.5 * (
+            parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+            parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+        .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+            parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+            parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
 
         if (graphRightPlusExist) {
             linkRightplus[2].filter(
@@ -1947,12 +2123,18 @@ function drawGraph(graphid, graph) {
         text.text('Place: ' + d.place)
     }
     //Click node event
+
     function clicked(d) {
+        console.log("clicked");
         drawsta();
-        text.text('Place: ' + d.place )
-        // graphContainer.selectAll("circle").attr("stroke", "#fff")
+        text.text('Place: ' + d.place)
         graphContainer.selectAll("circle").classed("clicked", false);
-            d3.select(this).classed("clicked", true)
+        d3.select(this).classed("clicked", true);
+        node.selectAll("text").classed("clicked",false);
+        node.selectAll("text").filter(t => t.sequence < -1 || t.sequence > 1).classed("text-hide",true);
+        node.selectAll("text").filter(t => t.target === d.target)
+            .attr("class", "text-hide node-text clicked")
+            .classed("text-hide", false)
     }
 
     //Add steps control
@@ -2050,7 +2232,6 @@ function drawGraph(graphid, graph) {
                 .attr("y2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeRightplus[seq] = node.append("g")
-
                 .attr("id", `seq${seq}`)
                 .selectAll("circle")
                 .data(graph.node.filter(d => d.sequence == seq))
@@ -2097,7 +2278,9 @@ function drawGraph(graphid, graph) {
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
         }
+        // add link text
         link.append("g")
+            .attr("id", `seq${seq}`)
             .selectAll("text")
             .data(graph.link.filter(d => d.sequence == seq)).enter()
             .append("text")
@@ -2110,35 +2293,59 @@ function drawGraph(graphid, graph) {
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
             .text(d => d.count * 10)
             .classed("text-hide", true)
+        //add node text
+        node.append("g")
+            .attr("id", `seq${seq}`)
+            .selectAll("text")
+            .data(graph.node.filter(d => d.sequence == seq))
+            .enter().append("text")
+            .attr("class", "node-text")
+            .attr("x", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
+            .attr("y", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))+nodeTxtOffset*0.6)
+            .text(d => d.place.slice(0, 3))
+            .classed("text-hide", true)
 
         function dragged(d) {
             graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
             d.x = d3.event.x, d.y = d3.event.y;
+            // let originX = d3.select
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            node.selectAll("text").filter(t => t.target === d.target)
+                .attr("x", d.x).attr("y", d.y+nodeTxtOffset*0.6);
             linkRightplus[seq].filter(
                 l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
             linkRightplus[seq].filter(
                 l => l.target == d.target
             ).attr("x2", d.x).attr("y2", d.y);
+            link.selectAll("text").filter(t => t.target === d.target)
+                .attr("x", t => 0.5 * (
+                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             if (linkRightplus[seq + 1] != undefined) {
                 linkRightplus[seq + 1].filter(
                     l => l.source == d.target
                 ).attr("x1", d.x).attr("y1", d.y);
+                link.selectAll("text").filter(t => t.source === d.target)
+                    .attr("x", t => 0.5 * (
+                        parseFloat(linkRightplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                        parseFloat(linkRightplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+                    .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                        parseFloat(linkRightplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                        parseFloat(linkRightplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             }
+            //Reset text pos
+            
             drawsta();
 
-            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
+            text.text('Place: ' + d.place)
         }
 
-        function clicked(d) {
-            console.log("clicked");
-            drawsta();
-            text.text('Place: ' + d.target.slice(1) + "  |  Frequecy: " + d.count)
-            graphContainer.selectAll("circle").classed("clicked", false);
-            d3.select(this).classed("clicked", true)
-        }
+
 
 
     }
@@ -2206,8 +2413,9 @@ function drawGraph(graphid, graph) {
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
         }
-
+        //add text
         link.append("g")
+            .attr("id", `seq${-seq}`)
             .selectAll("text")
             .data(graph.link.filter(d => d.sequence == -seq)).enter()
             .append("text")
@@ -2221,12 +2429,26 @@ function drawGraph(graphid, graph) {
             .text(d => d.count * 10)
             .classed("text-hide", true)
 
+        node.append("g")
+            .attr("id", `seq${-seq}`)
+            .selectAll("text")
+            .data(graph.node.filter(d => d.sequence == -seq))
+            .enter().append("text")
+            .attr("class", "node-text")
+            .attr("x", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
+            .attr("y", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))+nodeTxtOffset*0.6)
+            .text(d => d.place.slice(0, 3))
+            .classed("text-hide", true)
+        
+
         function dragged(d) {
             // console.log(d);
             graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            node.selectAll("text").filter(t => t.target === d.target)
+                .attr("x", d.x).attr("y", d.y+nodeTxtOffset*0.6);
             // console.log(link.selectAll(`seq${seq}`), linkRightplus[seq])
             linkLeftplus[seq].filter(
                 l => l.source == d.target
@@ -2234,24 +2456,29 @@ function drawGraph(graphid, graph) {
             linkLeftplus[seq].filter(
                 l => l.target == d.target
             ).attr("x2", d.x).attr("y2", d.y);
+            link.selectAll("text").filter(t => t.target === d.target)
+                .attr("x", t => 0.5 * (
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             if (seq < lseq && linkLeftplus[seq + 1] != undefined) {
                 linkLeftplus[seq + 1].filter(
                     l => l.source == d.target
                 ).attr("x1", d.x).attr("y1", d.y);
+                link.selectAll("text").filter(t => t.source === d.target)
+                .attr("x", t => 0.5 * (
+                    parseFloat(linkLeftplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                    parseFloat(linkLeftplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                    parseFloat(linkLeftplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                    parseFloat(linkLeftplus[seq+1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             }
 
             drawsta();
 
             text.text('Place: ' + d.place)
-        }
-
-        function clicked(d) {
-            console.log("clicked");
-            d3.selectAll(".samplePie").remove();
-            drawsta();
-            text.text('Place: ' + d.place)
-            graphContainer.selectAll("circle").classed("clicked", false);
-            d3.select(this).classed("clicked", true)
         }
     }
 
@@ -2556,7 +2783,5 @@ function drawGraph(graphid, graph) {
             // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
             drawsamplebar(id);
         }
-
     }
-    // });
 }

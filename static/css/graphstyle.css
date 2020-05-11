@@ -1,0 +1,631 @@
+
+html,
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  /* display: inline; */
+}
+
+body {
+  overflow: hidden;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -khtml-user-select: none;
+  user-select: none;
+}
+
+button {
+  outline: none;
+}
+
+#mainContainer {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+
+  /* position: relative; */
+}
+
+#leftContainer {
+  width: 70%;
+  height: 100%;
+  padding: 0;
+  float: left;
+}
+
+#rightContainer {
+  width: 30%;
+  height: 100%;
+  padding: 0;
+  float: left;
+  background-color: slategray;
+}
+
+#topContainer {
+  width: 100%;
+  height: 30%;
+}
+
+#workContainer {
+  width: 100%;
+  height: 70%;
+
+}
+
+#mapContainer {
+  height: 30%;
+  width: 100%;
+  /* display: inline; */
+}
+
+#staContainer {
+  height: 70%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: visible;
+  /* display: inline; */
+}
+
+.node {
+  stroke: #fff;
+  stroke-width: 2px;
+  fill: rgb(145, 163, 182);
+}
+
+.link {
+  stroke: #999;
+}
+
+.stacard {
+  background-color: #999;
+}
+
+.tooltip {
+  position: absolute;
+  text-align: center;
+  padding: .5rem;
+  background: #FFFFFF;
+  color: #313639;
+  border: 1px solid #313639;
+  border-radius: 2px;
+  pointer-events: none;
+  /* font-size: 1rem; */
+  font-size: 14px;
+  z-index: 2;
+}
+
+.tooltip-handle {
+  position: absolute;
+  text-align: center;
+  font-size: 12px;
+  color: #fff;
+  background-color: #0C0537;
+  padding: 5px;
+}
+
+.tooltip-handle-child {
+  position: absolute;
+  text-align: center;
+  font-size: 12px;
+  color: #fff;
+  background-color: #854911;
+  padding: 5px;
+}
+
+.hide {
+  display: none !important;
+}
+
+.disable-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+
+
+.icon {
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+}
+
+.heatmap-button {
+  position: absolute;
+  bottom: 5%;
+  right: 35%;
+  padding: 5px;
+
+  opacity: 0.7;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  /* transition: background-color .3s; */
+}
+
+.heatmap-button:hover {
+  opacity: 1;
+  transition: ease-in-out .2s;
+  /* background-color: white; */
+}
+
+.heatmap-button-active {
+  opacity: .8;
+  /* background-color: #CCC; */
+  /* background-color: #999; */
+}
+
+.heatmap-container {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  bottom: 5%;
+  right: 35%;
+  transition: .3s;
+  /* transition: all 0.3s; */
+}
+
+.heatmap-container-active {
+  background-color: #1E1841;
+  position: absolute;
+  /* padding: 2%; */
+  margin: 0;
+  width: 40%;
+  height: 60%;
+  opacity: 1;
+}
+
+
+.heatmap-axis line {
+  stroke: white;
+}
+
+.heatmap-axis path {
+  stroke: none;
+}
+
+.heatmap-axis text {
+  fill: white;
+  font-size: 13px;
+}
+
+.timeselector-axis path {
+  stroke: none;
+}
+
+.timeselector-axis line {
+  stroke: #999;
+}
+
+.timeselector-axis text {
+  fill: #484848;
+}
+
+.handle-custom {
+  cursor: ew-resize;
+}
+
+#staTab {
+  position: fixed;
+  right: 30%;
+  top: 30%;
+  width: 2.5%;
+  height: 6%;
+  background-color: #fff;
+  margin: 0;
+  align-items: center;
+}
+
+.sta-button {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: #CCC;
+  font-size: 1em;
+  color: white;
+}
+
+.sta-button-active {
+  background-color: slategray;
+}
+
+.add-graph {
+  position: absolute;
+  top: 31%;
+  right: 38%;
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  background-color: gray;
+  display: inline-block;
+  /* transition: ease-in-out .3s; */
+}
+
+.add-graph:hover {
+  background-color: darkgrey;
+  box-shadow: aliceblue;
+}
+
+#step-before {
+  position: absolute;
+  top: 37%;
+  left: 10%;
+}
+
+#step-after {
+  position: absolute;
+  top: 37%;
+  left: 50%;
+}
+
+button,
+.after-controller,
+.before-controller,
+.brush-menu {
+  cursor: pointer;
+}
+
+.topnodes {
+  cursor: grab;
+  fill: #393261;
+}
+
+.dragging-node {
+  cursor: grabbing;
+}
+
+.after-controller,
+.before-controller
+ {
+  text-anchor: middle;
+  alignment-baseline: middle;
+}
+
+.link-text {
+  alignment-baseline: middle;
+  text-anchor: middle;
+  fill:#393261;
+}
+
+.node-text {
+  alignment-baseline: middle;
+  text-anchor: middle;
+  fill: slategray;
+  cursor: default;
+  font-size: 11px;
+}
+
+.brush-menu {
+  /* position: absolute; */
+  z-index: 2;
+  background-color: rgb(104, 104, 104);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  padding: 10px;
+  display: block;
+}
+
+.brush-menu:active {
+  background-color: #0C0537;
+}
+
+
+#topNodesTab {
+  position: absolute;
+  top: 12%;
+  width: 50%;
+  height: 40px;
+  left: 35px;
+  /* background-color: #0C0537; */
+}
+
+.toptab {
+  height: 100%;
+  outline: none;
+  width: 10%;
+  margin: 0;
+  padding-bottom: 3px;
+  float: left;
+  color: #444444;
+  background-color: transparent;
+  border: #CCC 0.5px solid;
+  /* border-radius: 5px; */
+  font-size: 13px;
+}
+
+.toptab-custom {
+  padding: 0;
+  height: 40px;
+  outline: none;
+  width: 40px;
+  padding: 10px;
+  border: #CCC .5px solid;
+  background-color: transparent;
+}
+
+.toptab-custom:hover {
+  background-color: #fff;
+}
+
+
+.toptab-custom svg {
+  height: 100%;
+  width: 100%;
+}
+
+.toptab:hover {
+  background-color: white;
+  color: #3C2E93;
+}
+
+.toptab-active {
+  background-color: white;
+  /* background-opacity: .1; */
+  border: #4F4688 0.1px solid;
+  color: #0C0537;
+  padding: 0;
+  border-bottom: #4F4688 4px solid;
+  font-weight: 600;
+}
+
+.toptab-active:hover {
+  background-color: white;
+  color: #0C0537;
+}
+
+.noclick {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  opacity: .3;
+  z-index: 1001;
+}
+
+.nodelist-edit-container {
+  top: 15%;
+  left: 20%;
+  background-color: white;
+  position: absolute;
+  /* padding: 2%; */
+  margin: 0;
+  width: 30%;
+  max-height: 60%;
+  opacity: 1;
+  z-index: 1002;
+  box-shadow: 0px 0px 15px #666666;
+  border-radius: 3px;
+  padding: 2.5%;
+  overflow: auto;
+}
+
+.nodelist-input {
+  margin-top: 1%;
+  padding: 0 2.5%;
+  width: 95%;
+  height: 40px;
+  border-radius: 5px;
+  border: #CCC 1px solid;
+  font-size: 20px;
+}
+
+.nodelist-table {
+  width: 100%;
+  font-size: 14px;
+}
+
+.nodelist-table thead {
+  background-color: #3C2E93;
+  color: #fff;
+  /* border: none; */
+}
+
+.add-node-list {
+  margin: 20px 0;
+  /* background-color: #eeeeee; */
+  border: #CCC 1px solid;
+  color: #3C2E93;
+}
+
+/* .add-node-list:hover {
+  margin: 20px 0;
+  background-color: #3C2E93;
+  color: white;
+} */
+
+
+
+
+.nodelist-edit {
+  display: inline-block;
+  width: 100%;
+  color: #444444;
+  font-size: 14px;
+}
+
+.button-close {
+  float: right;
+  border: none;
+  background-color: transparent;
+}
+
+
+#toolsContainer {
+  position: absolute;
+  left:60%;
+  top:20%;
+  width: 8%;
+  padding: 0;
+}
+
+.multi-nodes, .draw-undirected-line, .draw-directed-line, .select-mode{
+  outline: none;
+  /* background-color: #0C0537; */
+  background-color: gray;
+  color: #fff;
+  border: none;
+  margin-bottom: 3%;
+  padding: 2%;
+}
+
+.multi-nodes {
+  width: 97%;
+}
+
+
+.draw-undirected-line, .draw-directed-line {
+  width: 30%;
+}
+
+.multi-nodes-active, .tool-active {
+  background-color: #4F4688;
+}
+
+.select-mode {
+  width: 30%;
+}
+
+
+.select-mode-active {
+  background-color: #4F4688;
+}
+
+.selected {
+  fill: #999 !important;
+  stroke: black !important;
+}
+
+.node-multi {
+  cursor:default;
+}
+
+.con-rect{
+  /* stroke: #393261; */
+  stroke-width: 3;
+  /* fill: transparent; */
+  fill:white;
+}
+
+.build-query-btn {
+  position: absolute;
+  left: 31%;
+  top: 90%;
+  width: 8%;
+  height: 6%;
+  outline: none;
+  border: none;
+  background-color: #4F4688;
+  color: white;
+}
+
+.build-query-btn:active{
+  background-color: #655AAF;
+}
+
+#multiNodeText {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  width: 65%;
+  height: 45px;
+  background-color: #272245;
+  color: white;
+  overflow-y: auto;
+  padding-left: 5%;
+}
+
+#multiNodePreview {
+  position: absolute;
+  height: 200px;
+  width: 300px;
+  background-color: #444444;
+
+}
+
+.node-multi-center {
+    fill: rgb(200, 214, 230);
+    stroke:white;
+}
+
+
+#timeSelectorDropdown {
+  position: absolute;
+  left: 54%;
+  top: 2%;
+  width: 10%;
+}
+
+#calendar {
+  margin-top: 5px;
+  width: 80%;
+  border-radius: 2px;
+  font-size: 14px;
+  height: 24px;
+  color:#666666;
+
+}
+
+.mdui-select{
+  font-size: 14px;
+  padding-bottom: 0;
+  height: 24px;
+}
+
+circle.this-route{
+  fill: #655AAF;
+}
+
+line.this-route {
+  stroke:#4F4688;
+}
+
+circle.not-this-route{
+  fill: rgba(162, 178, 194, 0.75);
+}
+
+line.not-this-route{
+  opacity: .3;
+}
+
+text.this-route{
+  display: block;
+}
+
+circle.clicked{
+  /* fill: white !important; */
+  /* stroke: #0093FF !important; */
+  stroke-width: 2.5 !important;
+  animation: circle-clicked-animation 3s linear infinite;
+}
+
+text.clicked {
+  fill: #FB644C;
+}
+
+@keyframes circle-clicked-animation {
+  0% {stroke: #FB644C;}
+  50% {stroke: rgba(251, 149, 76, 0.555);}
+  100% {stroke: #FB644C;}
+}
+
+.text-hide{
+  display: none;
+  /* opacity:0; */
+}
+
+.text-display{
+  display: block;
+}
