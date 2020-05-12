@@ -548,17 +548,20 @@ button,
 }
 
 #multiNodePreview {
-  position: absolute;
-  height: 200px;
-  width: 300px;
-  background-color: #444444;
-
+  fill: transparent;
+  /* position: absolute; */
 }
 
-.node-multi-center {
-    fill: rgb(200, 214, 230);
+
+.node-multi-center, .center-node {
+    fill: slategray;
     stroke:white;
 }
+
+.node-multi-pre-link {
+  stroke: white;
+}
+
 
 
 #timeSelectorDropdown {
@@ -605,8 +608,6 @@ text.this-route{
 }
 
 circle.clicked{
-  /* fill: white !important; */
-  /* stroke: #0093FF !important; */
   stroke-width: 2.5 !important;
   animation: circle-clicked-animation 3s linear infinite;
 }
@@ -628,4 +629,11 @@ text.clicked {
 
 .text-display{
   display: block;
+}
+
+.recenter-text {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  font-size: 12px;
+  fill: #276EAD;
 }
