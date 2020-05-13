@@ -2153,7 +2153,7 @@ function drawGraph(graphid, graph, type) {
         d.x = d3.event.x, d.y = d3.event.y;
         d3.select(this).attr("stroke", "#18569C");
         d3.select(this).attr("cx", d.x).attr("cy", d.y);
-        node.selectAll("text").filter(t => t.target === d.target)
+        node.selectAll(".node-text").filter(t => t.target === d.target)
             .attr("x", d.x).attr("y", d.y + nodeTxtOffset);
         // console.log(d.data.sequence);
         linkRight.filter(
@@ -2195,6 +2195,8 @@ function drawGraph(graphid, graph, type) {
     //Click node event
 
     function clicked(d) {
+        let thisNode = d3.select(this);
+        console.log(node.selectAll("text"));
         if (d3.event.shiftKey) {
             createQuery(d.place, 4, "single");
         } else {
@@ -2202,10 +2204,10 @@ function drawGraph(graphid, graph, type) {
             drawsta();
             text.text('Place: ' + d.place)
             graphContainer.selectAll("circle").classed("clicked", false);
-            d3.select(this).classed("clicked", true);
-            node.selectAll("text").classed("clicked", false);
-            node.selectAll("text").filter(t => t.sequence < -1 || t.sequence > 1).classed("text-hide", true);
-            node.selectAll("text").filter(t => t.target === d.target)
+            thisNode.classed("clicked", true);
+            node.selectAll(".node-text").classed("clicked", false);
+            node.selectAll(".node-text").filter(t => t.sequence < -1 || t.sequence > 1).classed("text-hide", true);
+            node.selectAll(".node-text").filter(t => t.target === d.target)
                 .attr("class", "text-hide node-text clicked")
                 .classed("text-hide", false)
         }
@@ -2391,7 +2393,7 @@ function drawGraph(graphid, graph, type) {
             // let originX = d3.select
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            node.selectAll("text").filter(t => t.target === d.target)
+            node.selectAll(".node-text").filter(t => t.target === d.target)
                 .attr("x", d.x).attr("y", d.y + nodeTxtOffset * 0.6);
             linkRightplus[seq].filter(
                 l => l.source == d.target
@@ -2529,7 +2531,7 @@ function drawGraph(graphid, graph, type) {
             d.x = d3.event.x, d.y = d3.event.y;
             d3.select(this).attr("stroke", "#18569C");
             d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            node.selectAll("text").filter(t => t.target === d.target)
+            node.selectAll(".node-text").filter(t => t.target === d.target)
                 .attr("x", d.x).attr("y", d.y + nodeTxtOffset * 0.6);
             // console.log(link.selectAll(`seq${seq}`), linkRightplus[seq])
             linkLeftplus[seq].filter(
