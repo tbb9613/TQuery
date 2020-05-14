@@ -204,6 +204,53 @@ function getTimeData(timeScale) {
 
             drawTimeSelector(timeTrans, timeScale,
                 document.getElementById("dataType").options[document.getElementById("dataType").options.selectedIndex].value);
+            
+            switch (timeScale) {
+                case "total":
+                    laydate.render({
+                        elem: "#calendar",
+                        lang: "en",
+                        theme: "#393261",
+                        type: 'datetime',
+                        range: true
+                    });
+                    timeFormat = "%Y-%m-%d";
+                    break;
+                case "year":
+                    laydate.render({
+                        elem: "#calendar",
+                        lang: "en",
+                        theme: "#393261",
+                        type: 'year'
+                    });
+                    timeFormat = "%Y-%m-%d";
+                    break;
+                case "month":
+                    laydate.render({
+                        elem: "#calendar",
+                        lang: "en",
+                        theme: "#393261",
+                        type: 'month'
+                    });
+                    timeFormat = "%Y-%m-%d";
+                    break;
+                case "week":
+                    laydate.render({
+                        elem: "#calendar",
+                        lang: "en",
+                        theme: "#393261",
+                    });
+                    timeFormat = "%c";
+                    break;
+                case "day":
+                    laydate.render({
+                        elem: "#calendar",
+                        lang: "en",
+                        theme: "#393261",
+                    });
+                    timeFormat = "%c";
+                    break;
+            };
         }).catch(function (error) {
             // handle error
             console.log(error);
@@ -221,6 +268,7 @@ document.getElementById("timePeriod").onchange = function () {
 }
 
 getTimeData("total");
+
 
 var timeFormat = "%Y-%m-%d";
 document.getElementById("dataType").onchange = function (e) {
@@ -315,9 +363,9 @@ function drawTimeSelector(data, timeScale, type) {
             dtype = "avg_transaction";
             break;
     }
-
     d3.selectAll("#calendar").remove();
-    d3.selectAll("layui-laydate").remove();
+    d3.selectAll(".layui-laydate").remove();
+
     let selectorDiv = d3.select("#timeSelectorDropdown");
     selectorDiv.append("input").attr("id", "calendar")
         .attr("type", "text")
@@ -1841,7 +1889,7 @@ function drawGraph(graphid, graph, type) {
             zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
             zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight / 2])
 
-            drawGraph("graph-second", subNodeMap)
+            drawGraph("graph-second", subNodeMap, "single")
             // callSecondBrush();
             console.log("clicked!")
 
