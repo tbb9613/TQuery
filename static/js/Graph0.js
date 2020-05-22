@@ -22,7 +22,7 @@ var packList = new Array(); // [pack id, [[node id, node class], [node id, node 
 var packLinkList = new Array();
 
 var linkmapList = new Array(); // linkmaplist
-var packLinkMap = new Array();
+var packLinks = new Array();
 var packNodes = new Array();
 // var udList = new Array();// undirected pair list
 var packCount = 1;
@@ -768,7 +768,7 @@ function drawTopNodes(list) {
             //reset array
             packList.length = 0;
             linkmapList.length = 0;
-            packLinkMap.length = 0;
+            packLinks.length = 0;
             packCount = 1;
             d3.select("#multiNodeText").selectAll("p").remove();
             d3.select("#multiNodeText").classed("hide", true);
@@ -804,7 +804,7 @@ function drawTopNodes(list) {
         // console.log(nodeList);
         // console.log(linkmapList);
         console.log(packList);
-        console.log(packLinkMap);
+        console.log(packLinks);
         console.log(packNodes);
         createQuery("Theatre", 4, "packed");
 
@@ -1402,7 +1402,7 @@ function drawTopNodes(list) {
                         .attr("fill", "#5F5985");
                     packList.push([packCount, lineList]);
                     // console.log(packList);
-                    packLinkMap.push(linkmapList);
+                    packLinks.push(linkmapList);
                     selectedNodes.data().forEach(d => packNodes.push({
                         "id": d
                     }))
@@ -1987,7 +1987,8 @@ function drawGraph(graphid, graph, type) {
 
         drawPreview();
         function drawPreview(){
-            if (packLinkMap.length < 2) {
+            console.log(packLinks, packNodes);
+            if (packLinks.length < 2) {
             //draw node map
             // const width = workSpaceWidth,
             //     height = ;
@@ -2005,7 +2006,7 @@ function drawGraph(graphid, graph, type) {
             var previewLink = svgMNode.append("g")
                 .attr("class", "node-multi-pre-link")
                 .selectAll("line")
-                .data(packLinkMap[0])
+                .data(packLinks[0])
                 .enter()
                 .append("line")
                 .attr("marker-end", d => (d.type === "directed") ? "url(#triangleArrow-p)" : null);
@@ -2041,7 +2042,7 @@ function drawGraph(graphid, graph, type) {
                 .on("tick", ticked);
 
             simulation.force("link")
-                .links(packLinkMap[0]);
+                .links(packLinks[0]);
 
             function ticked() {
                 previewLink
@@ -2091,7 +2092,7 @@ function drawGraph(graphid, graph, type) {
             .on("mouseleave", packedMouseLeave);
 
         function packedMouseOver() {
-            console.log(packList);
+            // console.log(packList);
         }
 
         function packedMouseLeave() {

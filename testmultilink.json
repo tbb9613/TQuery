@@ -1,0 +1,1 @@
+[{"source": "Pharmacy", "target": "Theatre", "type": "directed"}, {"source": "Cinema", "target": "School", "type": "undirected"}, {"source": "Theatre", "target": "Cafe", "type": "undirected"}]
