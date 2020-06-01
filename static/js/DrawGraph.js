@@ -785,7 +785,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", (d,i) => 
-                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]*0.8) ? 90 + i * 30 :
+                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]+1) ? 90 + i * 30 : //dumb layout if too much nodes
                     parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
                 // .attr("cy", (d,i) => 100+ i * 40)
                 .call(d3.drag().on("drag", dragged))
@@ -793,11 +793,16 @@ function drawGraph(graphid, graph, type) {
                 .on("mouseover", NodeMouseOver)
                 .on("mousemove", NodeMouseMove)
                 .on("mouseleave", NodeMouseLeave);
+            
+            //if this step nodes amount < last step nodes amount, then do not apply dumb layout
+            if (graph.node.filter(d => d.sequence == seq).length < (1+graph.node.filter(d => d.sequence == seq-1).length)) {
+                nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
+            }
 
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
             
-            
+            console.log(graph.node.filter(d => d.sequence == seq).length)
         }
         // add link text
         link.append("g")
@@ -927,13 +932,18 @@ function drawGraph(graphid, graph, type) {
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", (d,i) => 
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]+1) ? 100 + i * 30 :
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]+1) ? 90 + i * 30 :
                     parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mousemove", NodeMouseMove)
                 .on("mouseleave", NodeMouseLeave);
+
+                //if this step nodes amount < last step nodes amount, then do not apply dumb layout
+                if (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length)) {
+                    nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
+                }
 
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
