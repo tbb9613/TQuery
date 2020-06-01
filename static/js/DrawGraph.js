@@ -732,7 +732,6 @@ function drawGraph(graphid, graph, type) {
         //Calculate vertical layout
         if (seq === 2) {
             linkRightplus[seq] = link.append("g")
-
                 .attr("id", `seq${seq}`)
                 .selectAll("line")
                 .data(graph.link.filter(d => d.sequence == seq))
@@ -777,7 +776,6 @@ function drawGraph(graphid, graph, type) {
                 .attr("x2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2")) + 80)
                 .attr("y2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
 
-
             nodeRightplus[seq] = node.append("g")
                 .attr("id", `seq${seq}`)
                 .selectAll("circle")
@@ -786,7 +784,9 @@ function drawGraph(graphid, graph, type) {
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .attr("cy", (d,i) => 
+                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]*0.8) ? 90 + i * 30 :
+                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
                 // .attr("cy", (d,i) => 100+ i * 40)
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
@@ -796,6 +796,8 @@ function drawGraph(graphid, graph, type) {
 
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
+            
+            
         }
         // add link text
         link.append("g")
@@ -924,7 +926,9 @@ function drawGraph(graphid, graph, type) {
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .attr("cy", (d,i) => 
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]+1) ? 100 + i * 30 :
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
