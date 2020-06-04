@@ -325,7 +325,8 @@ function drawGraph(graphid, graph, type) {
     let node = graphContainer.append("g")
         .attr("id", "nodes");
 
-    let nodeTxtOffset = 27,
+    let nodeRadius = 20,
+        nodeTxtOffset = 27,
         fistNodeDistance = 100,
         coeffTxtOffset = 0.5;
 
@@ -512,7 +513,7 @@ function drawGraph(graphid, graph, type) {
         .selectAll("text")
         .data(graph.link.filter(d => d.sequence == 1)).enter()
         .append("text")
-        .attr("class", "link-text")
+        .attr("class", "link-text link-text-main")
         .attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * fistNodeDistance)
         .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
         .text(d => d.count * 10)
@@ -522,60 +523,107 @@ function drawGraph(graphid, graph, type) {
         .selectAll("text")
         .data(graph.link.filter(d => d.sequence == -1)).enter()
         .append("text")
-        .attr("class", "link-text")
+        .attr("class", "link-text link-text-main")
         .attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * fistNodeDistance)
         .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
         .text(d => d.count * 10)
         .classed("text-hide", true)
 
-    let nodeRight = node.append("g")
-        .selectAll("circle")
+    
+    let nodeRight = node.selectAll(".node-right")
         .data(graph.node.filter(d => d.sequence == 1))
-        .enter().append("circle")
-        .attr("class", "node")
-        .attr("r", 20)
-        .attr("cx", d => linkRight.filter(l => l.target == d.target).attr("x2"))
-        .attr("cy", d => linkRight.filter(l => l.target == d.target).attr("y2"))
+        .enter().append("g")
+        .attr("class", "node-right")
+        .attr("transform",  d => "translate("+ linkRight.filter(l => l.target == d.target).attr("x2") + "," 
+            + linkRight.filter(l => l.target == d.target).attr("y2") + ")")
         .call(d3.drag().on("drag", dragged))
-        .on("click", clicked)
-        .on("mouseover", NodeMouseOver)
-        .on("mousemove", NodeMouseMove)
-        .on("mouseleave", NodeMouseLeave);
-        // .on("contextmenu", rightclicked)
+        
 
-    let textRight = node.append("g")
-        .selectAll("text")
-        .data(graph.node.filter(d => d.sequence == 1))
-        .enter().append("text")
-        .attr("class", "node-text")
-        .attr("x", d => linkRight.filter(l => l.target == d.target).attr("x2"))
-        .attr("y", d => parseFloat(linkRight.filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset)
-        .text(d => d.place.slice(0, 3))
-
-    let nodeLeft = node.append("g")
-        .selectAll("circle")
-        .data(graph.node.filter(d => d.sequence == -1))
-        .enter().append("circle")
+    nodeRight
+        .append("circle")
         .attr("class", "node")
-        .attr("r", 20)
-        .attr("cx", d => linkLeft.filter(l => l.target == d.target).attr("x2"))
-        .attr("cy", d => linkLeft.filter(l => l.target == d.target).attr("y2"))
-        .call(d3.drag().on("drag", dragged))
+        .attr("r", nodeRadius)
         .on("click", clicked)
         .on("mouseover", NodeMouseOver)
         .on("mousemove", NodeMouseMove)
         .on("mouseleave", NodeMouseLeave);
 
-    let textLeft = node.append("g")
-        .selectAll("text")
-        .data(graph.node.filter(d => d.sequence == -1))
-        .enter().append("text")
+    nodeRight.append("text")
         .attr("class", "node-text")
-        .attr("x", d => linkLeft.filter(l => l.target == d.target).attr("x2"))
-        .attr("y", d => parseFloat(linkLeft.filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset)
+        .attr("y", nodeTxtOffset)
+        .text(d => d.place.slice(0, 3));
+    //add percent graph
+
+    //calculate the proportion of thisnode atv / total atv
+    let inNodeHistScaler = d3.scaleLinear()
+        .range([-0.5 * nodeRadius, 0.5*nodeRadius])
+        .domain([-1, 1]).nice();
+    let atvmean = d3.mean(graph.node, d => d.atv);
+    let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
+
+    // console.log(digitFormat(atvmean));
+    nodeRight.append("rect")
+        .attr("width", 0.8 * nodeRadius)
+        .attr("x", -0.4 * nodeRadius)
+        .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
+        .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
+        .attr("class", "innode-graph")
+        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5");
+    //baseline
+    nodeRight.append("line")
+        .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
+        .attr("class", "innode-graph");
+    //number text "+" "-"
+    nodeRight.append("text")
+        .text(d => digitFormat(d.atv-atvmean))
+        .attr("class", "innode-graph")
+        .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
+        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D")
+        
+
+    let nodeLeft = node.selectAll(".node-left")
+        .data(graph.node.filter(d => d.sequence == -1))
+        .enter().append("g")
+        .attr("class", "node-left")
+        .attr("transform",  d => "translate("+ linkLeft.filter(l => l.target == d.target).attr("x2") + "," 
+            + linkLeft.filter(l => l.target == d.target).attr("y2") + ")")
+        .call(d3.drag().on("drag", dragged))
+    
+    nodeLeft.append("circle")
+        .attr("class", "node")
+        .attr("r", nodeRadius)
+        .on("click", clicked)
+        .on("mouseover", NodeMouseOver)
+        .on("mousemove", NodeMouseMove)
+        .on("mouseleave", NodeMouseLeave);
+
+    nodeLeft.append("text")
+        .attr("class", "node-text")
+        .attr("y", nodeTxtOffset)
         .text(d => d.place.slice(0, 3))
-
-
+    //in-node graph
+    nodeLeft.append("rect")
+        .attr("width", 0.8 * nodeRadius)
+        .attr("x", -0.4 * nodeRadius)
+        .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
+        .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
+        .attr("class", "innode-graph")
+        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5")
+    //baseline
+    nodeLeft.append("line")
+        .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
+        .attr("class", "innode-graph")
+    //number text "+" "-"
+    nodeLeft.append("text")
+        .text(d => digitFormat(d.atv-atvmean))
+        .attr("class", "innode-graph")
+        .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
+        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
+    
+    node.selectAll(".innode-graph")
+        .on("mouseover", InNodeGraphMouseOver)
+        .on("mousemove", InNodeGraphMouseMove)
+        .on("mouseleave", InNodeGraphMouseLeave);
 
 
     function dragged(d) {
@@ -583,11 +631,10 @@ function drawGraph(graphid, graph, type) {
         // console.log(d);
         graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
         d.x = d3.event.x, d.y = d3.event.y;
-        d3.select(this).attr("stroke", "#18569C");
-        d3.select(this).attr("cx", d.x).attr("cy", d.y);
-        node.selectAll(".node-text").filter(t => t.target === d.target)
-            .attr("x", d.x).attr("y", d.y + nodeTxtOffset);
-        // console.log(d.data.sequence);
+        // d3.select(this).selectattr("stroke", "#18569C");
+
+        d3.select(this).attr("transform", "translate("+ d.x + "," + d.y + ")")
+
         linkRight.filter(
             l => l.source == d.target
         ).attr("x1", d.x).attr("y1", d.y);
@@ -600,24 +647,32 @@ function drawGraph(graphid, graph, type) {
         linkLeft.filter(
             l => l.target == d.target
         ).attr("x2", d.x).attr("y2", d.y);
-        link.selectAll("text").filter(t => t.target === d.target)
-            .attr("x", t => 0.5 * (
-                parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
-                parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
-            .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
-                parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
-                parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
+
 
         if (graphRightPlusExist) {
             linkRightplus[2].filter(
                 l => l.source == d.target
-            ).attr("x1", d.x).attr("y1", d.y);
+            ).attr("x1", d.x).attr("y1", d.y);            
+            link.selectAll(".link-text-rightplus").filter(t => t.source === d.target)
+                .attr("x", t => 0.5 * (
+                    parseFloat(linkRightplus[2].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                    parseFloat(linkRightplus[2].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                    parseFloat(linkRightplus[2].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                    parseFloat(linkRightplus[2].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
         }
 
         if (graphLeftPlusExist) {
             linkLeftplus[2].filter(
                 l => l.source == d.target
             ).attr("x1", d.x).attr("y1", d.y);
+            link.selectAll(".link-text-leftplus").filter(t => t.source === d.target)
+                .attr("x", t => 0.5 * (
+                    parseFloat(linkLeftplus[2].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                    parseFloat(linkLeftplus[2].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                    parseFloat(linkLeftplus[2].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                    parseFloat(linkLeftplus[2].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
         }
 
         // console.log(d.id);
@@ -737,10 +792,10 @@ function drawGraph(graphid, graph, type) {
                 .data(graph.link.filter(d => d.sequence == seq))
                 .enter().append("line")
                 .attr("class", "link")
-                .attr("x1", d => nodeRight.filter(n => n.target == d.source).attr("cx"))
-                .attr("y1", d => nodeRight.filter(n => n.target == d.source).attr("cy"))
-                .attr("x2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cx")) + 80)
-                .attr("y2", d => parseFloat(nodeRight.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
+                .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
+                .attr("y2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeRightplus[seq] = node.append("g")
                 .attr("id", `seq${seq}`)
@@ -807,10 +862,10 @@ function drawGraph(graphid, graph, type) {
         // add link text
         link.append("g")
             .attr("id", `seq${seq}`)
-            .selectAll("text")
+            .selectAll(".link-text-rightplus")
             .data(graph.link.filter(d => d.sequence == seq)).enter()
             .append("text")
-            .attr("class", "link-text")
+            .attr("class", "link-text link-text-rightplus")
             .attr("x", d => 0.5 * (
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
                 parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
@@ -889,10 +944,10 @@ function drawGraph(graphid, graph, type) {
                 .data(graph.link.filter(d => d.sequence == -seq))
                 .enter().append("line")
                 .attr("class", "link")
-                .attr("x1", d => nodeLeft.filter(n => n.target == d.source).attr("cx"))
-                .attr("y1", d => nodeLeft.filter(n => n.target == d.source).attr("cy"))
-                .attr("x2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cx")) - 80)
-                .attr("y2", d => parseFloat(nodeLeft.filter(n => n.target == d.source).attr("cy")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
+                .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
+                .attr("y2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
 
             nodeLeftplus[seq] = node.append("g")
                 .attr("id", `seq${-seq}`)
@@ -951,10 +1006,10 @@ function drawGraph(graphid, graph, type) {
         //add text
         link.append("g")
             .attr("id", `seq${-seq}`)
-            .selectAll("text")
+            .selectAll(".link-text-leftplus")
             .data(graph.link.filter(d => d.sequence == -seq)).enter()
             .append("text")
-            .attr("class", "link-text")
+            .attr("class", "link-text-leftplus link-text")
             .attr("x", d => 0.5 * (
                 parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
                 parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
@@ -1027,13 +1082,50 @@ function drawGraph(graphid, graph, type) {
     var shiftTooltip = leftContainer.append("div")
         .attr("class", "tooltip")
         .style("opacity", 0)
+    
+    var inNodeTooltip = leftContainer.append("div")
+        .attr("class", "tooltip innode-tooltip")
+        .style("opacity", 0)
+    
+
+    function InNodeGraphMouseOver(d){
+        inNodeTooltip.style("opacity", 1);
+
+    }
+
+    function InNodeGraphMouseMove(d) {
+        let dpx = event.pageX,
+            dpy = event.pageY;
+        let percentFormat = d3.format(".0%"),
+            numFormat = d3.format(".1f");
+
+        inNodeTooltip
+            .html(inNodeTooltipHtml(d))
+            .style("top", dpy + "px")
+            .style("left", dpx + "px");
+        
+        function inNodeTooltipHtml(d){
+            if (d.atv-atvmean > 0) {
+                return "ATV: " + "<span style = 'color:#C94CB0'>" + numFormat(d.atv) + "</span>; <br>" 
+                + "<span style = 'color:#C94CB0'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
+                + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+            } else {
+                return "ATV: "  + "<span style = 'color:#328347'>" + numFormat(d.atv) + "</span>; <br>" 
+                + "<span style = 'color:#328347'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
+                + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+            }
+        }
+    }
+    function InNodeGraphMouseLeave(d) {
+        inNodeTooltip
+            .style("opacity", 0)
+
+    }
 
     function NodeMouseOver(d) {
         let hoveredNode = d3.select(this);
         let hoveredNodeParent = d3.select(this.parentNode);
-        console.log(hoveredNodeParent);
-
-
+        // console.log(hoveredNodeParent);
         node.selectAll("circle").filter(n => n.sequence !== 0).classed("not-this-route", true)
         link.selectAll("line").classed("not-this-route", true)
         link.selectAll("text").classed("not-this-route", true)
@@ -1135,11 +1227,6 @@ function drawGraph(graphid, graph, type) {
         link.selectAll("line").classed("not-this-route", false)
         link.selectAll("text").classed("this-route", false)
         link.selectAll("text").classed("not-this-route", false)
-
-    }
-    //IF HAVE TIME TRY TO USE FORCE GRAPH
-    function drawRightplusForce(seq) {
-        let simulation = d3.forceSimulation();
 
     }
 

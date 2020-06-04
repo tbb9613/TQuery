@@ -346,13 +346,14 @@ getNodeList("Restaurant");
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
     let selectorWidth = 0.7 * workSpaceWidth;
-    let selectorHeight = 0.2 * topSpaceHeight;
+    let selectorHeight = 0.25 * topSpaceHeight;
     let selectorMargin = ({
-        top: 20,
+        top: topSpaceHeight * 0.1,
         right: 20,
         bottom: 30,
-        left: 30
+        left: 35
     })
+    
     // let data = timeTrans;
     let dtype
     switch (type) {
@@ -376,7 +377,7 @@ function drawTimeSelector(data, timeScale, type) {
 
     var areachart = topSpace.append("g")
         .attr("id", "timeSelector")
-        .attr("transform", `translate(40, ${topSpaceHeight * 0.1})`)
+        .attr("transform", `translate(${selectorMargin.left}, ${selectorMargin.top})`)
 
     // console.log(data);
 
@@ -714,9 +715,8 @@ function clearToolState() {
 function drawTopNodes(list) {
 
     var nodeList = list;
-
-    let nodesyPos = 0.7 * topSpaceHeight
     let topNodeRadius = 20;
+    let nodesyPos = 0.8 * topSpaceHeight + topNodeRadius
 
     // console.log(nodeList)
     const xPosition = (d, i) => i * 50 + 60;
@@ -831,43 +831,42 @@ function drawTopNodes(list) {
     }
     //drag top nodes
     function dragstarted(d) {
+
+        centerX = d3.select(this).select("circle").attr("cx");
+        centerY = d3.select(this).select("circle").attr("cy");
+
         let draggingNode = globalDragLayer
             .attr("height", "100%")
             .attr("width", "100%")
             .append("g")
-            .attr("class", "dragging-node topnodes");
+            .attr("class", "dragging-node topnodes")
+            .attr("transform", `translate(${centerX},${centerY})`);
 
         draggingNode.append("circle")
-            .attr("cx", d3.select(this).select("circle").attr("cx"))
-            .attr("cy", d3.select(this).select("circle").attr("cy"))
+            // .attr("cx", d3.select(this).select("circle").attr("cx"))
+            // .attr("cy", d3.select(this).select("circle").attr("cy"))
             .attr("r", topNodeRadius + 5);
         // .attr("stroke", "#CCC");
 
         draggingNode.append("text")
             .attr('text-anchor', 'middle')
             .attr('alignment-baseline', 'middle')
-            .attr("x", d3.select(this).select("text").attr("x"))
-            .attr("y", d3.select(this).select("text").attr("y"))
+            // .attr("x", d3.select(this).select("text").attr("x"))
+            // .attr("y", d3.select(this).select("text").attr("y"))
             .attr("fill", d3.select(this).select("text").attr("fill"))
             .style('font-size', '15px')
             .text(d.slice(0, 3))
 
         d3.select(this)
-            .attr("opacity", 0)
+            .attr("opacity", 0.3)
 
     }
 
     function dragged(d) {
         dpx = event.pageX;
         dpy = event.pageY;
-        globalDragLayer.select(".dragging-node").select("circle")
-            .attr("cx", dpx).attr("cy", dpy)
 
-        globalDragLayer.select(".dragging-node").select("text")
-            .attr("x", dpx).attr("y", dpy)
-
-        d3.select(this).select("text").attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
-        d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+        globalDragLayer.select(".dragging-node").attr("transform", `translate(${dpx},${dpy})`)
     }; //???????
 
 
@@ -878,14 +877,15 @@ function drawTopNodes(list) {
         if (endYPos > topSpaceHeight) { //judge height space
 
             globalDragLayer.select(".text").select("text").remove();
-            globalDragLayer.select(".dragging-node").select("circle")
+            globalDragLayer.select(".dragging-node")
                 .transition().duration(200)
-                .attr("cx", workSpaceWidth / 2)
-                .attr("cy", topSpaceHeight + workSpaceHeight / 2)
+                .attr("transform", `translate(${workSpaceWidth / 2},${topSpaceHeight + workSpaceHeight / 2})`)
+            globalDragLayer.select(".dragging-node").select("circle")
                 .attr("opacity", 1)
-                .transition().duration(300)
-                .attr("r", 80)
-                .attr("opacity", 0.1);
+                .transition().duration(500)
+                .attr("r", 200)
+                .attr("opacity", 0);
+            globalDragLayer.select(".dragging-node").select("text").attr("opacity", 0);
 
             setTimeout(() => {
                 globalDragLayer.selectAll("g").remove();
@@ -1509,10 +1509,7 @@ function postSubQuery(t) {
         })
 
 }
-
-
 // drawLine("directed");
-
 function getHeatmap() {
 
     axios.get('http://127.0.0.1:5000/heatmap')

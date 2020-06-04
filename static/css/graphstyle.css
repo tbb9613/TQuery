@@ -72,9 +72,11 @@ button {
 }
 
 .node {
-  stroke: #fff;
+  stroke: rgb(145, 163, 182);
   stroke-width: 2px;
-  fill: rgb(145, 163, 182);
+  fill: whitesmoke;
+  /* fill: rgb(145, 163, 182);
+  stroke: white; */
 }
 
 .link {
@@ -304,6 +306,36 @@ button,
   font-size: 11px;
 }
 
+line.innode-graph{
+  stroke:#BBB;
+  /* opacity: 0; */
+  stroke-width: 1;
+}
+
+rect.innode-graph{
+  /* fill:none; */
+  /* stroke: aliceblue; */
+  /* opacity: 0.6; */
+  /* stroke-width: 1.5; */
+}
+
+text.innode-graph{
+  text-anchor: middle;
+  /* fill: #BBB; */
+  cursor: default;
+  font-size: 11px;
+}
+
+.innode-tooltip {
+  font-size: 11px;
+  width: 70px;
+  text-align: left;
+  hyphens: auto;
+  border-radius: 5%;
+  border: none;
+  box-shadow: 2px 2px 10px #CCC;
+}
+
 .brush-menu {
   /* position: absolute; */
   z-index: 2;
@@ -323,7 +355,8 @@ button,
 
 #topNodesTab {
   position: absolute;
-  top: 12%;
+  top: calc(21% - 20px);
+  top:-webkit-calc(21% - 20px);
   width: 50%;
   height: 40px;
   left: 35px;
@@ -445,8 +478,6 @@ button,
   background-color: #3C2E93;
   color: white;
 } */
-
-
 
 
 .nodelist-edit {
@@ -596,7 +627,8 @@ line.this-route {
 }
 
 circle.not-this-route{
-  fill: rgba(162, 178, 194, 0.75);
+  /* fill: rgba(162, 178, 194, 0.75); */
+  opacity: 0.7;
 }
 
 line.not-this-route{
