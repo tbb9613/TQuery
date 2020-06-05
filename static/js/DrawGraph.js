@@ -3,9 +3,6 @@ function drawGraph(graphid, graph, type) {
 
     let graphRightPlusExist = false;
     let graphLeftPlusExist = false;
-
-    staSpace.selectAll("g").remove();
-
     graphExist = true;
 
     d3.selectAll(".brush-child").classed("hide", true);
@@ -101,9 +98,9 @@ function drawGraph(graphid, graph, type) {
         staSpace.attr("height", 300 + staCardList.length * (30 + staCardHeight))
     }
 
-    drawStaCards();
-    var supplierHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
-    var customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
+    // drawStaCards();
+    // var supplierHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
+    // var customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
 
     d3.selectAll(".sta-button")
         .on("click", clickStaTab)
@@ -143,7 +140,7 @@ function drawGraph(graphid, graph, type) {
         }, 1500)
 
     }
-    staContainer.node().onscroll = checkScroll;
+    // staContainer.node().onscroll = checkScroll;
 
     function checkScroll() {
         let sTop = staContainer.node().scrollTop;
@@ -171,7 +168,7 @@ function drawGraph(graphid, graph, type) {
         .on("end", brushpopup);
 
     function brushstart() {
-        leftContainer.selectAll(".brush-menu").remove();
+        workContainer.selectAll(".brush-menu").remove();
         console.log("start")
     };
 
@@ -209,7 +206,7 @@ function drawGraph(graphid, graph, type) {
                 [x1, y1]
             ] = selection;
 
-            let menuContainer = leftContainer.append("div")
+            let menuContainer = workContainer.append("div")
                 .attr("class", "brush-menu-container")
                 .style("position", "absolute")
                 .style("top", `${y0+topSpaceHeight}px`)
@@ -676,8 +673,8 @@ function drawGraph(graphid, graph, type) {
         }
 
         // console.log(d.id);
-        drawsta();
-        text.text('Place: ' + d.place)
+        // drawsta();
+        // text.text('Place: ' + d.place)
     }
     //Click node event
 
@@ -688,8 +685,12 @@ function drawGraph(graphid, graph, type) {
             createQuery(d.place, 4, "single");
         } else {
             console.log("clicked");
-            drawsta();
-            text.text('Place: ' + d.place)
+            d3.select("#staContainer").classed("hide",false);
+            d3.selectAll(".sta-single").on("click",StaLabelClick);
+            d3.select(".sta-nodename").select("span")
+                .html(d.place)
+            // drawsta();
+            // text.text('Place: ' + d.place)
             graphContainer.selectAll("circle").classed("clicked", false);
             thisNode.classed("clicked", true);
             node.selectAll(".node-text").classed("clicked", false);
@@ -840,7 +841,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", (d,i) => 
-                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]+1) ? 90 + i * 30 : //dumb layout if too much nodes
+                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? 90 + i * 30 : //dumb layout if too much nodes
                     parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
                 // .attr("cy", (d,i) => 100+ i * 40)
                 .call(d3.drag().on("drag", dragged))
@@ -850,7 +851,7 @@ function drawGraph(graphid, graph, type) {
                 .on("mouseleave", NodeMouseLeave);
             
             //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-            if (graph.node.filter(d => d.sequence == seq).length < (1+graph.node.filter(d => d.sequence == seq-1).length)) {
+            if  ((graph.node.filter(d => d.sequence == seq).length < 6) || (graph.node.filter(d => d.sequence == seq).length < (2+graph.node.filter(d => d.sequence == seq-1).length))) {
                 nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
             }
 
@@ -921,13 +922,10 @@ function drawGraph(graphid, graph, type) {
             }
             //Reset text pos
 
-            drawsta();
+            // drawsta();
 
-            text.text('Place: ' + d.place)
+            // text.text('Place: ' + d.place)
         }
-
-
-
 
     }
 
@@ -987,7 +985,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", (d,i) => 
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]+1) ? 90 + i * 30 :
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? 90 + i * 30 :
                     parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
@@ -995,10 +993,11 @@ function drawGraph(graphid, graph, type) {
                 .on("mousemove", NodeMouseMove)
                 .on("mouseleave", NodeMouseLeave);
 
-                //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-                if (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length)) {
-                    nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
-                }
+            //if this step nodes amount < last step nodes amount, then do not apply dumb layout
+            if  ((graph.node.filter(d => d.sequence == -seq).length < 6) || (graph.node.filter(d => d.sequence == -seq).length < (2+graph.node.filter(d => d.sequence == -seq+1).length))) {
+                nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
+            }
+
 
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
@@ -1066,24 +1065,24 @@ function drawGraph(graphid, graph, type) {
                         parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             }
 
-            drawsta();
+            // drawsta();
 
-            text.text('Place: ' + d.place)
+            // text.text('Place: ' + d.place)
         }
     }
 
     function LayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
             .range([-10 - 10 * subC, 10 + 10 * subC])
-            .domain([0.4, subC + 0.6]);
+            .domain([0.3, subC + 0.7]);
         return scaler(subID);
     }
 
-    var shiftTooltip = leftContainer.append("div")
+    var shiftTooltip = workContainer.append("div")
         .attr("class", "tooltip")
         .style("opacity", 0)
     
-    var inNodeTooltip = leftContainer.append("div")
+    var inNodeTooltip = workContainer.append("div")
         .attr("class", "tooltip innode-tooltip")
         .style("opacity", 0)
     
@@ -1140,7 +1139,6 @@ function drawGraph(graphid, graph, type) {
                 .classed("this-route", l => isInRoute(r, l.route))
             link.selectAll("line").filter(".this-route")
                 .classed("not-this-route", !(l => isInRoute(r, l.route)))
-
             link.selectAll("text").filter(".not-this-route")
                 .classed("this-route", (l => isInRoute(r, l.route)))
             link.selectAll("text").filter(".this-route")
@@ -1270,20 +1268,33 @@ function drawGraph(graphid, graph, type) {
 
     let conditionBoxPos = conditionBox.node().getBoundingClientRect();
 
-    function drawsta() {
-        console.log("draw");
-        staSpace.selectAll(".samplePie").remove();
-        staSpace.selectAll(".sampleBar").remove();
-        drawsamplepie("#sta1");
-        drawsamplebar("#sta2");
-        drawsamplepie("#sta3");
-        drawsamplepie("#sta4");
-        drawsamplebar("#sta5");
-        drawsamplebar("#sta6");
+
+
+    function StaLabelClick(){
+        console.log("staclick");
+        let thisCard = d3.select(this);
+        if (!thisCard.classed("sta-card")){
+            let svgWidth = 200, svgHeight = 200;
+            thisCard.classed("sta-card", true);
+            let svg = thisCard.append("svg")
+                .transition().duration(200)
+                .attr("height", svgHeight)
+                .attr("width", svgWidth);
+
+            drawsamplepie(d3.select(this).selectAll("svg"), svgWidth, svgHeight)
+        } else {
+            thisCard.selectAll("svg")
+            .transition().duration(200)
+            .attr("height", 0)
+            .attr("width", 0)
+            .remove();
+            thisCard.classed("sta-card", false);
+        }
     }
 
+
     //draw sample pie chart
-    function drawsamplepie(id) {
+    function drawsamplepie(svg, svgWidth, svgHeight) {
         let fakeData = [{
                 "label": "one",
                 "value": 20
@@ -1300,7 +1311,7 @@ function drawGraph(graphid, graph, type) {
 
         let samplePieColorScale = d3.schemeTableau10;
 
-        let samplePie = staSpace.select(id).append("g")
+        let samplePie = svg.append("g")
             .attr("class", "samplePie")
 
         let arcSample = d3.arc()
@@ -1313,21 +1324,11 @@ function drawGraph(graphid, graph, type) {
             .data(spConverter(fakeData))
             .enter()
             .append("path")
-            .attr('transform', `translate(${staSpaceWidth/2}, 
-                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/2)})`)
+            .attr('transform', `translate(${svgWidth/2}, 
+                ${svgHeight/2})`)
             .attr("fill", (d, i) => samplePieColorScale[i])
             .attr("d", arcSample)
             .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
-
-        staSpace.select(id)
-            .append("g")
-            .attr("class", "samplePie")
-            .attr('transform', `translate(${ staSpaceWidth / 5},
-                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
-            .append("text")
-            .text(d => d.category + " " + id)
-            .attr("x", 10)
-            .attr("y", 10)
 
         function dragstarted(d) {
             let boundingPos = this.getBoundingClientRect();
@@ -1371,8 +1372,8 @@ function drawGraph(graphid, graph, type) {
             }
             globalDragLayer.selectAll("path").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
-            staSpace.select(id).selectAll("g").remove();
-            drawsamplepie(id);
+            svg.selectAll("g").remove();
+            drawsamplepie(svg, svgWidth, svgHeight);
         }
     }
 

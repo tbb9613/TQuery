@@ -31,9 +31,10 @@ var mainContainer = document.getElementById("mainContainer");
 var width = mainContainer.clientWidth;
 var height = mainContainer.clientHeight;
 // console.log(width, height);
-var topSpaceHeight = 0.3 * height;
-var workSpaceHeight = 0.7 * height;
-var workSpaceWidth = 0.7 * width;
+var topSpaceHeight = 0.25 * height;
+var topSpaceWidth = 0.7 * width;
+var workSpaceHeight = 0.75 * height;
+var workSpaceWidth = width;
 var staSpaceWidth = 0.3 * width
 
 var graphExist = false;
@@ -48,8 +49,9 @@ function getSize() {
     width = mainContainer.clientWidth;
     height = mainContainer.clientHeight;
     topSpaceHeight = 0.3 * height;
+    topSpaceWidth = 0.7 * width;
     workSpaceHeight = 0.7 * height;
-    workSpaceWidth = 0.7 * width;
+    workSpaceWidth = width;
     staSpaceWidth = 0.3 * width
 
 }
@@ -57,7 +59,9 @@ function getSize() {
 var globalDragLayer = d3.select("#globalDrag")
     .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
+    .style("z-index", "10")
     .attr("height", 0).attr("width", 0)
+    
 
 var brushLayer = d3.select("#brushLayer")
     .attr("x", 0).attr("y", 0)
@@ -80,9 +84,6 @@ drawLayer.append("svg:defs").append("svg:marker")
     .append("path")
     .attr("d", "M 0 0 12 6 0 12 3 6")
     .style("fill", "black");
-
-var leftContainer = d3.select("#leftContainer")
-var rightContainer = d3.select("#rightContainer")
 
 var topContainer = d3.select("#topContainer")
 var workContainer = d3.select("#workContainer")
@@ -124,8 +125,9 @@ var nodeMenu = d3.select(".node-menu");
 
 //Add workspace text(interpretation of node map)
 var titletext = workSpace.append("text")
+    .attr("class", "title-text")
     .attr("y", 50)
-    .attr("x", 100)
+    .attr("x", workSpaceWidth/2)
 
 var mapContainer = d3.select("#mapContainer")
 
@@ -148,16 +150,6 @@ map.on('moveend', function () {
 });
 
 var staContainer = d3.select("#staContainer")
-
-var staSpace = staContainer.append("svg")
-    .attr("id", "staSpace")
-    .attr("width", "100%")
-    .attr("overflow", "visible")
-
-var text = staSpace.append("text")
-    .attr("x", 100)
-    .attr("y", 50)
-    .attr("fill", "white")
 
 var initialNodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 
@@ -345,10 +337,11 @@ getNodeList("Restaurant");
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
-    let selectorWidth = 0.7 * workSpaceWidth;
-    let selectorHeight = 0.25 * topSpaceHeight;
+    let selectorWidth = 0.7 * topSpaceWidth;
+    let selectorHeight = 0.3 * topSpaceHeight;
+
     let selectorMargin = ({
-        top: topSpaceHeight * 0.1,
+        top: topSpaceHeight * 0.15,
         right: 20,
         bottom: 30,
         left: 35
@@ -431,7 +424,7 @@ function drawTimeSelector(data, timeScale, type) {
         const brushParent = d3.brushX()
             .extent([
                 [0, 0],
-                [selectorWidth, selectorHeight - 30]
+                [selectorWidth, selectorHeight - selectorMargin.bottom]
             ])
             .on("start brush", brushmoved)
             .on("end", brushend);
@@ -444,7 +437,7 @@ function drawTimeSelector(data, timeScale, type) {
         let brushResizePath = function (d) {
             let e = +(d.type == "e"),
                 x = e ? 1 : -1,
-                y = (selectorHeight - 30) / 2;
+                y = (selectorHeight - selectorMargin.bottom) / 2;
             return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8);
         }
 
@@ -464,33 +457,25 @@ function drawTimeSelector(data, timeScale, type) {
 
         gBrushFirst.call(brushParent)
             .call(brushParent.move, [200, 300]);
-
-
         // console.log(handle);
 
         let lefttooltip = topContainer
             .append("div")
-            .classed("tooltip-handle", true)
-            .style("opacity", 0)
-        // .attr("class", "tooltip")
+            .classed("tooltip-handle hide", true)
+            // .style("opacity", 0)
 
         let righttooltip = topContainer
             .append("div")
-            .classed("tooltip-handle", true)
-            .style("opacity", 0)
-        // .attr("class", "tooltip")
+            .classed("tooltip-handle hide", true)
+            // .style("opacity", 0)
 
         gBrushFirst.selectAll(".handle--w")
             .on("mouseover", leftHandleOver)
-            .on("mouseout", function () {
-                lefttooltip.style("opacity", 0)
-            });
+            .on("mouseout", handleMouseLeave);
 
         gBrushFirst.selectAll(".handle--e")
             .on("mouseover", rightHandleOver)
-            .on("mouseout", function () {
-                righttooltip.style("opacity", 0)
-            });;
+            .on("mouseout", handleMouseLeave);
 
         gBrushFirst.selectAll(".selection")
             .attr("fill", "white")
@@ -512,7 +497,7 @@ function drawTimeSelector(data, timeScale, type) {
         function brushend() {
             if (graphExist === true && secondGraphExist === false) {
                 workSpace.selectAll("g").remove();
-                leftContainer.selectAll(".tooltip").remove();
+                workContainer.selectAll(".tooltip").remove();
                 graphLeftPlusExist = false;
                 graphRightPlusExist = false;
 
@@ -530,7 +515,7 @@ function drawTimeSelector(data, timeScale, type) {
 
         function leftHandleOver() {
             let format = d3.timeFormat(timeFormat)
-            lefttooltip.style("opacity", 1)
+            lefttooltip.classed("hide", false)
                 .html("Start: " + format(x.invert(timeSelection[0])))
                 .style("left", (d3.mouse(this)[0]) + "px")
                 .style("top", "20px")
@@ -546,6 +531,11 @@ function drawTimeSelector(data, timeScale, type) {
                 .style("left", (d3.mouse(this)[0]) + "px")
                 .style("top", "20px")
         };
+
+        function handleMouseLeave(){
+            lefttooltip.classed("hide", true);
+            righttooltip.classed("hide", true);
+        }
 
 
     }
@@ -716,7 +706,7 @@ function drawTopNodes(list) {
 
     var nodeList = list;
     let topNodeRadius = 20;
-    let nodesyPos = 0.8 * topSpaceHeight + topNodeRadius
+    let nodesyPos = 0.7 * topSpaceHeight + topNodeRadius
 
     // console.log(nodeList)
     const xPosition = (d, i) => i * 50 + 60;
@@ -1317,7 +1307,7 @@ function drawTopNodes(list) {
             .on("end", brushpopup);
 
         function brushstart() {
-            leftContainer.selectAll(".brush-menu-container").remove();
+            workContainer.selectAll(".brush-menu-container").remove();
             // console.log("start")
         };
 
@@ -1350,7 +1340,7 @@ function drawTopNodes(list) {
                     [x0, y0],
                     [x1, y1]
                 ] = selection;
-                let menuContainer = leftContainer.append("div")
+                let menuContainer = workContainer.append("div")
                     .attr("class", "brush-menu-container")
                     .style("position", "absolute")
                     .style("top", `${y0+topSpaceHeight}px`)
@@ -1389,13 +1379,22 @@ function drawTopNodes(list) {
                 if (selectedNodes.size() > 1) {
                     console.log("packclick");
                     let conContainer = drawLayer
-                        .append("rect")
+                        .append("g")
+
+                    conContainer.append("rect")
                         .attr("class", "con-rect")
                         .attr("x", xPos).attr("y", yPos)
                         .attr("height", rectHeight)
                         .attr("width", rectWidth)
                         .attr("stroke", "#393261")
                         .datum(packCount);
+                    conContainer.append("text")
+                        .text("OR")
+                        .attr("x", xPos).attr("y", yPos)
+                        .attr("fill", "#393261")
+                        .style("text-anchor", "middle")
+                        .style("font-size", 12)
+                        // .attr("class", "")
                     conContainer
                         .lower()
                         .transition().delay(150).duration(200)
@@ -1424,7 +1423,7 @@ function drawTopNodes(list) {
         }
 
         function clearBrushLayer() {
-            leftContainer.selectAll(".brush-menu-container").remove();
+            workContainer.selectAll(".brush-menu-container").remove();
             // brushLayer.selectAll("rect").remove();
             brushLayer.call(brush.clear);
             drawLayer.selectAll("circle").classed("selected", false)
@@ -1456,7 +1455,7 @@ function drawTopNodes(list) {
 };
 
 function createQuery(d, timePoint, type, nodeList) {
-    leftContainer.selectAll(".tooltip").remove();
+    workContainer.selectAll(".tooltip").remove();
     workSpace.selectAll("g").remove();
     // postQuery(d, 4);
     console.log(d)
@@ -1519,7 +1518,7 @@ function getHeatmap() {
 }
 
 function drawHeatmap(d) {
-    let heatmapContainer = leftContainer.select(".heatmap-container")
+    let heatmapContainer = workContainer.select(".heatmap-container")
     if (!isHeatmapActive) {
         // console.log(heatmap);
         d3.select(this).classed("heatmap-button-active", true);

@@ -29,7 +29,7 @@
     <svg id="globalDrag"></svg>
     <div class="noclick hide">
     </div>
-    <div id="leftContainer">
+    <!-- <div id="leftContainer"> -->
 
       <!-- <svg id="brushLayer"></svg> -->
       
@@ -73,7 +73,9 @@
           <button class="draw-directed-line"><i class="fas fa-arrow-right"></i></button>
           <button class="select-mode"><i class="fas fa-object-group"></i></button>
         </div>
+
       </div>
+      <div id="mapContainer"></div>
       <div id="workContainer">
         <svg id="drawLayer"></svg>
         <svg id="brushLayer"></svg>
@@ -81,88 +83,77 @@
         <div class="node-menu hide">
           <button class="change-center">change center to this</button>
         </div>
-      </div>
-      
-      <div class="nodelist-edit-container hide">
-        <button class="button-close">
-          <i class="fas fa-times"></i>
+        <div id = "staContainer" class="hide">
+          <div class="sta-nodename"><span></span></div>
+          <div class="sta-single"><span>Bank of Issue</span><br></div>
+          <div class="sta-single"><span>Market Share</span><br></div>
+        </div>
+        <div class="nodelist-edit-container hide">
+          <button class="button-close">
+            <i class="fas fa-times"></i>
+          </button>
+
+          <h3>Node List</h3>
+          <div>
+            <table class="pure-table pure-table-horizontal nodelist-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th> </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Customize1</td>
+                  <td style="text-align: right;"><a href="#">Edit</a> <a href="#">Delete</a></td>
+                </tr>
+
+                <tr>
+                  <td>2</td>
+                  <td>Customize2</td>
+                  <td style="text-align: right;"><a href="#">Edit</a> <a href="#">Delete</a></td>
+                </tr>
+
+                <tr>
+                  <td>3</td>
+                  <td>Customize3</td>
+                  <td style="text-align: right;"><a href="#">Edit</a> <a href="#">Delete</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <button class="mdui-btn mdui-ripple add-node-list">Add new</button>
+          </div>
+
+
+          <div class="nodelist-edit hide">
+            
+            <span>SEARCH BY</span>
+            <select class = "mdui-select" mdui-select="options">
+              <option value="name">Merchant Name</option>
+              <option value="MCC">MCC</option>
+            </select>
+            
+            <input class="nodelist-input">
+            <button class="mdui-btn mdui-ripple add-node-list">SEARCH</button>
+          </div>
+
+
+        </div>
+        <div class="heatmap-container"></div>
+        <button class="heatmap-button">
+          <svg t="1588091530679" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+            p-id="4713" width="200" height="200">
+            <path
+              d="M891.264 85.333333C917.44 85.333333 938.666667 106.56 938.666667 132.736v758.528A47.402667 47.402667 0 0 1 891.264 938.666667H132.736A47.402667 47.402667 0 0 1 85.333333 891.264V132.736C85.333333 106.56 106.56 85.333333 132.736 85.333333h758.528zM597.333333 682.666667h-170.666666v170.666666h170.666666v-170.666666z m-256 0H170.666667v170.666666h170.666666v-170.666666z m256-256h-170.666666v170.666666h170.666666v-170.666666z m-256 0H170.666667v170.666666h170.666666v-170.666666z m512 0h-170.666666v170.666666h170.666666v-170.666666zM597.333333 170.666667h-170.666666v170.666666h170.666666V170.666667zM341.333333 170.666667H170.666667v170.666666h170.666666V170.666667z m512 0h-170.666666v170.666666h170.666666V170.666667z"
+              p-id="4714" fill="#4F4688"></path>
+          </svg>
         </button>
-
-        <h3>Node List</h3>
-        <div>
-          <table class="pure-table pure-table-horizontal nodelist-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th> </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>Customize1</td>
-                <td style="text-align: right;"><a href="#">Edit</a> <a href="#">Delete</a></td>
-              </tr>
-
-              <tr>
-                <td>2</td>
-                <td>Customize2</td>
-                <td style="text-align: right;"><a href="#">Edit</a> <a href="#">Delete</a></td>
-              </tr>
-
-              <tr>
-                <td>3</td>
-                <td>Customize3</td>
-                <td style="text-align: right;"><a href="#">Edit</a> <a href="#">Delete</a></td>
-              </tr>
-            </tbody>
-          </table>
-          <button class="mdui-btn mdui-ripple add-node-list">Add new</button>
-        </div>
-
-
-        <div class="nodelist-edit hide">
-          
-          <span>SEARCH BY</span>
-          <select class = "mdui-select" mdui-select="options">
-            <option value="name">Merchant Name</option>
-            <option value="MCC">MCC</option>
-          </select>
-          
-          <input class="nodelist-input">
-          <button class="mdui-btn mdui-ripple add-node-list">SEARCH</button>
-        </div>
-
-
+        
       </div>
-      <div class="heatmap-container"></div>
-      <button class="heatmap-button">
-        <svg t="1588091530679" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
-          p-id="4713" width="200" height="200">
-          <path
-            d="M891.264 85.333333C917.44 85.333333 938.666667 106.56 938.666667 132.736v758.528A47.402667 47.402667 0 0 1 891.264 938.666667H132.736A47.402667 47.402667 0 0 1 85.333333 891.264V132.736C85.333333 106.56 106.56 85.333333 132.736 85.333333h758.528zM597.333333 682.666667h-170.666666v170.666666h170.666666v-170.666666z m-256 0H170.666667v170.666666h170.666666v-170.666666z m256-256h-170.666666v170.666666h170.666666v-170.666666z m-256 0H170.666667v170.666666h170.666666v-170.666666z m512 0h-170.666666v170.666666h170.666666v-170.666666zM597.333333 170.666667h-170.666666v170.666666h170.666666V170.666667zM341.333333 170.666667H170.666667v170.666666h170.666666V170.666667z m512 0h-170.666666v170.666666h170.666666V170.666667z"
-            p-id="4714" fill="#4F4688"></path>
-        </svg>
-      </button>
-    </div>
-    <!-- <button class="heatmap-button"> -->
-
-    <div id="rightContainer">
-
-      <div id="mapContainer"></div>
-      <div id="staTab" class="hide">
-        <button id="G" class="sta-button sta-button-active">G</button>
-        <button id="S" class="sta-button">S</button>
-        <button id="C" class="sta-button">C</button>
-      </div>
-      <div id="staContainer">
-      </div>
-
-    </div>
   </div>
-  <!-- <script src="{{ url_for('static',filename='laydate/laydate.js') }}"></script> -->
-  <!-- <script src="{{ url_for('static',filename='js/Graph0.js') }}"></script> -->
+
   <script src="/static/js/Graph0.js"></script>
   <script src="/static/js/DrawGraph.js"></script>
 

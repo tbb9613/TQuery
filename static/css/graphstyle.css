@@ -31,44 +31,55 @@ button {
   /* position: relative; */
 }
 
-#leftContainer {
-  width: 70%;
-  height: 100%;
-  padding: 0;
-  float: left;
-}
-
-#rightContainer {
-  width: 30%;
-  height: 100%;
-  padding: 0;
-  float: left;
-  background-color: slategray;
-}
 
 #topContainer {
-  width: 100%;
-  height: 30%;
+  width: 75%;
+  height: 25%;
+  float: left;
 }
 
 #workContainer {
   width: 100%;
-  height: 70%;
-
+  height: 75%;
+  float: left;
 }
 
 #mapContainer {
-  height: 30%;
-  width: 100%;
+  height: 25%;
+  width: 25%;
+  float: right;
   /* display: inline; */
 }
 
 #staContainer {
-  height: 70%;
-  width: 100%;
-  overflow-y: auto;
-  overflow-x: visible;
-  /* display: inline; */
+  position: absolute;
+  top: calc(25%+50px);
+  left: 50px;
+}
+
+.sta-single{
+  border-radius: 10px;
+  box-shadow: 1px 1px 3px #ccc;
+  margin: 10px 5px;
+  padding: 10px;
+  background-color: #fff;
+  float: left;
+  cursor: pointer;
+}
+
+.sta-card {
+  border-radius: 10px;
+}
+
+.sta-nodename {
+  border-radius: 5px;
+  background-color: #D85945;
+  color: #fff;
+  box-shadow: 1px 1px 2px #ccc;
+  margin: 10px;
+  padding: 10px;
+  float: left;
+  cursor: default;
 }
 
 .node {
@@ -83,8 +94,8 @@ button {
   stroke: #999;
 }
 
-.stacard {
-  background-color: #999;
+.title-text{
+  text-anchor: middle;
 }
 
 .tooltip {
@@ -225,24 +236,11 @@ button {
   align-items: center;
 }
 
-.sta-button {
-  display: inline-block;
-  width: 100%;
-  height: 100%;
-  border: none;
-  background-color: #CCC;
-  font-size: 1em;
-  color: white;
-}
-
-.sta-button-active {
-  background-color: slategray;
-}
 
 .add-graph {
   position: absolute;
-  top: 31%;
-  right: 38%;
+  top: 26%;
+  right: 5%;
   border: none;
   color: white;
   padding: 10px;
@@ -287,7 +285,7 @@ button,
 
 .after-controller,
 .before-controller
- {
+{
   text-anchor: middle;
   alignment-baseline: middle;
 }
@@ -315,7 +313,7 @@ line.innode-graph{
 rect.innode-graph{
   /* fill:none; */
   /* stroke: aliceblue; */
-  /* opacity: 0.6; */
+  opacity: 0.9;
   /* stroke-width: 1.5; */
 }
 
@@ -355,8 +353,8 @@ text.innode-graph{
 
 #topNodesTab {
   position: absolute;
-  top: calc(21% - 20px);
-  top:-webkit-calc(21% - 20px);
+  top: calc(14% - 20px);
+  /* top:-webkit-calc(13% - 20px); */
   width: 50%;
   height: 40px;
   left: 35px;
@@ -496,8 +494,8 @@ text.innode-graph{
 
 #toolsContainer {
   position: absolute;
-  left:60%;
-  top:20%;
+  left:65%;
+  top:15%;
   width: 8%;
   padding: 0;
 }
