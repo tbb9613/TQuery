@@ -1562,39 +1562,22 @@ function drawHeatmap(d) {
 
         let heatmapColorScale = d3.scaleSequential(d3.interpolateBlues)
             .domain([0, d3.max(probHeatmap, d => d.prob)])
+        let heatmapTextColorScale = d3.scaleSequential(d3.interpolateBlues)
+            .domain([-d3.max(probHeatmap, d => d.prob), 0])
 
         let tooltip = heatmapContainer
             .append("div")
             .style("opacity", 0)
             .attr("class", "tooltip")
 
-        function heatmapMouseover(d) {
-            tooltip
-                .style("opacity", 1)
-            d3.select(this)
-                .style("stroke", "#154360")
-                .style("opacity", 1)
-        }
 
-        function heatmapMousemove(d) {
-            tooltip
-                .html("The prob from " + d.place1 + " to " + d.place2 + " is: " + "<span style='color:darkblue'> "+ d3.format(".2%")(d.prob) + "</span>")
-                .style("left", (d3.mouse(this)[0] + 10) + "px")
-                .style("top", (d3.mouse(this)[1]) + "px")
-        }
 
-        function heatmapMouseleave(d) {
-            tooltip
-                .style("opacity", 0)
-            d3.select(this)
-                .style("stroke", "none")
-                .style("opacity", 0.9)
-        }
-
-        heatmap.selectAll()
+        let heatRect = heatmap.selectAll(".heatmap-rect")
             .data(probHeatmap, d => d.place1 + ":" + d.place2)
-            .enter()
-            .append("rect")
+            .enter().append("g")
+            .attr("class","heatmap-rect");
+
+        heatRect.append("rect")
             .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
             .attr("y", d => y(d.place1) + 0 * heatmapHeight)
             // .attr("rx", 4)
@@ -1607,7 +1590,40 @@ function drawHeatmap(d) {
             .style("opacity", 0.9)
             .on("mouseover", heatmapMouseover)
             .on("mousemove", heatmapMousemove)
-            .on("mouseleave", heatmapMouseleave)
+            .on("mouseleave", heatmapMouseleave);
+        
+        heatRect.append("text")
+            .text(d => d3.format(".2%")(d.prob))
+            .attr("x", d => x(d.place2) + 0.2 * heatmapWidth+5)
+            .attr("y", d => y(d.place1) + 10)
+            .attr("class", "heatmap-text")
+            // .style("text-anchor", "middle")
+            .style("alignment-baseline", "middle")
+            .style("font-size", 10)
+            .attr("fill", d => (d.prob < d3.max(probHeatmap, d => d.prob) * 0.75 && d.prob > d3.max(probHeatmap, d => d.prob) * 0.35) ? "black" : heatmapTextColorScale(-d.prob));
+
+        function heatmapMouseover(d) {
+            tooltip
+                .style("opacity", 1)
+            d3.select(this)
+                .style("stroke", "#154360")
+                .style("opacity", 1)
+        }
+    
+        function heatmapMousemove(d) {
+            tooltip
+                .html("The prob from " + d.place1 + " to " + d.place2 + " is: " + "<span style='color:darkblue'> "+ d3.format(".2%")(d.prob) + "</span>")
+                .style("left", (d3.mouse(this)[0] + 10) + "px")
+                .style("top", (d3.mouse(this)[1]) + "px")
+        }
+    
+        function heatmapMouseleave(d) {
+            tooltip
+                .style("opacity", 0)
+            d3.select(this)
+                .style("stroke", "none")
+                .style("opacity", 0.9)
+        }
     }, 300);
 
     isHeatmapActive = true;
