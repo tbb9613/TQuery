@@ -1594,10 +1594,10 @@ function drawHeatmap(d) {
         
         heatRect.append("text")
             .text(d => d3.format(".2%")(d.prob))
-            .attr("x", d => x(d.place2) + 0.2 * heatmapWidth+5)
-            .attr("y", d => y(d.place1) + 10)
+            .attr("x", d => x(d.place2) + x.bandwidth()/2 + 0.2 * heatmapWidth)
+            .attr("y", d => y(d.place1) + y.bandwidth()/2)
             .attr("class", "heatmap-text")
-            // .style("text-anchor", "middle")
+            .style("text-anchor", "middle")
             .style("alignment-baseline", "middle")
             .style("font-size", 10)
             .attr("fill", d => (d.prob < d3.max(probHeatmap, d => d.prob) * 0.75 && d.prob > d3.max(probHeatmap, d => d.prob) * 0.35) ? "black" : heatmapTextColorScale(-d.prob));
