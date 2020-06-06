@@ -745,7 +745,7 @@ function drawGraph(graphid, graph, type) {
 
     let rseq = 2;
     let lseq = 2;
-    let maxseq = 4;
+    let maxseq = 6;
 
     function afterplus() {
         if (rseq <= maxseq) {
@@ -780,7 +780,18 @@ function drawGraph(graphid, graph, type) {
             lseq -= 1
         }
     }
-
+    function LayoutScaler(subID, subC) {
+        let scaler = d3.scaleLinear()
+            .range([-10 - 10 * subC, 10 + 10 * subC])
+            .domain([0.3, subC + 0.7]);
+        return scaler(subID);
+    }
+    function LayoutScaler_Adjust(thisID,count) {
+        let scaler = d3.scaleLinear()
+            .range([graphCenter[1] - workSpaceHeight / 4, graphCenter[1] + workSpaceHeight / 4])
+            .domain([-0.3, count-0.7]);
+        return scaler(thisID);
+    }
     function drawRightplus(seq) {
 
         graphRightPlusExist = true;
@@ -796,7 +807,9 @@ function drawGraph(graphid, graph, type) {
                 .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
                 .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
-                .attr("y2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("y2", 
+                    // d => parseFloat(linkRight.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+                    (d,i) => LayoutScaler_Adjust(i, graph.link.filter(d => d.sequence == seq).length));
 
             nodeRightplus[seq] = node.append("g")
                 .attr("id", `seq${seq}`)
@@ -841,8 +854,9 @@ function drawGraph(graphid, graph, type) {
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", (d,i) => 
-                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? 90 + i * 30 : //dumb layout if too much nodes
-                    parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
+                    // parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length) : //dumb layout if too much nodes
+                    // parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
+                    LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length))
                 // .attr("cy", (d,i) => 100+ i * 40)
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
@@ -851,9 +865,9 @@ function drawGraph(graphid, graph, type) {
                 .on("mouseleave", NodeMouseLeave);
             
             //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-            if  ((graph.node.filter(d => d.sequence == seq).length < 6) || (graph.node.filter(d => d.sequence == seq).length < (2+graph.node.filter(d => d.sequence == seq-1).length))) {
-                nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
-            }
+            // if  ((graph.node.filter(d => d.sequence == seq).length < 4) || (graph.node.filter(d => d.sequence == seq).length < (1+graph.node.filter(d => d.sequence == seq-1).length))) {
+            //     nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
+            // }
 
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
@@ -945,7 +959,9 @@ function drawGraph(graphid, graph, type) {
                 .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
                 .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
-                .attr("y2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("y2", 
+                // d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+                (d,i) => LayoutScaler_Adjust(i, graph.link.filter(d => d.sequence == -seq).length));
 
             nodeLeftplus[seq] = node.append("g")
                 .attr("id", `seq${-seq}`)
@@ -985,8 +1001,9 @@ function drawGraph(graphid, graph, type) {
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
                 .attr("cy", (d,i) => 
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? 90 + i * 30 :
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
+                    // parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? 90 + i * 30 :
+                    // parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
+                    LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == -seq).length))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
@@ -994,9 +1011,9 @@ function drawGraph(graphid, graph, type) {
                 .on("mouseleave", NodeMouseLeave);
 
             //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-            if  ((graph.node.filter(d => d.sequence == -seq).length < 6) || (graph.node.filter(d => d.sequence == -seq).length < (2+graph.node.filter(d => d.sequence == -seq+1).length))) {
-                nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
-            }
+            // if  ((graph.node.filter(d => d.sequence == -seq).length < 4) || (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length))) {
+            //     nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
+            // }
 
 
             linkLeftplus[seq]
@@ -1071,12 +1088,7 @@ function drawGraph(graphid, graph, type) {
         }
     }
 
-    function LayoutScaler(subID, subC) {
-        let scaler = d3.scaleLinear()
-            .range([-10 - 10 * subC, 10 + 10 * subC])
-            .domain([0.3, subC + 0.7]);
-        return scaler(subID);
-    }
+
 
     var shiftTooltip = workContainer.append("div")
         .attr("class", "tooltip")

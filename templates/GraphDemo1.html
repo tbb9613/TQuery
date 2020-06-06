@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <title>Graph Demo</title>
   <link rel="stylesheet" type="text/css" href="/static/css/graphstyle.css">
-  <script src="https://unpkg.com/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://d3js.org/d3-random.v2.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
@@ -50,15 +49,14 @@
           </select>
           <!-- <input type="text" id = "calendar" placeholder="Choose date"> -->
         </div>
-        <div id="topNodesTab">
-          <button class="toptab">Industry</button>
-          <button class="toptab toptab-active">MCC</button>
-          <button class="toptab">Location</button>
-          <button class="toptab">Customize1</button>
-          <button class="toptab">Customize2</button>
-          <button class="toptab">Customize3</button>
-          <!-- <button class="toptab">...</button> -->
-          <button class="toptab-custom">
+        <div id="topNodesTab" class="mdui-btn-group">
+          <button class="toptab mdui-btn">Industry</button>
+          <button class="toptab mdui-btn toptab-active">MCC</button>
+          <button class="toptab mdui-btn">Location</button>
+          <button class="toptab mdui-btn">Customize1</button>
+          <button class="toptab mdui-btn">Customize2</button>
+          <!-- <button class="toptab mdui-btn">Customize3</button> -->
+          <button class="toptab-custom mdui-btn">
             <svg t="1588090942694" class="icon" viewBox="0 0 1026 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
               p-id="2525" width="200" height="200">
               <path
@@ -67,11 +65,14 @@
             </svg>
           </button>
         </div>
-        <div id="toolsContainer">
-          <button class="multi-nodes">Multi</button>
-          <button class="draw-undirected-line"><i class="fas fa-minus"></i></button>
-          <button class="draw-directed-line"><i class="fas fa-arrow-right"></i></button>
-          <button class="select-mode"><i class="fas fa-object-group"></i></button>
+        <div id="toolsContainer" class="mdui-btn-group">
+          <button class="multi-nodes mdui-btn">Multi</button>
+          <!-- <div class="mdui-btn-group"> -->
+            <button class="tool-btn draw-undirected-line mdui-btn"><i class="fas fa-minus"></i></button>
+            <button class="tool-btn draw-directed-line mdui-btn"><i class="fas fa-arrow-right"></i></button>
+            <button class="tool-btn select-mode mdui-btn"><i class="fas fa-object-group"></i></button>
+          <!-- </div> -->
+
         </div>
 
       </div>
@@ -85,8 +86,8 @@
         </div>
         <div id = "staContainer" class="hide">
           <div class="sta-nodename"><span></span></div>
-          <div class="sta-single"><span>Bank of Issue</span><br></div>
-          <div class="sta-single"><span>Market Share</span><br></div>
+          <div class="sta-single"><span>Bank of Issue</span></div>
+          <div class="sta-single"><span>Market Share</span></div>
         </div>
         <div class="nodelist-edit-container hide">
           <button class="button-close">
@@ -141,8 +142,16 @@
 
 
         </div>
-        <div class="heatmap-container"></div>
-        <button class="heatmap-button">
+        <div id="heatmapContainer" class="mdui-panel mdui-panel-gapless" mdui-panel>
+          <div class="mdui-panel-item mdui-panel-item-open">
+            <div class="mdui-panel-item-header"><span>Probability Heatmap</span></div>
+            <div class="mdui-panel-item-body heatmap-container">
+              <!-- <div class=""></div> -->
+            </div>
+          </div>
+        </div>
+
+          <button class="heatmap-button">
           <svg t="1588091530679" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
             p-id="4713" width="200" height="200">
             <path

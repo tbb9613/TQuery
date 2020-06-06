@@ -162,9 +162,9 @@ var brush = d3.brush()
 
 // drawTopNodes(initialNodeList);
 getHeatmap();
-
-let isHeatmapActive = false;
-d3.select(".heatmap-button").on("click", drawHeatmap)
+drawHeatmap();
+// let isHeatmapActive = false;
+// d3.select(".heatmap-button").on("click", drawHeatmap)
 
 
 
@@ -337,8 +337,8 @@ getNodeList("Restaurant");
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
-    let selectorWidth = 0.7 * topSpaceWidth;
-    let selectorHeight = 0.3 * topSpaceHeight;
+    let selectorWidth = 0.85 * topSpaceWidth;
+    let selectorHeight = 0.25 * topSpaceHeight;
 
     let selectorMargin = ({
         top: topSpaceHeight * 0.15,
@@ -526,7 +526,7 @@ function drawTimeSelector(data, timeScale, type) {
         function rightHandleOver() {
             // let selection = d3.brushSelection();
             let format = d3.timeFormat(timeFormat)
-            righttooltip.style("opacity", 1)
+            righttooltip.classed("hide", false)
                 .html("End: " + format(x.invert(timeSelection[1])))
                 .style("left", (d3.mouse(this)[0]) + "px")
                 .style("top", "20px")
@@ -694,7 +694,7 @@ function clearToolState() {
     drawLayer
         .on("mousedown", null)
         .on("mouseup", null);
-    d3.selectAll(".tool-active").classed("tool-active", false);
+    d3.selectAll(".tool-btn").classed("tool-active", false);
     d3.selectAll(".brush-menu-container").remove();
 
     isSelectMode = false;
@@ -731,7 +731,7 @@ function drawTopNodes(list) {
             workSpace.selectAll("text").text(null);
             node.remove();
             drawTopNodes(nodeList);
-            d3.select(this).classed("multi-nodes-active", true);
+            d3.select(this).classed("tool-active", true);
             d3.select(".draw-undirected-line").on("click", drawUndirectedLine);
             d3.select(".draw-directed-line").on("click", drawDirectedLine);
             workContainer.append("button")
@@ -740,6 +740,7 @@ function drawTopNodes(list) {
                 .on("click", packedQuery);
             d3.select("#multiNodeText").selectAll("p").remove();
             d3.select("#multiNodeText").classed("hide", false);
+            d3.select("#staContainer").classed("hide", true);
         } else {
             clearToolState();
             isMultiMode = false;
@@ -752,7 +753,7 @@ function drawTopNodes(list) {
             workContainer.selectAll("button").remove();
             node.remove();
             drawTopNodes(nodeList);
-            d3.select(this).classed("multi-nodes-active", false);
+            d3.select(this).classed("tool-active", false);
             d3.select(".draw-undirected-line").on("click", null);
             d3.select(".draw-directed-line").on("click", null);
             //reset array
@@ -790,7 +791,7 @@ function drawTopNodes(list) {
     // getHeatmap()
 
     //Data exchange
-    function packedQuery() {
+    function packedQuery(d) {
         // console.log(nodeList);
         // console.log(linkmapList);
         console.log(packList);
@@ -799,8 +800,6 @@ function drawTopNodes(list) {
         createQuery("Theatre", 4, "packed", nodeList);
 
         // setTimeout(drawPreview(),210)
-
-
         clearToolState();
         isMultiMode = false;
         drawLayer.attr("height", 0).attr("width", 0);
@@ -811,11 +810,10 @@ function drawTopNodes(list) {
         workContainer.selectAll("button").remove();
         node.remove();
         drawTopNodes(nodeList);
-        d3.select(this).classed("multi-nodes-active", false);
+        d3.selectAll(".tool-active").classed("tool-active", false);
         //reset array
         packCount = 1;
 
-        
         d3.select("#multiNodeText").selectAll("p").remove();
         d3.select("#multiNodeText").classed("hide", true);
     }
@@ -901,7 +899,7 @@ function drawTopNodes(list) {
             drawTopNodes(nodeList);
             globalDragLayer.selectAll("g").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
-           
+
         }
         console.log("end");
     }
@@ -1455,6 +1453,7 @@ function drawTopNodes(list) {
 };
 
 function createQuery(d, timePoint, type, nodeList) {
+    d3.select("#staContainer").classed("hide", true);
     workContainer.selectAll(".tooltip").remove();
     workSpace.selectAll("g").remove();
     // postQuery(d, 4);
@@ -1476,7 +1475,6 @@ function createQuery(d, timePoint, type, nodeList) {
     } else {
         titletext.text("Packed Query");
     }
-
 }
 
 function postQuery(d, t) {
@@ -1506,11 +1504,9 @@ function postSubQuery(t) {
         .then(function (response) { // if success then update data
             subNodeMap = response.data;
         })
-
 }
 // drawLine("directed");
 function getHeatmap() {
-
     axios.get('http://127.0.0.1:5000/heatmap')
         .then(function (response) { // if success then update data
             probHeatmap = response.data;
@@ -1519,103 +1515,100 @@ function getHeatmap() {
 
 function drawHeatmap(d) {
     let heatmapContainer = workContainer.select(".heatmap-container")
-    if (!isHeatmapActive) {
-        // console.log(heatmap);
-        d3.select(this).classed("heatmap-button-active", true);
-        d3.select(this).select("path").attr("fill", "#fff")
-        heatmapContainer.classed("heatmap-container-active", true);
-        let heatmapWidth = 0.4 * width;
-        let heatmapHeight = 0.6 * height;
-        // let heatmap = heatmapContainer.append("svg")
-        setTimeout(() => {
-            let heatmap = heatmapContainer.append("svg")
-                .attr("id", "heatmap")
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .attr("fill", "white");
-            let heatmap_x = d3.map(probHeatmap, d => d.place2).keys();
-            let heatmap_y = d3.map(probHeatmap, d => d.place1).keys();
+    // if (!isHeatmapActive) {
+    // console.log(heatmap);
+    // d3.select(this).classed("heatmap-button-active", true);
+    // d3.select(this).select("path").attr("fill", "#fff")
+    // heatmapContainer.classed("heatmap-container-active", true);
+    let heatmapWidth = 0.2 * width;
+    let heatmapHeight = 0.2 * height;
+    // let heatmap = heatmapContainer.append("svg")
+    setTimeout(() => {
+        let heatmap = heatmapContainer.append("svg")
+            .attr("id", "heatmap")
+            .attr("width", 1.2 * heatmapWidth)
+            .attr("height", 1.2 * heatmapHeight)
+            .attr("fill", "white");
+        let heatmap_x = d3.map(probHeatmap, d => d.place2).keys();
+        let heatmap_y = d3.map(probHeatmap, d => d.place1).keys();
 
-            //x axis
-            let x = d3.scaleBand()
-                .range([0, 0.7 * heatmapWidth])
-                .domain(heatmap_x)
-                .padding(0.05)
-            heatmap.append("g")
-                .attr("transform", `translate(${0.2 * heatmapWidth},${0.85 * heatmapHeight})`)
-                .classed("heatmap-axis", true)
-                .call(d3.axisBottom(x).tickSize(0))
-                .select(".domamin").remove()
-                .attr("stroke", "white")
+        //x axis
+        let x = d3.scaleBand()
+            .range([0, heatmapWidth])
+            .domain(heatmap_x)
+            .padding(0.05)
+        heatmap.append("g")
+            .attr("transform", `translate(${0.2 * heatmapWidth},${0.85 * heatmapHeight + 3})`)
+            .classed("heatmap-axis", true)
+            .call(d3.axisBottom(x).tickSize(0))
+            .selectAll("text")
+            .style("text-anchor", "start")
+            .attr("transform", "rotate(90)")
+            .select(".domamin").remove()
+            .attr("stroke", "white")
+            
 
-            //y axis
-            let y = d3.scaleBand()
-                .range([0.7 * heatmapHeight, 0])
-                .domain(heatmap_y)
-                .padding(0.05)
-            heatmap.append("g")
-                .attr("transform", `translate(${0.2 * heatmapWidth},${0.15 * heatmapHeight})`)
-                .classed("heatmap-axis", true)
-                .call(d3.axisLeft(y).tickSize(0))
-                .select(".domamin").remove()
+        //y axis
+        let y = d3.scaleBand()
+            .range([0.85 * heatmapHeight, 0])
+            .domain(heatmap_y)
+            .padding(0.05)
 
-            let heatmapColorScale = d3.scaleSequential(d3.interpolateBlues)
-                .domain([0, d3.max(probHeatmap, d => d.prob)])
+        heatmap.append("g")
+            .attr("transform", `translate(${0.2 * heatmapWidth},${0 * heatmapHeight})`)
+            .classed("heatmap-axis", true)
+            .call(d3.axisLeft(y).tickSize(0))
+            .select(".domamin").remove()
 
-            let tooltip = heatmapContainer
-                .append("div")
+        let heatmapColorScale = d3.scaleSequential(d3.interpolateBlues)
+            .domain([0, d3.max(probHeatmap, d => d.prob)])
+
+        let tooltip = heatmapContainer
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+
+        function heatmapMouseover(d) {
+            tooltip
+                .style("opacity", 1)
+            d3.select(this)
+                .style("stroke", "#154360")
+                .style("opacity", 1)
+        }
+
+        function heatmapMousemove(d) {
+            tooltip
+                .html("The prob from " + d.place1 + " to " + d.place2 + " is: " + "<span style='color:darkblue'> "+ d3.format(".2%")(d.prob) + "</span>")
+                .style("left", (d3.mouse(this)[0] + 10) + "px")
+                .style("top", (d3.mouse(this)[1]) + "px")
+        }
+
+        function heatmapMouseleave(d) {
+            tooltip
                 .style("opacity", 0)
-                .attr("class", "tooltip")
-
-            function heatmapMouseover(d) {
-                tooltip
-                    .style("opacity", 1)
-                d3.select(this)
-                    .style("stroke", "#154360")
-                    .style("opacity", 1)
-            }
-
-            function heatmapMousemove(d) {
-                tooltip
-                    .html("The prob from " + d.place1 + " to " + d.place2 + " is: " + parseFloat(d.prob).toFixed(2))
-                    .style("left", (d3.mouse(this)[0] + 70) + "px")
-                    .style("top", (d3.mouse(this)[1]) + "px")
-            }
-
-            function heatmapMouseleave(d) {
-                tooltip
-                    .style("opacity", 0)
-                d3.select(this)
-                    .style("stroke", "none")
-                    .style("opacity", 0.9)
-            }
-
-            heatmap.selectAll()
-                .data(probHeatmap, d => d.place1 + ":" + d.place2)
-                .enter()
-                .append("rect")
-                .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
-                .attr("y", d => y(d.place1) + 0.15 * heatmapHeight)
-                // .attr("rx", 4)
-                // .attr("ry", 4)
-                .attr("width", x.bandwidth())
-                .attr("height", y.bandwidth())
-                .style("fill", d => heatmapColorScale(d.prob))
-                .style("stroke-width", 3)
+            d3.select(this)
                 .style("stroke", "none")
                 .style("opacity", 0.9)
-                .on("mouseover", heatmapMouseover)
-                .on("mousemove", heatmapMousemove)
-                .on("mouseleave", heatmapMouseleave)
-        }, 300);
+        }
 
-        isHeatmapActive = true;
+        heatmap.selectAll()
+            .data(probHeatmap, d => d.place1 + ":" + d.place2)
+            .enter()
+            .append("rect")
+            .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
+            .attr("y", d => y(d.place1) + 0 * heatmapHeight)
+            // .attr("rx", 4)
+            // .attr("ry", 4)
+            .attr("width", x.bandwidth())
+            .attr("height", y.bandwidth())
+            .style("fill", d => heatmapColorScale(d.prob))
+            .style("stroke-width", 3)
+            .style("stroke", "none")
+            .style("opacity", 0.9)
+            .on("mouseover", heatmapMouseover)
+            .on("mousemove", heatmapMousemove)
+            .on("mouseleave", heatmapMouseleave)
+    }, 300);
 
-    } else {
-        isHeatmapActive = false;
-        d3.select(this).classed("heatmap-button-active", false);
-        heatmapContainer.selectAll("svg").remove();
-        heatmapContainer.classed("heatmap-container-active", false);
-        d3.select(this).select("path").attr("fill", "#4F4688")
-    }
+    isHeatmapActive = true;
 }
