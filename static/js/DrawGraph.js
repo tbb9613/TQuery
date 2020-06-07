@@ -1292,8 +1292,10 @@ function drawGraph(graphid, graph, type) {
                 .transition().duration(200)
                 .attr("height", svgHeight)
                 .attr("width", svgWidth);
-
-            drawsamplepie(d3.select(this).selectAll("svg"), svgWidth, svgHeight)
+            setTimeout(() => {
+                drawsamplepie(d3.select(this).selectAll("svg"), svgWidth, svgHeight)
+            }, 200)
+            
         } else {
             thisCard.selectAll("svg")
             .transition().duration(200)

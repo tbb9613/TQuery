@@ -337,7 +337,7 @@ getNodeList("Restaurant");
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
-    let selectorWidth = 0.85 * topSpaceWidth;
+    let selectorWidth = 0.88 * topSpaceWidth;
     let selectorHeight = 0.25 * topSpaceHeight;
 
     let selectorMargin = ({
@@ -1446,8 +1446,7 @@ function drawTopNodes(list) {
             isSelectMode = false;
             brushLayer.on(".brush", null);
             brushLayer.attr("width", 0)
-                .attr("height", 0)
-
+                .attr("height", 0);
         }
     }
 };
@@ -1538,7 +1537,7 @@ function drawHeatmap(d) {
             .domain(heatmap_x)
             .padding(0.05)
         heatmap.append("g")
-            .attr("transform", `translate(${0.2 * heatmapWidth},${0.85 * heatmapHeight + 3})`)
+            .attr("transform", `translate(${0.2 * heatmapWidth + 5},${0.85 * heatmapHeight + 3})`)
             .classed("heatmap-axis", true)
             .call(d3.axisBottom(x).tickSize(0))
             .selectAll("text")
@@ -1570,12 +1569,13 @@ function drawHeatmap(d) {
             .style("opacity", 0)
             .attr("class", "tooltip")
 
-
-
         let heatRect = heatmap.selectAll(".heatmap-rect")
             .data(probHeatmap, d => d.place1 + ":" + d.place2)
             .enter().append("g")
-            .attr("class","heatmap-rect");
+            .attr("class","heatmap-rect")
+            .on("mouseover", heatmapMouseover)
+            .on("mousemove", heatmapMousemove)
+            .on("mouseleave", heatmapMouseleave);
 
         heatRect.append("rect")
             .attr("x", d => x(d.place2) + 0.2 * heatmapWidth)
@@ -1587,25 +1587,20 @@ function drawHeatmap(d) {
             .style("fill", d => heatmapColorScale(d.prob))
             .style("stroke-width", 3)
             .style("stroke", "none")
-            .style("opacity", 0.9)
-            .on("mouseover", heatmapMouseover)
-            .on("mousemove", heatmapMousemove)
-            .on("mouseleave", heatmapMouseleave);
+            .style("opacity", 0.9);
+
         
         heatRect.append("text")
             .text(d => d3.format(".2%")(d.prob))
             .attr("x", d => x(d.place2) + x.bandwidth()/2 + 0.2 * heatmapWidth)
             .attr("y", d => y(d.place1) + y.bandwidth()/2)
             .attr("class", "heatmap-text")
-            .style("text-anchor", "middle")
-            .style("alignment-baseline", "middle")
-            .style("font-size", 10)
             .attr("fill", d => (d.prob < d3.max(probHeatmap, d => d.prob) * 0.75 && d.prob > d3.max(probHeatmap, d => d.prob) * 0.35) ? "black" : heatmapTextColorScale(-d.prob));
 
         function heatmapMouseover(d) {
             tooltip
                 .style("opacity", 1)
-            d3.select(this)
+            d3.select(this).select("rect")
                 .style("stroke", "#154360")
                 .style("opacity", 1)
         }
@@ -1620,7 +1615,7 @@ function drawHeatmap(d) {
         function heatmapMouseleave(d) {
             tooltip
                 .style("opacity", 0)
-            d3.select(this)
+            d3.select(this).select("rect")
                 .style("stroke", "none")
                 .style("opacity", 0.9)
         }

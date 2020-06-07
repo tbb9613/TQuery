@@ -57,6 +57,45 @@ button {
   left: 50px;
 }
 
+#filterContainer {
+  position: absolute;
+  top: calc(14% - 20px);
+  width: 27%;
+  left:calc(35% + 20px);
+  box-shadow: none !important;
+  /* border: 1px solid #ccc; */
+  alignment-baseline: bottom;
+  color: #666;
+  /* padding-top: 10px; */
+  /* height: 40px; */
+}
+
+#topNodesTab {
+  position: absolute;
+  top: calc(14% - 20px);
+  /* top:-webkit-calc(13% - 20px); */
+  width: 50%;
+  height: 40px;
+  left: 35px;
+  /* background-color: #0C0537; */
+}
+
+#toolsContainer {
+  position: absolute;
+  right:27%;
+  top: calc(14% - 20px);
+  width: 8%;
+  padding: 0;
+}
+
+
+#heatmapContainer {
+  position: absolute;
+  width: 25%;
+  top: 25%;
+  right: 0;
+}
+
 .sta-single{
   border-radius: 10px;
   box-shadow: 1px 1px 3px #ccc;
@@ -150,37 +189,14 @@ button {
   padding: 0;
 }
 
-.heatmap-button {
-  position: absolute;
-  bottom: 1%;
-  right: 1%;
-  padding: 5px;
-
-  opacity: 0.7;
-  cursor: pointer;
-  background-color: transparent;
-  border: none;
-  /* transition: background-color .3s; */
+.heatmap-text {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  font-size: 10px;
+  cursor: default;
 }
 
-.heatmap-button:hover {
-  opacity: 1;
-  transition: ease-in-out .3s;
-  /* background-color: white; */
-}
 
-.heatmap-button-active {
-  opacity: .8;
-  /* background-color: #CCC; */
-  /* background-color: #999; */
-}
-
-#heatmapContainer {
-  position: absolute;
-  width: 25%;
-  top: 25%;
-  right: 0;
-}
 
 .heatmap-container {
   /* background-color: #1E1841; */
@@ -224,17 +240,6 @@ button {
 
 .handle-custom {
   cursor: ew-resize;
-}
-
-#staTab {
-  position: fixed;
-  right: 30%;
-  top: 30%;
-  width: 2.5%;
-  height: 6%;
-  background-color: #fff;
-  margin: 0;
-  align-items: center;
 }
 
 
@@ -352,20 +357,12 @@ text.innode-graph{
 }
 
 
-#topNodesTab {
-  position: absolute;
-  top: calc(14% - 20px);
-  /* top:-webkit-calc(13% - 20px); */
-  width: 50%;
-  height: 40px;
-  left: 35px;
-  /* background-color: #0C0537; */
-}
+
 
 .toptab {
   height: 100%;
   outline: none;
-  width: 11%;
+  width: 12%;
   margin: 0;
   padding-bottom: 3px;
   float: left;
@@ -416,6 +413,9 @@ text.innode-graph{
   background-color: white;
   color: #0C0537;
 }
+
+
+
 
 .noclick {
   position: absolute;
@@ -473,7 +473,6 @@ text.innode-graph{
   color: #3C2E93;
 }
 
-
 .nodelist-edit {
   display: inline-block;
   width: 100%;
@@ -487,13 +486,43 @@ text.innode-graph{
   background-color: transparent;
 }
 
+.filter-text-input {
+  /* font-size: 12px; */
+  width: 50px;
+  border: none;
+  border-bottom: 1px solid  #0C0537;
+  outline: none;
+  background-color: transparent;
+  color: #3C2E93;
+  /* height: 24px; */
+  /* margin-top: 5px; */
+}
 
-#toolsContainer {
-  position: absolute;
-  right:27%;
-  top: calc(14% - 20px);
-  width: 8%;
-  padding: 0;
+.post-code-input, .bank-input {
+  width: 100px;
+}
+
+input.filter-text-input:focus {
+  border-bottom: 2px solid #3C2E93;
+}
+
+.address-checkbox {
+  float: right;
+  /* margin-right: 5px; */
+  /* margin-right: 10%; */
+}
+
+.node-filter {
+  font-size: 13px;
+  font-family: "Roboto";
+  float: left;
+  margin-bottom: 5px;
+  margin-right: 20px;
+}
+
+#ATVFilter {
+  float: right;
+  /* margin-right: 12%; */
 }
 
 /* .multi-nodes, .draw-undirected-line, .draw-directed-line, .select-mode{
@@ -520,7 +549,7 @@ text.innode-graph{
 #timeSelectorDropdown {
   position: absolute;
   right:25%;
-  top: 2%;
+  top: 3%;
   width: 10%;
 }
 
@@ -534,9 +563,9 @@ text.innode-graph{
 }
 
 .mdui-select{
-  font-size: 14px;
-  padding-bottom: 0;
-  height: 24px;
+  font-size: 13.5px !important;
+  padding-bottom: 0 ;
+  height: 24px !important;
 }
 
 .selected {
@@ -623,6 +652,7 @@ text.this-route{
 circle.clicked{
   stroke-width: 2.5 !important;
   animation: circle-clicked-animation 3s linear infinite;
+  background-color: #fff;
 }
 
 text.clicked {

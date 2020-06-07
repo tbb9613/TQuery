@@ -20,7 +20,6 @@
   <script src="/static/laydate/laydate.js"></script>
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/mdui/0.4.3/css/mdui.min.css">
   <script src="//cdnjs.cloudflare.com/ajax/libs/mdui/0.4.3/js/mdui.min.js"></script>
-
 </head>
 
 <body class="mdui-theme-accent-deep-purple">
@@ -29,10 +28,10 @@
     <div class="noclick hide">
     </div>
     <!-- <div id="leftContainer"> -->
-
       <!-- <svg id="brushLayer"></svg> -->
       
       <button class="add-graph"><i class="fas fa-columns"></i></button>
+
 
       <div id="topContainer">
         <div id="timeSelectorDropdown">
@@ -65,6 +64,7 @@
             </svg>
           </button>
         </div>
+
         <div id="toolsContainer" class="mdui-btn-group">
           <button class="multi-nodes mdui-btn">Multi</button>
           <!-- <div class="mdui-btn-group"> -->
@@ -77,6 +77,43 @@
 
       </div>
       <div id="mapContainer"></div>
+      <div id="filterContainer">
+        <!-- <span style="color: #666;">FILTER</span> -->
+          <div class="node-filter" id="TTVFilter">
+            <span >TTV:</span>
+            <input class="filter-text-input" type="text" placeholder="From"/>
+            <span >--</span>
+            <input class="filter-text-input" type="text" placeholder="To"/>
+            <button><i class="far fa-chart-bar"></i></button>
+          </div>
+          <div class="node-filter" id="ATVFilter">
+            <span >ATV:</span>
+            <input class="filter-text-input" type="text" placeholder="From"/>
+            <span >--</span>
+            <input class="filter-text-input" type="text" placeholder="To"/>
+            <button id="showFilterATV"><i class="far fa-chart-bar"></i></button>
+          </div>
+          <div class="node-filter" id="CardAddress">
+            <div class="node-filter" style = "margin:0; margin-top: 4px;">
+              <span >Card Holder Address:</span>
+              <input class="filter-text-input post-code-input" type="text" placeholder="City/District"/>
+              <button><i class="fas fa-search"></i></button>
+            </div>
+
+            <div class="address-checkbox">
+              <span>Not this city</span>
+                <input type="checkbox"/>
+            </div>
+            <div class="address-checkbox">
+              <span>Not this country</span>
+                <input type="checkbox"/>
+            </div>
+          </div>
+          <div class="node-filter" id="BankFilter">
+            <span >Bank of Issue:</span>
+            <input class="filter-text-input bank-input" type="text" placeholder="Bank Name"/>
+          </div>
+      </div>
       <div id="workContainer">
         <svg id="drawLayer"></svg>
         <svg id="brushLayer"></svg>
@@ -86,14 +123,14 @@
         </div>
         <div id = "staContainer" class="hide">
           <div class="sta-nodename"><span></span></div>
-          <div class="sta-single"><span>Bank of Issue</span></div>
-          <div class="sta-single"><span>Market Share</span></div>
+          <div class="sta-single"><span>Bank of Issue</span><br/></div>
+          <div class="sta-single"><span>Market Share</span><br/></div>
+          <div class="sta-single"><span>Card Holder Address</span><br/></div>
         </div>
         <div class="nodelist-edit-container hide">
           <button class="button-close">
             <i class="fas fa-times"></i>
           </button>
-
           <h3>Node List</h3>
           <div>
             <table class="pure-table pure-table-horizontal nodelist-table">
@@ -126,8 +163,6 @@
             </table>
             <button class="mdui-btn mdui-ripple add-node-list">Add new</button>
           </div>
-
-
           <div class="nodelist-edit hide">
             
             <span>SEARCH BY</span>
@@ -139,8 +174,6 @@
             <input class="nodelist-input">
             <button class="mdui-btn mdui-ripple add-node-list">SEARCH</button>
           </div>
-
-
         </div>
         <div id="heatmapContainer" class="mdui-panel mdui-panel-gapless" mdui-panel>
           <div class="mdui-panel-item mdui-panel-item-open">
@@ -150,16 +183,6 @@
             </div>
           </div>
         </div>
-
-          <button class="heatmap-button">
-          <svg t="1588091530679" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
-            p-id="4713" width="200" height="200">
-            <path
-              d="M891.264 85.333333C917.44 85.333333 938.666667 106.56 938.666667 132.736v758.528A47.402667 47.402667 0 0 1 891.264 938.666667H132.736A47.402667 47.402667 0 0 1 85.333333 891.264V132.736C85.333333 106.56 106.56 85.333333 132.736 85.333333h758.528zM597.333333 682.666667h-170.666666v170.666666h170.666666v-170.666666z m-256 0H170.666667v170.666666h170.666666v-170.666666z m256-256h-170.666666v170.666666h170.666666v-170.666666z m-256 0H170.666667v170.666666h170.666666v-170.666666z m512 0h-170.666666v170.666666h170.666666v-170.666666zM597.333333 170.666667h-170.666666v170.666666h170.666666V170.666667zM341.333333 170.666667H170.666667v170.666666h170.666666V170.666667z m512 0h-170.666666v170.666666h170.666666V170.666667z"
-              p-id="4714" fill="#4F4688"></path>
-          </svg>
-        </button>
-        
       </div>
   </div>
 
