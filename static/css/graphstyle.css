@@ -55,6 +55,14 @@ button {
   position: absolute;
   top: calc(25%+50px);
   left: 50px;
+  font-size: 13px;
+}
+
+#queryTitleContainer {
+  position: absolute;
+  bottom: 10px;
+  left: 50px;
+  font-size: 13px;
 }
 
 #filterContainer {
@@ -100,7 +108,7 @@ button {
   border-radius: 10px;
   box-shadow: 1px 1px 3px #ccc;
   margin: 10px 5px;
-  padding: 10px;
+  padding: 8px;
   background-color: #fff;
   float: left;
   cursor: pointer;
@@ -116,7 +124,18 @@ button {
   color: #fff;
   box-shadow: 1px 1px 2px #ccc;
   margin: 10px;
-  padding: 10px;
+  padding: 8px;
+  float: left;
+  cursor: default;
+}
+
+.query-title {
+  border-radius: 5px;
+  background-color: #393261;
+  color: #fff;
+  box-shadow: 1px 1px 2px #ccc;
+  margin: 10px;
+  padding: 8px;
   float: left;
   cursor: default;
 }
@@ -131,6 +150,11 @@ button {
 
 .link {
   stroke: #999;
+}
+
+.vertical-line {
+  stroke: #999;
+  stroke-width: 2px;
 }
 
 .title-text{
@@ -245,7 +269,7 @@ button {
 
 .add-graph {
   position: absolute;
-  top: 26%;
+  bottom: 5%;
   right: 5%;
   border: none;
   color: white;

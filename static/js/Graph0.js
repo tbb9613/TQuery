@@ -12,6 +12,7 @@ var probHeatmap //heatmap data
 var queryNode
 var timeTrans // time selector data 
 var timeSelection // time selector
+var timeSec // var for time axis
 
 var isMultiMode = false // initialize tool area boolean
 var isSelectMode = false;
@@ -124,10 +125,7 @@ var nodeMenu = d3.select(".node-menu");
 //make the workspace under topspace
 
 //Add workspace text(interpretation of node map)
-var titletext = workSpace.append("text")
-    .attr("class", "title-text")
-    .attr("y", 50)
-    .attr("x", workSpaceWidth/2)
+var titletext = d3.select("#queryTitleContainer").select(".query-title").selectAll("span");
 
 var mapContainer = d3.select("#mapContainer")
 
@@ -337,7 +335,7 @@ getNodeList("Restaurant");
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
-    let selectorWidth = 0.88 * topSpaceWidth;
+    let selectorWidth = 0.86 * topSpaceWidth;
     let selectorHeight = 0.25 * topSpaceHeight;
 
     let selectorMargin = ({
@@ -457,6 +455,7 @@ function drawTimeSelector(data, timeScale, type) {
 
         gBrushFirst.call(brushParent)
             .call(brushParent.move, [200, 300]);
+        
         // console.log(handle);
 
         let lefttooltip = topContainer
@@ -495,14 +494,16 @@ function drawTimeSelector(data, timeScale, type) {
         };
 
         function brushend() {
+            timeSelection = d3.event.selection;
+            timeSec = (x.invert(timeSelection[1]) - x.invert(timeSelection[0]))/ 1000
             if (graphExist === true && secondGraphExist === false) {
                 workSpace.selectAll("g").remove();
                 workContainer.selectAll(".tooltip").remove();
                 graphLeftPlusExist = false;
                 graphRightPlusExist = false;
 
-                const [x0, x1] = d3.event.selection;
-                console.log(x0, x1)
+                const [x0, x1] = timeSelection;
+                console.log(x0, x1);
                 var randomConverter = d3.scaleLinear()
                     .range([1, 10])
                     .domain([0, selectorWidth])
@@ -510,7 +511,8 @@ function drawTimeSelector(data, timeScale, type) {
                 createQuery(queryNode, Math.floor(randomConverter(x1)), "single", nodeList);
                 console.log(randomConverter(x1));
             }
-
+            
+            
         }
 
         function leftHandleOver() {
@@ -646,12 +648,10 @@ function drawTimeSelector(data, timeScale, type) {
     callSecondBrush();
     if (!secondGraphExist) {
         d3.selectAll(".brush-child").classed("hide", true);
-    }
-
-    // console.log(d3.selectAll(".brush-child").classed("hide"))
-
-
+    }    
 }
+
+
 
 function topNodeTab() {
     let tab = d3.select("#topNodesTab");
@@ -728,7 +728,7 @@ function drawTopNodes(list) {
             graphExist = false;
             drawLayer.attr("height", "100%").attr("width", "100%");
             workSpace.selectAll("g").remove();
-            workSpace.selectAll("text").text(null);
+            d3.selectAll("#queryTitleContainer").classed("hide", true);
             node.remove();
             drawTopNodes(nodeList);
             d3.select(this).classed("tool-active", true);
@@ -1113,9 +1113,6 @@ function drawTopNodes(list) {
                     line.remove();
                 }
             }
-
-
-
         }
 
         function isInCircle(x, y, cx, cy, r) {
@@ -1422,7 +1419,6 @@ function drawTopNodes(list) {
 
         function clearBrushLayer() {
             workContainer.selectAll(".brush-menu-container").remove();
-            // brushLayer.selectAll("rect").remove();
             brushLayer.call(brush.clear);
             drawLayer.selectAll("circle").classed("selected", false)
         }
@@ -1469,10 +1465,11 @@ function createQuery(d, timePoint, type, nodeList) {
         drawGraph("graph-first", nodeMap_c, type);
         secondGraphExist = false;
     }, 350);
+    d3.select("#queryTitleContainer").classed("hide", false);
     if (type === "single") {
-        titletext.text("Routes of people who go to " + queryNode);
+        titletext.html("Routes of people who go to " + queryNode);
     } else {
-        titletext.text("Packed Query");
+        titletext.html("Packed Query");
     }
 }
 
@@ -1514,14 +1511,8 @@ function getHeatmap() {
 
 function drawHeatmap(d) {
     let heatmapContainer = workContainer.select(".heatmap-container")
-    // if (!isHeatmapActive) {
-    // console.log(heatmap);
-    // d3.select(this).classed("heatmap-button-active", true);
-    // d3.select(this).select("path").attr("fill", "#fff")
-    // heatmapContainer.classed("heatmap-container-active", true);
     let heatmapWidth = 0.2 * width;
     let heatmapHeight = 0.2 * height;
-    // let heatmap = heatmapContainer.append("svg")
     setTimeout(() => {
         let heatmap = heatmapContainer.append("svg")
             .attr("id", "heatmap")
@@ -1623,3 +1614,4 @@ function drawHeatmap(d) {
 
     isHeatmapActive = true;
 }
+

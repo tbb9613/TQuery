@@ -4,6 +4,7 @@ function drawGraph(graphid, graph, type) {
     let graphRightPlusExist = false;
     let graphLeftPlusExist = false;
     graphExist = true;
+    
 
     d3.selectAll(".brush-child").classed("hide", true);
 
@@ -39,129 +40,13 @@ function drawGraph(graphid, graph, type) {
     }
 
     // zoom(graphBg);
-    graphBg.call(zoom).on("dblclick.zoom", null);
+
+    // graphBg.call(zoom).on("dblclick.zoom", null);
 
     //display side tab menu
     d3.select("#staTab").classed("hide", false)
     //draw sta cards
     let staCardHeight = 2 * staSpaceWidth / 3;
-
-    function drawStaCards() {
-        //Create sta cards
-        const staCardList = [{
-            "category": "general",
-            "type": "pie",
-            "name": "sta1"
-        }, {
-            "category": "general",
-            "type": "bar",
-            "name": "sta2"
-        }, {
-            "category": "business",
-            "type": "pie",
-            "name": "sta3"
-        }, {
-            "category": "business",
-            "type": "bar",
-            "name": "sta4"
-        }, {
-            "category": "consumer",
-            "type": "pie",
-            "name": "sta5"
-        }, {
-            "category": "consumer",
-            "type": "bar",
-            "name": "sta6"
-        }]
-
-        //Create background   
-        var staCards = staSpace.selectAll(".stacard")
-            .data(staCardList).enter()
-            .append("g")
-            .classed("stacard", true)
-            .attr("class", d => (d.category + " " + d.type))
-            .attr("id", d => d.name)
-            .attr("width", "100%")
-            .attr("height", staCardHeight)
-            // .attr("fill", "#CCC")
-            .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
-
-        staCards
-            .append("rect")
-            .attr("class", "stacard-bg")
-            .attr("x", "2.5%")
-            .attr("width", "95%")
-            .attr("height", staCardHeight)
-            .attr("fill", "#EEE")
-            .attr("y", (d, i) => 200 + i * (30 + staCardHeight))
-
-        staSpace.attr("height", 300 + staCardList.length * (30 + staCardHeight))
-    }
-
-    // drawStaCards();
-    // var supplierHeight = parseFloat(d3.select("#sta2").attr("y")) + 2 * staCardHeight / 3
-    // var customerHeight = parseFloat(d3.select("#sta4").attr("y")) + 2 * staCardHeight / 3
-
-    d3.selectAll(".sta-button")
-        .on("click", clickStaTab)
-    var isTabClicked = false;
-
-    function clickStaTab() {
-        isTabClicked = true;
-        let id = d3.select(this).attr("id");
-        if (id === "G") {
-            staContainer.node().scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-            d3.select("#G").classed("sta-button-active", true);
-            d3.select("#S").classed("sta-button-active", false);
-            d3.select("#C").classed("sta-button-active", false);
-        } else if (id === "S") {
-            staContainer.node().scrollTo({
-                top: supplierHeight,
-                behavior: "smooth"
-            })
-            d3.select("#G").classed("sta-button-active", false);
-            d3.select("#S").classed("sta-button-active", true);
-            d3.select("#C").classed("sta-button-active", false);
-        } else if (id === "C") {
-            staContainer.node().scrollTo({
-                top: customerHeight,
-                behavior: "smooth"
-            })
-            d3.select("#G").classed("sta-button-active", false);
-            d3.select("#S").classed("sta-button-active", false);
-            d3.select("#C").classed("sta-button-active", true);
-        }
-        setTimeout(() => {
-            isTabClicked = false;
-            checkScroll();
-        }, 1500)
-
-    }
-    // staContainer.node().onscroll = checkScroll;
-
-    function checkScroll() {
-        let sTop = staContainer.node().scrollTop;
-        if (!isTabClicked) {
-            if (sTop < supplierHeight) {
-                d3.select("#G").classed("sta-button-active", true);
-                d3.select("#S").classed("sta-button-active", false);
-                d3.select("#C").classed("sta-button-active", false);
-            } else if (sTop >= supplierHeight && sTop < customerHeight) {
-                d3.select("#G").classed("sta-button-active", false);
-                d3.select("#S").classed("sta-button-active", true);
-                d3.select("#C").classed("sta-button-active", false);
-            } else {
-                d3.select("#G").classed("sta-button-active", false);
-                d3.select("#S").classed("sta-button-active", false);
-                d3.select("#C").classed("sta-button-active", true);
-            }
-        }
-        // console.log("scroll!", sTop);
-    }
-    //brush - select
 
     brush.on("start", brushstart)
         .on("brush", brushed)
@@ -298,8 +183,31 @@ function drawGraph(graphid, graph, type) {
             .attr("stroke-width", "3px");
     }
 
-    //Pie around center node
-    //Calculate pie chart data
+    //Draw Bottom Axis according to time selector data
+    var bottomAxisWidth = 0.85 * width;
+    let bottomAxisMargin = ({
+        left: (width - bottomAxisWidth) * 0.5,
+        top: 0.9 * workSpaceHeight - 30
+    });
+    function drawBottomAxis(){
+        d3.selectAll(".bottom-axis").remove();
+
+        let timeMin = timeSec / 60; 
+        console.log(timeMin);
+
+        let xBottom = d3.scaleLinear()
+            .domain([-timeMin / 2, timeMin / 2])
+            .range([0, bottomAxisWidth]);
+        console.log(xBottom(0));
+        let xAxisBottom = workSpace.append("g")
+            .attr("transform", `translate(${bottomAxisMargin.left}, ${bottomAxisMargin.top})`)
+            .attr("class", "bottom-axis");
+        xAxisBottom.call(d3.axisBottom(xBottom).ticks(bottomAxisWidth / 25).tickSize(3).tickSizeOuter(0))
+            // .raise();
+        xAxisBottom.selectAll("text").remove();
+        xAxisBottom.attr("opacity", .3)
+    }
+    drawBottomAxis();
     //Draw links & nodes
     function MainLayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
@@ -308,7 +216,6 @@ function drawGraph(graphid, graph, type) {
         return scaler(subID);
     }
 
-
     let linkScaler = d3.scaleLinear()
         .range([1, 5])
         .domain([1, d3.max(graph.link, d => d.count)])
@@ -316,11 +223,15 @@ function drawGraph(graphid, graph, type) {
     let rightCountSum = d3.sum(graph.link.filter(d => d.sequence == 1), d => d.count)
     let leftCountSum = d3.sum(graph.link.filter(d => d.sequence == -1), d => d.count)
 
+    var verticalLine = graphContainer.append("g")
+        .attr("id", "VerticalLines")
+        .attr("opacity", .3);
+
     let link = graphContainer.append('g')
-        .attr("id", "link")
+        .attr("id", "Links")
 
     let node = graphContainer.append("g")
-        .attr("id", "nodes");
+        .attr("id", "Nodes");
 
     let nodeRadius = 20,
         nodeTxtOffset = 27,
@@ -479,8 +390,37 @@ function drawGraph(graphid, graph, type) {
         function packedMouseLeave() {
 
         }
-
     }
+
+    //add vertical line
+    
+    var verLiney = ({
+        y1: workSpaceHeight-bottomAxisMargin.top - 10,
+        y2: bottomAxisMargin.top + 10
+    })
+    let leftVerline = verticalLine.append("g")  
+        .attr("id", "seq-1")
+        
+        .call(d3.drag().on("drag", vlineDragged));
+    leftVerline.append("line")
+        .attr("x1", graphCenter[0]-fistNodeDistance)
+        .attr("y1", verLiney.y1)
+        .attr("x2", graphCenter[0]-fistNodeDistance)
+        .attr("y2", verLiney.y2)
+        .attr("class", "vertical-line");
+
+    let rightVerline = verticalLine.append("g")  
+        .attr("id", "seq1")
+        // .attr("opacity", .5)
+        .call(d3.drag().on("drag", vlineDragged));
+    rightVerline.append("line")
+        .attr("x1", graphCenter[0]+fistNodeDistance)
+        .attr("y1", verLiney.y1)
+        .attr("x2", graphCenter[0]+fistNodeDistance)
+        .attr("y2", verLiney.y2)
+        .attr("class", "vertical-line");
+
+    //add other link and nodes
 
     let linkRight = link.append("g")
         .selectAll("line")
@@ -514,7 +454,7 @@ function drawGraph(graphid, graph, type) {
         .attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * fistNodeDistance)
         .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
         .text(d => d.count * 10)
-        .classed("text-hide", true)
+        .classed("text-hide", true);
 
     let leftText = link.append("g")
         .selectAll("text")
@@ -524,18 +464,16 @@ function drawGraph(graphid, graph, type) {
         .attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * fistNodeDistance)
         .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
         .text(d => d.count * 10)
-        .classed("text-hide", true)
+        .classed("text-hide", true);
 
-    
     let nodeRight = node.selectAll(".node-right")
         .data(graph.node.filter(d => d.sequence == 1))
         .enter().append("g")
         .attr("class", "node-right")
         .attr("transform",  d => "translate("+ linkRight.filter(l => l.target == d.target).attr("x2") + "," 
             + linkRight.filter(l => l.target == d.target).attr("y2") + ")")
-        .call(d3.drag().on("drag", dragged))
+        .call(d3.drag().on("drag", dragged));
         
-
     nodeRight
         .append("circle")
         .attr("class", "node")
@@ -549,7 +487,6 @@ function drawGraph(graphid, graph, type) {
         .attr("class", "node-text")
         .attr("y", nodeTxtOffset)
         .text(d => d.place.slice(0, 3));
-    //add percent graph
 
     //calculate the proportion of thisnode atv / total atv
     let inNodeHistScaler = d3.scaleLinear()
@@ -622,7 +559,48 @@ function drawGraph(graphid, graph, type) {
         .on("mousemove", InNodeGraphMouseMove)
         .on("mouseleave", InNodeGraphMouseLeave);
 
+    //drag vertical line event
+    function vlineDragged(d){
+        console.log(d3.event.x)
+        let dLinex = d3.event.x, dLiney = d3.event.y;
+        var thisLine = d3.select(this);
+        thisLine.select("line").attr("x1", dLinex).attr("x2", dLinex);
+        if (thisLine.attr("id") === "seq-1") {
+            nodeLeft.attr("transform",  d => "translate("+ dLinex + "," 
+            + linkLeft.filter(l => l.target == d.target).attr("y2") + ")");
+            linkLeft.attr("x2",dLinex);
+            if (linkLeftplus[2] != undefined) {
+                linkLeftplus[2].attr("x1", dLinex);
+            }
 
+        } else if (thisLine.attr("id") === "seq1") {
+            nodeRight.attr("transform",  d => "translate("+ dLinex + "," 
+            + linkRight.filter(l => l.target == d.target).attr("y2") + ")");
+            linkRight.attr("x2",dLinex);
+            if (linkRightplus[2] != undefined) {
+                linkRightplus[2].attr("x1", dLinex);
+            }
+        } else {
+            var seq = parseFloat(thisLine.attr("id").replace("seq", ""));
+            let allgroup = d3.selectAll(`#${thisLine.attr("id")}`);
+            allgroup.selectAll("circle").attr("cx", dLinex);
+            allgroup.selectAll("text").attr("x", dLinex);
+            allgroup.selectAll("line").attr("x2", dLinex);
+            if (seq>0) {
+                if (linkRightplus[seq+1] != undefined) {
+                    linkRightplus[seq+1].attr("x1", dLinex);
+                }
+            } else {
+                if (linkLeftplus[-seq+1] != undefined) {
+                    linkLeftplus[-seq+1].attr("x1", dLinex);
+                }
+            }
+            
+            
+        }
+    }
+
+    //drag node event
     function dragged(d) {
         console.log(event.pageX)
         // console.log(d);
@@ -795,6 +773,18 @@ function drawGraph(graphid, graph, type) {
     function drawRightplus(seq) {
 
         graphRightPlusExist = true;
+        //add vertical line
+        let verLine = verticalLine.append("g")  
+        .attr("id", `seq${seq}`)
+        .attr("opacity", .5)
+        .call(d3.drag().on("drag", vlineDragged));
+        let verLineXpos = parseFloat(verticalLine.select(`#seq${seq-1}`).select("line").attr("x2"))+ 80;
+        verLine.append("line")
+            .attr("x1", verLineXpos)
+            .attr("y1", verLiney.y1)
+            .attr("x2", verLineXpos)
+            .attr("y2", verLiney.y2)
+            .attr("class", "vertical-line");
 
         //Calculate vertical layout
         if (seq === 2) {
@@ -946,9 +936,20 @@ function drawGraph(graphid, graph, type) {
     function drawLeftplus(seq) {
 
         graphLeftPlusExist = true;
+        //add vertical line
+        let verLine = verticalLine.append("g")  
+        .attr("id", `seq${-seq}`)
+        .attr("opacity", .5)
+        .call(d3.drag().on("drag", vlineDragged));
+        let verLineXpos = parseFloat(verticalLine.select(`#seq${-seq+1}`).select("line").attr("x2")) - 80;
+        verLine.append("line")
+            .attr("x1", verLineXpos)
+            .attr("y1", verLiney.y1)
+            .attr("x2", verLineXpos)
+            .attr("y2", verLiney.y2)
+            .attr("class", "vertical-line");
 
         //Calculate vertical layout
-
         if (seq == 2) {
             linkLeftplus[seq] = link.append("g")
                 .attr("id", `seq${-seq}`)
@@ -1081,13 +1082,8 @@ function drawGraph(graphid, graph, type) {
                         parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
                         parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             }
-
-            // drawsta();
-
-            // text.text('Place: ' + d.place)
         }
     }
-
 
 
     var shiftTooltip = workContainer.append("div")
@@ -1186,7 +1182,6 @@ function drawGraph(graphid, graph, type) {
                 .classed("node", false)
                 .attr("stroke-width", 3)
                 .attr("stroke", "#00AAFF");
-                // .attr("fill", "#00AAFF");
             hoveredNodeParent.select(".recenter-text")
                 .classed("hide", false);
         } else {
@@ -1203,7 +1198,7 @@ function drawGraph(graphid, graph, type) {
     function NodeMouseMove(d){
         let hoveredNode = d3.select(this);
         let hoveredNodeParent = d3.select(this.parentNode)
-
+        //recenter
         if (d3.event.shiftKey){
             console.log("shifthover!")
             hoveredNode
@@ -1244,6 +1239,7 @@ function drawGraph(graphid, graph, type) {
 
     let conditionBox = graphBg.append("g")
         .attr("id", "conditionBox")
+        .attr("transform", `translate(${0.45 * width}, ${0.9 * workSpaceHeight})`)
 
     if (graphid === "graph-first") {
         conditionCount = 0;
@@ -1251,16 +1247,16 @@ function drawGraph(graphid, graph, type) {
 
     function initializeConditionBox() {
         conditionBox.append("rect")
-            .attr("x", "45%")
-            .attr("y", "90%")
-            .attr("height", "7%")
-            .attr("width", "10%")
+            // .attr("x", "45%")
+            // .attr("y", 0.9 * workSpaceHeight)
+            .attr("height", 50)
+            .attr("width", 0.1 * width)
             .attr("fill", "#808080")
             .attr("opacity", .5)
 
         conditionBox.append("text")
-            .attr("x", "50%")
-            .attr("y", "93.5%")
+            .attr("x", 0.05 * width)
+            .attr("y", 25)
             .attr('text-anchor', 'middle')
             .attr('alignment-baseline', 'middle')
             .text(`Conditions(${conditionCount})`)
@@ -1279,9 +1275,6 @@ function drawGraph(graphid, graph, type) {
     initializeConditionBox();
 
     let conditionBoxPos = conditionBox.node().getBoundingClientRect();
-
-
-
     function StaLabelClick(){
         console.log("staclick");
         let thisCard = d3.select(this);
