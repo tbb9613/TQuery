@@ -120,6 +120,18 @@ workSpace.append("svg:defs").append("svg:marker")
     .attr("d", "M 0 0 12 6 0 12 3 6")
     .style("fill", "white");
 
+//horizontal def
+workSpace.append("svg:defs").append("svg:marker") 
+    .attr("id", "triangleArrow-hor")
+    .attr("refX", 3)
+    .attr("refY", 3)
+    .attr("markerWidth", 30)
+    .attr("markerHeight", 30)
+    .attr("orient", "auto-start-reverse")
+    .append("path")
+    .attr("d", "M 0 0 6 3 0 6 1.5 3")
+    .style("fill", "black");
+
 var nodeMenu = d3.select(".node-menu");
 
 //make the workspace under topspace

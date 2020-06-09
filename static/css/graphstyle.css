@@ -153,8 +153,26 @@ button {
 }
 
 .vertical-line {
-  stroke: #999;
-  stroke-width: 2px;
+  stroke: #CCC;
+  stroke-width: 4px;
+  cursor: col-resize;
+}
+
+.horizontal-line{
+  stroke: black;
+  stroke-width: 1px;
+}
+
+.horizontal-line-text {
+  font-size: 12px;
+  fill: blue;
+  text-anchor: middle;
+}
+
+.horizontal-line-text-unit{
+  font-size: 11px;
+  fill: black;
+  text-anchor: middle;
 }
 
 .title-text{
@@ -532,7 +550,7 @@ input.filter-text-input:focus {
 
 .address-checkbox {
   float: right;
-  /* margin-right: 5px; */
+  margin-left: 15px;
   /* margin-right: 10%; */
 }
 

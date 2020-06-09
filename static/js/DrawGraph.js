@@ -189,22 +189,23 @@ function drawGraph(graphid, graph, type) {
         left: (width - bottomAxisWidth) * 0.5,
         top: 0.9 * workSpaceHeight - 30
     });
+    let timeBoundary = bottomAxisWidth/2
+    let xBottom = d3.scaleLinear()
+            .domain([-timeBoundary, timeBoundary])
+            .range([0, bottomAxisWidth]);
     function drawBottomAxis(){
         d3.selectAll(".bottom-axis").remove();
 
-        let timeMin = timeSec / 60; 
-        console.log(timeMin);
-
-        let xBottom = d3.scaleLinear()
-            .domain([-timeMin / 2, timeMin / 2])
-            .range([0, bottomAxisWidth]);
+        let timeMin = timeSec / 60
+        let timeHour = timeMin / 60
+        // console.log(timeMin);
         console.log(xBottom(0));
         let xAxisBottom = workSpace.append("g")
             .attr("transform", `translate(${bottomAxisMargin.left}, ${bottomAxisMargin.top})`)
             .attr("class", "bottom-axis");
-        xAxisBottom.call(d3.axisBottom(xBottom).ticks(bottomAxisWidth / 25).tickSize(3).tickSizeOuter(0))
+        xAxisBottom.call(d3.axisBottom(xBottom).ticks(bottomAxisWidth / 40).tickSize(3).tickSizeOuter(0))
             // .raise();
-        xAxisBottom.selectAll("text").remove();
+        // xAxisBottom.selectAll("text").remove();
         xAxisBottom.attr("opacity", .3)
     }
     drawBottomAxis();
@@ -225,6 +226,10 @@ function drawGraph(graphid, graph, type) {
 
     var verticalLine = graphContainer.append("g")
         .attr("id", "VerticalLines")
+        .attr("opacity", .3);
+
+    var horizontalLine = graphContainer.append("g")
+        .attr("id", "HorizontalLines")
         .attr("opacity", .3);
 
     let link = graphContainer.append('g')
@@ -398,30 +403,66 @@ function drawGraph(graphid, graph, type) {
         y1: workSpaceHeight-bottomAxisMargin.top - 10,
         y2: bottomAxisMargin.top + 10
     })
-    let leftVerline = verticalLine.append("g")  
-        .attr("id", "seq-1")
-        
-        .call(d3.drag().on("drag", vlineDragged));
-    leftVerline.append("line")
-        .attr("x1", graphCenter[0]-fistNodeDistance)
+
+    function appendVerLine(selection, xPos) {
+        selection.append("line")
+        .attr("x1", xPos)
         .attr("y1", verLiney.y1)
-        .attr("x2", graphCenter[0]-fistNodeDistance)
+        .attr("x2", xPos)
         .attr("y2", verLiney.y2)
         .attr("class", "vertical-line");
+    }
+
+    let centerVerline = verticalLine.append("g")  
+        .attr("id", "seq0");
+
+    appendVerLine(centerVerline, graphCenter[0]);
+    
+    let leftVerline = verticalLine.append("g")  
+        .attr("id", "seq-1")
+        .call(d3.drag().on("drag", vlineDragged));
+
+    appendVerLine(leftVerline, graphCenter[0]-fistNodeDistance);
 
     let rightVerline = verticalLine.append("g")  
         .attr("id", "seq1")
-        // .attr("opacity", .5)
         .call(d3.drag().on("drag", vlineDragged));
-    rightVerline.append("line")
-        .attr("x1", graphCenter[0]+fistNodeDistance)
-        .attr("y1", verLiney.y1)
-        .attr("x2", graphCenter[0]+fistNodeDistance)
-        .attr("y2", verLiney.y2)
-        .attr("class", "vertical-line");
+
+    appendVerLine(rightVerline, graphCenter[0]+fistNodeDistance);
+
+    //add horizontal line(interval indicator)
+
+    function appendHorLine(selection, x1pos, x2pos){
+        selection.append("line")
+            .attr("class", "horizontal-line")
+            .attr("x1", x1pos)
+            .attr("y1", verLiney.y1+5)
+            .attr("x2", x2pos)
+            .attr("y2", verLiney.y1+5)
+            .attr("marker-end", "url(#triangleArrow-hor)")
+            .attr("marker-start", "url(#triangleArrow-hor)");
+        
+        selection.append("text")
+            .attr("x", (x1pos + x2pos)/2)
+            .attr("y", verLiney.y1)
+            .attr("class", "horizontal-line-text")
+            .text(d3.format(".0f")(xBottom(graphCenter[0]+arrowOffset*2) - xBottom(graphCenter[0]) + Math.abs(xBottom(x2pos)-xBottom(x1pos))));
+        selection.append("text")
+            .attr("x", (x1pos + x2pos)/2)
+            .attr("y", verLiney.y1+15)
+            .attr("class", "horizontal-line-text-unit")
+            .text("mins");
+    }
+    var arrowOffset = 4;
+    let leftHorline = horizontalLine.append("g")
+        .attr("id", "seq-1");
+    appendHorLine(leftHorline, graphCenter[0]-arrowOffset, graphCenter[0]-fistNodeDistance+arrowOffset);
+    let rightHorline = horizontalLine.append("g")
+        .attr("id", "seq1");
+    appendHorLine(rightHorline, graphCenter[0]+arrowOffset, graphCenter[0]+fistNodeDistance-arrowOffset);
+
 
     //add other link and nodes
-
     let linkRight = link.append("g")
         .selectAll("line")
         .data(graph.link.filter(d => d.sequence == 1))
@@ -432,8 +473,6 @@ function drawGraph(graphid, graph, type) {
         .attr("y1", d => graphCenter[1])
         .attr("x2", d => graphCenter[0] + d.sequence * fistNodeDistance)
         .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, d.sublink_count));
-
-    var txtOffset = -20
 
     let linkLeft = link.append("g")
         .selectAll("line")
@@ -446,6 +485,7 @@ function drawGraph(graphid, graph, type) {
         .attr("x2", d => graphCenter[0] + d.sequence * fistNodeDistance)
         .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, d.sublink_count));
 
+    var txtOffset = -15
     let rightText = link.append("g")
         .selectAll("text")
         .data(graph.link.filter(d => d.sequence == 1)).enter()
@@ -507,14 +547,13 @@ function drawGraph(graphid, graph, type) {
     nodeRight.append("line")
         .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
         .attr("class", "innode-graph");
-    //number text "+" "-"
+    //number text with "+" "-"
     nodeRight.append("text")
         .text(d => digitFormat(d.atv-atvmean))
         .attr("class", "innode-graph")
         .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
         .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D")
         
-
     let nodeLeft = node.selectAll(".node-left")
         .data(graph.node.filter(d => d.sequence == -1))
         .enter().append("g")
@@ -547,7 +586,7 @@ function drawGraph(graphid, graph, type) {
     nodeLeft.append("line")
         .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
         .attr("class", "innode-graph")
-    //number text "+" "-"
+    //number text with "+" "-"
     nodeLeft.append("text")
         .text(d => digitFormat(d.atv-atvmean))
         .attr("class", "innode-graph")
@@ -561,43 +600,93 @@ function drawGraph(graphid, graph, type) {
 
     //drag vertical line event
     function vlineDragged(d){
-        console.log(d3.event.x)
-        let dLinex = d3.event.x, dLiney = d3.event.y;
+        // console.log(d3.event.x)
+        let dLinex = d3.event.x;
         var thisLine = d3.select(this);
         thisLine.select("line").attr("x1", dLinex).attr("x2", dLinex);
-        if (thisLine.attr("id") === "seq-1") {
+        if (thisLine.attr("id") === "seq-1") { //left seq 1 node
             nodeLeft.attr("transform",  d => "translate("+ dLinex + "," 
             + linkLeft.filter(l => l.target == d.target).attr("y2") + ")");
             linkLeft.attr("x2",dLinex);
+            //move left text
+            leftText.attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * (graphCenter[0]-dLinex));
+            //move horizontal line
+            horLineMove(-1, -2);
+            //if left plus line is drawn
             if (linkLeftplus[2] != undefined) {
                 linkLeftplus[2].attr("x1", dLinex);
+                linkTxtPosMove(-2, linkLeftplus[2]);
             }
 
-        } else if (thisLine.attr("id") === "seq1") {
+        } else if (thisLine.attr("id") === "seq1") { //right seq 1 node
             nodeRight.attr("transform",  d => "translate("+ dLinex + "," 
             + linkRight.filter(l => l.target == d.target).attr("y2") + ")");
             linkRight.attr("x2",dLinex);
+            //move right line text
+            rightText.attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * (dLinex-graphCenter[0]));
+            //move horizontal line
+            horLineMove(1, 2);
             if (linkRightplus[2] != undefined) {
                 linkRightplus[2].attr("x1", dLinex);
+                // console.log(linkRightplus[2].selectAll("text"))
+                linkTxtPosMove(2, linkRightplus[2]);
             }
         } else {
             var seq = parseFloat(thisLine.attr("id").replace("seq", ""));
             let allgroup = d3.selectAll(`#${thisLine.attr("id")}`);
             allgroup.selectAll("circle").attr("cx", dLinex);
-            allgroup.selectAll("text").attr("x", dLinex);
+            allgroup.selectAll(".node-text").attr("x", dLinex); //node text move
             allgroup.selectAll("line").attr("x2", dLinex);
             if (seq>0) {
+                horLineMove(seq, seq+1);
+                linkTxtPosMove(seq, linkRightplus[seq]);
                 if (linkRightplus[seq+1] != undefined) {
                     linkRightplus[seq+1].attr("x1", dLinex);
+                    
+                    linkTxtPosMove(seq+1, linkRightplus[seq+1]);
                 }
             } else {
+                horLineMove(seq, seq-1);
+                linkTxtPosMove(seq, linkLeftplus[-seq]);
                 if (linkLeftplus[-seq+1] != undefined) {
                     linkLeftplus[-seq+1].attr("x1", dLinex);
+                    linkTxtPosMove(seq-1, linkLeftplus[-seq+1]);
                 }
             }
-            
+        }
+        function horLineMove(seq, nxtseq){
+            horizontalLine.select(`#seq${seq}`).select(".horizontal-line") 
+                .attr("x2", () => (dLinex < graphCenter[0]) ? dLinex + arrowOffset : dLinex - arrowOffset);
+            horizontalLine.select(`#seq${nxtseq}`).select(".horizontal-line") 
+                .attr("x1", () => (dLinex < graphCenter[0]) ? dLinex - arrowOffset : dLinex + arrowOffset);
+            let seqx1pos = parseFloat(horizontalLine.select(`#seq${seq}`).select(".horizontal-line").attr("x2")),
+                seqx2pos = parseFloat(horizontalLine.select(`#seq${seq}`).select(".horizontal-line").attr("x1"));
+            horizontalLine.select(`#seq${seq}`).select(".horizontal-line-text")
+                .attr("x", (seqx1pos + seqx2pos)/2)
+                .text(d3.format(".0f")(xBottom(graphCenter[0]+arrowOffset*2) - xBottom(graphCenter[0]) + Math.abs(xBottom(seqx2pos)- xBottom(seqx1pos))));
+            horizontalLine.select(`#seq${seq}`).select(".horizontal-line-text-unit")
+                .attr("x", (seqx1pos + seqx2pos)/2);
+            if (!horizontalLine.select(`#seq${nxtseq}`).empty()){ // if the selection not empty
+                let nxtseqx1pos = parseFloat(horizontalLine.select(`#seq${nxtseq}`).select(".horizontal-line").attr("x2")),
+                    nxtseqx2pos = parseFloat(horizontalLine.select(`#seq${nxtseq}`).select(".horizontal-line").attr("x1"));
+                horizontalLine.select(`#seq${nxtseq}`).select(".horizontal-line-text")
+                    .attr("x", (nxtseqx1pos + nxtseqx2pos)/2)
+                    .text(d3.format(".0f")(xBottom(graphCenter[0]+arrowOffset*2) - xBottom(graphCenter[0]) + Math.abs(xBottom(nxtseqx2pos)-xBottom(nxtseqx1pos))));
+                horizontalLine.select(`#seq${nxtseq}`).select(".horizontal-line-text-unit")
+                    .attr("x", (nxtseqx1pos + nxtseqx2pos)/2)
+            }
             
         }
+    }
+
+    function linkTxtPosMove(seq, linkGroup){
+        link.selectAll(`#seq${seq}`).selectAll("text") //select text belongs to the seq
+            .attr("x", t => 0.5 * (
+                parseFloat(linkGroup.filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
+                parseFloat(linkGroup.filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
+            .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
+                parseFloat(linkGroup.filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
+                parseFloat(linkGroup.filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
     }
 
     //drag node event
@@ -690,7 +779,7 @@ function drawGraph(graphid, graph, type) {
         .attr("class", "after-controller")
         .text("➕")
         .attr("x", "95%")
-        .attr("y", "48%")
+        .attr("y", "48%");
 
     graphBg.append("g")
         .on("click", afterminus)
@@ -698,7 +787,7 @@ function drawGraph(graphid, graph, type) {
         .attr("class", "after-controller")
         .text("➖")
         .attr("x", "95%")
-        .attr("y", "54%")
+        .attr("y", "54%");
 
     graphBg.append("g")
         .on("click", beforeplus)
@@ -706,7 +795,7 @@ function drawGraph(graphid, graph, type) {
         .attr("class", "before-controller")
         .text("➕")
         .attr("x", "5%")
-        .attr("y", "48%")
+        .attr("y", "48%");
 
     graphBg.append("g")
         .on("click", beforeminus)
@@ -714,16 +803,14 @@ function drawGraph(graphid, graph, type) {
         .attr("class", "before-controller")
         .text("➖")
         .attr("x", "5%")
-        .attr("y", "54%")
+        .attr("y", "54%");
 
     if (graphid === "graph-second") {
         graphBg.selectAll(".before-controller")
             .attr("x", "55%")
     }
 
-    let rseq = 2;
-    let lseq = 2;
-    let maxseq = 6;
+    let rseq = 2, lseq = 2, maxseq = 4;
 
     function afterplus() {
         if (rseq <= maxseq) {
@@ -758,6 +845,7 @@ function drawGraph(graphid, graph, type) {
             lseq -= 1
         }
     }
+
     function LayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
             .range([-10 - 10 * subC, 10 + 10 * subC])
@@ -770,21 +858,43 @@ function drawGraph(graphid, graph, type) {
             .domain([-0.3, count-0.7]);
         return scaler(thisID);
     }
-    function drawRightplus(seq) {
 
-        graphRightPlusExist = true;
-        //add vertical line
+    function drawPlusVerticalLine(seq, lastseq, gap){
         let verLine = verticalLine.append("g")  
-        .attr("id", `seq${seq}`)
-        .attr("opacity", .5)
-        .call(d3.drag().on("drag", vlineDragged));
-        let verLineXpos = parseFloat(verticalLine.select(`#seq${seq-1}`).select("line").attr("x2"))+ 80;
+            .attr("id", `seq${seq}`)
+            .call(d3.drag().on("drag", vlineDragged));
+        let verLineXpos = parseFloat(verticalLine.select(`#seq${lastseq}`).select("line").attr("x2")) + gap;
         verLine.append("line")
             .attr("x1", verLineXpos)
             .attr("y1", verLiney.y1)
             .attr("x2", verLineXpos)
             .attr("y2", verLiney.y2)
             .attr("class", "vertical-line");
+    }
+
+    function drawPlusHorizontalLine(seq, lastseq, gap){
+        let horLine = horizontalLine.append("g")
+            .attr("id", `seq${seq}`)
+        let horLineX1pos =  parseFloat(verticalLine.select(`#seq${lastseq}`).select("line").attr("x2")),
+            horLineX2pos =  parseFloat(verticalLine.select(`#seq${lastseq}`).select("line").attr("x2")) + gap;
+        if (horLineX1pos < graphCenter[0]) {
+            horLineX1pos -= arrowOffset
+        } else {
+            horLineX1pos += arrowOffset;
+        };
+        if (horLineX2pos < graphCenter[0]) {
+            horLineX2pos += arrowOffset
+        } else {
+            horLineX2pos -= arrowOffset;
+        }
+        appendHorLine(horLine, horLineX1pos, horLineX2pos);
+    }
+
+    function drawRightplus(seq) {
+        graphRightPlusExist = true;
+        //add vertical line
+        drawPlusVerticalLine(seq, seq-1, 80);
+        drawPlusHorizontalLine(seq, seq-1, 80);
 
         //Calculate vertical layout
         if (seq === 2) {
@@ -819,9 +929,6 @@ function drawGraph(graphid, graph, type) {
             linkRightplus[seq]
                 .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
 
-            nodeRightplus[seq].sort(function(){
-                
-            })
             console.log(d3.selectAll(`#seq${seq}`).sort())
         } else {
             linkRightplus[seq] = link.append("g")
@@ -911,7 +1018,7 @@ function drawGraph(graphid, graph, type) {
                     parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
                 .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
                     parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
-                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
+                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))));
             if (linkRightplus[seq + 1] != undefined) {
                 linkRightplus[seq + 1].filter(
                     l => l.source == d.target
@@ -930,24 +1037,13 @@ function drawGraph(graphid, graph, type) {
 
             // text.text('Place: ' + d.place)
         }
-
     }
 
     function drawLeftplus(seq) {
-
         graphLeftPlusExist = true;
         //add vertical line
-        let verLine = verticalLine.append("g")  
-        .attr("id", `seq${-seq}`)
-        .attr("opacity", .5)
-        .call(d3.drag().on("drag", vlineDragged));
-        let verLineXpos = parseFloat(verticalLine.select(`#seq${-seq+1}`).select("line").attr("x2")) - 80;
-        verLine.append("line")
-            .attr("x1", verLineXpos)
-            .attr("y1", verLiney.y1)
-            .attr("x2", verLineXpos)
-            .attr("y2", verLiney.y2)
-            .attr("class", "vertical-line");
+        drawPlusVerticalLine(-seq ,-seq+1, -80);
+        drawPlusHorizontalLine(-seq ,-seq+1, -80);
 
         //Calculate vertical layout
         if (seq == 2) {
@@ -1015,8 +1111,6 @@ function drawGraph(graphid, graph, type) {
             // if  ((graph.node.filter(d => d.sequence == -seq).length < 4) || (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length))) {
             //     nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
             // }
-
-
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
         }
