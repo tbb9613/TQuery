@@ -24,8 +24,6 @@ function drawGraph(graphid, graph, type) {
         .attr("width", "100%")
         .attr("height", "100%");
         // .on("click", function(){d3.select(".node-menu").classed("hide", true)})
-        
-    // .attr("y", "30%");
 
     let graphContainer = graphBg.append("g")
         .attr("id", "graphContainer");
@@ -39,8 +37,8 @@ function drawGraph(graphid, graph, type) {
         graphContainer.attr("transform", d3.event.transform)
     }
 
+    //Active zoom
     // zoom(graphBg);
-
     // graphBg.call(zoom).on("dblclick.zoom", null);
 
     //display side tab menu
@@ -206,7 +204,13 @@ function drawGraph(graphid, graph, type) {
         xAxisBottom.call(d3.axisBottom(xBottom).ticks(bottomAxisWidth / 40).tickSize(3).tickSizeOuter(0))
             // .raise();
         // xAxisBottom.selectAll("text").remove();
-        xAxisBottom.attr("opacity", .4)
+        xAxisBottom.append("text").attr("class","bottom-axis-label")
+            .attr("x", -5)
+            .attr("y", 10)
+            .text("Max Time Interval");
+            
+        xAxisBottom.attr("opacity", .4);
+
     }
     drawBottomAxis();
     //Draw links & nodes
@@ -266,6 +270,9 @@ function drawGraph(graphid, graph, type) {
             .attr("y", graphCenter[1] + nodeTxtOffset + 15)
             .text(d => multiWordsFormat(d.place))
             .style("font-size", "14px")
+            .on("mouseover", d => showFullName(d.place))
+            .on("mousemove", moveFullName)
+            .on("mouseout", hideFullName);
 
 
     } else {
@@ -461,7 +468,6 @@ function drawGraph(graphid, graph, type) {
         .attr("id", "seq1");
     appendHorLine(rightHorline, graphCenter[0]+arrowOffset, graphCenter[0]+fistNodeDistance-arrowOffset);
 
-
     //add other link and nodes
     let linkRight = link.append("g")
         .selectAll("line")
@@ -505,7 +511,7 @@ function drawGraph(graphid, graph, type) {
         .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
         .text(d => d.count * 10)
         .classed("text-hide", true);
-
+        
     let nodeRight = node.selectAll(".node-right")
         .data(graph.node.filter(d => d.sequence == 1))
         .enter().append("g")
@@ -526,7 +532,10 @@ function drawGraph(graphid, graph, type) {
     nodeRight.append("text")
         .attr("class", "node-text")
         .attr("y", nodeTxtOffset)
-        .text(d => multiWordsFormat(d.place));
+        .text(d => multiWordsFormat(d.place))
+        .on("mouseover", d => showFullName(d.place))
+        .on("mousemove", moveFullName)
+        .on("mouseout", hideFullName);
 
     //calculate the proportion of thisnode atv / total atv
     let inNodeHistScaler = d3.scaleLinear()
@@ -569,11 +578,14 @@ function drawGraph(graphid, graph, type) {
         .on("mouseover", NodeMouseOver)
         .on("mousemove", NodeMouseMove)
         .on("mouseleave", NodeMouseLeave);
-
+    //add node name
     nodeLeft.append("text")
         .attr("class", "node-text")
         .attr("y", nodeTxtOffset)
         .text(d => multiWordsFormat(d.place))
+        .on("mouseover", d => showFullName(d.place))
+        .on("mousemove", moveFullName)
+        .on("mouseout", hideFullName);
     //in-node graph
     nodeLeft.append("rect")
         .attr("width", 0.8 * nodeRadius)
@@ -988,6 +1000,9 @@ function drawGraph(graphid, graph, type) {
             .attr("x", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
             .attr("y", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
             .text(d => multiWordsFormat(d.place))
+            .on("mouseover", d => showFullName(d.place))
+            .on("mousemove", moveFullName)
+            .on("mouseout", hideFullName);
             // .classed("text-hide", true)
 
         function dragged(d) {
@@ -1125,7 +1140,11 @@ function drawGraph(graphid, graph, type) {
             .attr("class", "node-text")
             .attr("x", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
             .attr("y", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
-            .text(d => multiWordsFormat(d.place));
+            .text(d => multiWordsFormat(d.place))
+            .on("mouseover", d => showFullName(d.place))
+            .on("mousemove", moveFullName)
+            .on("mouseout", hideFullName);
+            
             // .classed("text-hide", true)
 
 
@@ -1165,17 +1184,6 @@ function drawGraph(graphid, graph, type) {
             }
         }
     }
-
-
-    var shiftTooltip = workContainer.append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0)
-    
-    var inNodeTooltip = workContainer.append("div")
-        .attr("class", "tooltip innode-tooltip")
-        .style("opacity", 0)
-    
-
     function InNodeGraphMouseOver(d){
         inNodeTooltip.style("opacity", 1);
 

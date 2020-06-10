@@ -173,10 +173,36 @@ var brush = d3.brush()
 // drawTopNodes(initialNodeList);
 getHeatmap();
 drawHeatmap();
-// let isHeatmapActive = false;
-// d3.select(".heatmap-button").on("click", drawHeatmap)
 
+//draw full node name tooltip 
+var tooltipFullNodeName = d3.select("#mainContainer").append("div")
+        // .attr("x", 0).attr("y", 0)
+        .attr("class", "tooltip-full-node-name hide");
+function showFullName(d){
+    let pgX = event.pageX, pgY = event.pageY;
+    tooltipFullNodeName.style("left", `${pgX+5}px`)
+        .style("top", `${pgY+5}px`)
+        .html(d+ " (" + MCCDict.filter(m => m.edited_description === d)[0].mcc + ")")
+        .classed("hide", false)
+}
 
+function moveFullName(){
+    let pgX = event.pageX, pgY = event.pageY;
+    tooltipFullNodeName.style("left", `${pgX+5}px`)
+        .style("top", `${pgY+5}px`);
+}
+
+function hideFullName(d){
+    tooltipFullNodeName.classed("hide", true);
+}
+//add other tooltips
+var shiftTooltip = workContainer.append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0)
+
+var inNodeTooltip = workContainer.append("div")
+    .attr("class", "tooltip innode-tooltip")
+    .style("opacity", 0)
 
 //TIME SELECTOR
 function getTimeData(timeScale) {
@@ -355,9 +381,6 @@ function getNodeList(name) {
         })
     // return nodeList;
 }
-
-
-
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
@@ -740,6 +763,9 @@ function drawTopNodes(list) {
         .enter().append("g")
         .attr("class", "topnodes")
         .attr("transform", (d,i) => "translate("+ (i * 50 + 60) + "," + nodesyPos+")")
+        .on("mouseover", d => showFullName(d))
+        // .on("mousemove", moveFullName)
+        .on("mouseout", hideFullName);
         // .attr("x", xPosition)
         // .attr("y", "50%");
 
@@ -768,6 +794,7 @@ function drawTopNodes(list) {
             clearToolState();
             isMultiMode = false;
             drawLayer.attr("height", 0).attr("width", 0);
+            drawLayer.selectAll("g").remove();
             drawLayer.selectAll("circle").remove();
             drawLayer.selectAll("rect").remove();
             drawLayer.selectAll("line").remove();
@@ -833,12 +860,13 @@ function drawTopNodes(list) {
         console.log(packList);
         console.log(packLinks);
         console.log(packNodes);
-        createQuery("Theatre", 4, "packed", nodeList);
+        createQuery("Bakeries", 4, "packed", nodeList);
 
         // setTimeout(drawPreview(),210)
         clearToolState();
         isMultiMode = false;
         drawLayer.attr("height", 0).attr("width", 0);
+        drawLayer.selectAll("g").remove();
         drawLayer.selectAll("circle").remove();
         drawLayer.selectAll("rect").remove();
         drawLayer.selectAll("line").remove();
@@ -862,7 +890,10 @@ function drawTopNodes(list) {
             .append("g")
             .attr("class", "dragging-node topnodes")
             .attr("transform", d3.select(this).attr("transform"))
-            .datum(d);
+            .datum(d)
+            .on("mouseover", d => showFullName(d))
+            .on("mousemove", moveFullName);
+            // .on("mouseout", hideFullName);
 
         draggingNode.append("circle")
             .attr("r", topNodeRadius + 5);
@@ -891,6 +922,7 @@ function drawTopNodes(list) {
     function dragged(d) {
         dpx = event.pageX;
         dpy = event.pageY;
+        moveFullName();
 
         globalDragLayer.select(".dragging-node").attr("transform", `translate(${dpx},${dpy})`)
     }; //???????
@@ -919,10 +951,7 @@ function drawTopNodes(list) {
                 let thisNode = d;
                 nodeList = nodeList.filter((d, i) => d !== thisNode) // filter this node id, remove from top nodes
                 console.log(nodeList)
-                // node.exit().remove();
-                // drawTopNodes(nodeList);
-                
-                // node.attr("x", xPosition)
+                hideFullName();
                 if (graphExist == false) {
                     createQuery(d, 4, "single", nodeList);
                 } else {
@@ -939,6 +968,7 @@ function drawTopNodes(list) {
             globalDragLayer.attr("width", 0).attr("height", 0);
 
         }
+        hideFullName();
         console.log("end");
     }
 
@@ -965,15 +995,18 @@ function drawTopNodes(list) {
             let drawLayerNode = drawLayer
                 .append("g")
                 .attr("class", "node-multi")
+                .datum(d)
+                .on("mouseover", d => showFullName(d.place))
+                // .on("mousemove", moveFullName)
+                .on("mouseout", hideFullName);
+                
+                // .attr("transform", `translate(${endXPos}, ${endYPos-topSpaceHeight})`)
 
 
             drawLayerNode.call(d3.drag().on("drag", draggedInMultiDraw))
 
             // console.log(d, typeof(d));
             drawLayerNode
-                // .selectAll("circle")
-                .datum(d)
-                // .enter()
                 .append("circle")
                 .attr("cx", endXPos)
                 .attr("cy", endYPos - topSpaceHeight)
@@ -983,13 +1016,24 @@ function drawTopNodes(list) {
                 .attr("stroke-width", 1.5)
 
             drawLayerNode.append("text")
+                .attr("class", "draw-layer-mcc")
                 .attr('text-anchor', 'middle')
                 .attr('alignment-baseline', 'middle')
                 .attr("x", endXPos)
-                .attr("y", endYPos - topSpaceHeight)
+                .attr("y", endYPos - topSpaceHeight - topNodeRadius/3)
                 .attr("fill", "#fff")
-                .style('font-size', '15px')
-                .text(d.slice(0, 3))
+                .style('font-size', '12px')
+                .text(d => MCCDict.filter(m => m.edited_description === d)[0].mcc);
+
+            drawLayerNode.append('text')
+                .attr("class", "draw-layer-name")
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .attr("fill", "#fff")
+                .style('font-size', '12px')
+                .attr("x", endXPos)
+                .attr("y", endYPos - topSpaceHeight + topNodeRadius/4)
+                .text(d => nodeMultiWordsFormat(d));
 
         } else {
             topSpace.selectAll(".topnodes").remove();
@@ -998,6 +1042,7 @@ function drawTopNodes(list) {
             drawTopNodes(nodeList)
             // .call(d3.drag().on("drag",draggedInMultiDraw))
         }
+        hideFullName()
 
 
         // console.log("end");
@@ -1006,10 +1051,12 @@ function drawTopNodes(list) {
     function draggedInMultiDraw(d) {
         let dx = d3.event.x,
             dy = d3.event.y;
+
         d3.select(this).select("circle").attr("cx", dx);
         d3.select(this).select("circle").attr("cy", dy);
-        d3.select(this).select("text").attr("x", dx);
-        d3.select(this).select("text").attr("y", dy);
+        d3.select(this).selectAll("text").attr("x", dx);
+        d3.select(this).select(".draw-layer-mcc").attr("y", dy - topNodeRadius/3);
+        d3.select(this).select(".draw-layer-name").attr("y", dy + topNodeRadius/4)
     }
 
     function drawUndirectedLine() {
@@ -1423,10 +1470,10 @@ function drawTopNodes(list) {
                         .datum(packCount);
                     conContainer.append("text")
                         .text("OR")
-                        .attr("x", xPos + rectWidth/2).attr("y", yPos - 3)
+                        .attr("x", xPos + rectWidth/2).attr("y", yPos - 5)
                         .attr("fill", "#393261")
                         .style("text-anchor", "middle")
-                        .style("font-size", 15)
+                        .style("font-size", 17)
                         // .attr("class", "")
                     conContainer
                         .lower()
@@ -1487,7 +1534,7 @@ function drawTopNodes(list) {
 
 function createQuery(d, timePoint, type, nodeList) {
     d3.select("#staContainer").classed("hide", true);
-    workContainer.selectAll(".tooltip").remove();
+    // workContainer.selectAll(".tooltip").remove();
     workSpace.selectAll("g").remove();
     // postQuery(d, 4);
     console.log(d)
@@ -1603,7 +1650,7 @@ function drawHeatmap(d) {
         let tooltip = heatmapContainer
             .append("div")
             .style("opacity", 0)
-            .attr("class", "tooltip")
+            .attr("class", "tooltip");
 
         let heatRect = heatmap.selectAll(".heatmap-rect")
             .data(probHeatmap, d => d.place1 + ":" + d.place2)

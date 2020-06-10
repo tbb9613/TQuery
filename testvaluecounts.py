@@ -10,6 +10,7 @@ querySeries = []
 for node in multiQueryNodes["id"]:
     thisSeries = []
     thisTypeList = []
+    #if it is an independant node
     if (~(multiQueryLinks["source"].eq(node).any()) & ~(multiQueryLinks["target"].eq(node).any())):
         # print(node)
         querySeries.append([node])
