@@ -127,7 +127,6 @@ def queryNode_c(typeMCC, time):
                 sequence.append(singleSequence)
                 # ids.append(j+1)
             for location in MCCQueryRoute.iloc[:,i]:
-                
                 target.append(str(singleSequence) + location)
                 nodeName.append(location)
                 nodeSequence.append(singleSequence)
@@ -137,7 +136,7 @@ def queryNode_c(typeMCC, time):
             else:
                 for location in MCCQueryRoute.iloc[:,i-1]:
                     source.append(str(singleSequence-1) + location)
-        else:
+        else: #if this node is start node
             source.append(str(singleSequence) + typeMCC)
             target.append(str(singleSequence) + typeMCC)
             sequence.append(singleSequence)
@@ -151,7 +150,6 @@ def queryNode_c(typeMCC, time):
     linkData = {"links":zip(source, target), "sequence":sequence}
     nodeData = {"links":zip(source, target), "target": target,"place":nodeName, "sequence":nodeSequence, "route": routeID}
     # print(len(source-target), len(sequence), len(ids))
-
 
     nodeMap = pd.DataFrame(data=linkData).sort_values(by = ['links'])
     nodeSelf = pd.DataFrame(data=nodeData).sort_values(by = ['target']).reset_index(drop=True)
@@ -252,9 +250,9 @@ def TimeData(timeScale):
     return timeTrans
 
 def NodeList(listNmae):
-    listdict = { "Location": ["Restaurant","Surpermarket", "Cafe", "Restaurant", "School", "Theatre", "Cinema","Cafe"],
-                "Industry": ["Pharmacy", "Surpermarket", "School", "Theatre", "Cinema","Cafe"], 
-                "MCC": ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]}
+    listdict = { "Location": ["Grocery Stores, Supermarkets", "Bakeries", "Fast Food Restaurants", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"],
+                "Industry": ["Grocery Stores, Supermarkets", "Bakeries", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"], 
+                "MCC": ["Grocery Stores, Supermarkets", "Bakeries", "Fast Food Restaurants", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"]}
     if listdict.__contains__(listNmae):
         return json.dumps(listdict[listNmae])
     else:
@@ -299,6 +297,13 @@ def getlist():
     getListName = request.get_json()["name"]
     # print(getListName)
     return NodeList(getListName)
+
+@app.route('/MCCdict/', methods = ['GET', 'POST'])
+def getMCCdict():
+    MCCdict_get = pd.read_csv("mcc_codes.csv")
+    MCCdict = MCCdict_get.to_json(orient = "records")
+    # print(MCCdict)
+    return MCCdict
 
 
 if __name__ == '__main__': 

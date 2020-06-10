@@ -42,6 +42,9 @@ var graphExist = false;
 var secondGraphExist = false;
 var conditionCount = 0;
 
+var MCCDict
+// console.log(MCCDict)
+
 window.onresize = function () {
     getSize()
 }
@@ -54,25 +57,23 @@ function getSize() {
     workSpaceHeight = 0.7 * height;
     workSpaceWidth = width;
     staSpaceWidth = 0.3 * width
-
 }
 
 var globalDragLayer = d3.select("#globalDrag")
     .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
     .style("z-index", "10")
-    .attr("height", 0).attr("width", 0)
-    
+    .attr("height", 0).attr("width", 0);
 
 var brushLayer = d3.select("#brushLayer")
     .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
-    .attr("height", 0).attr("width", 0)
+    .attr("height", 0).attr("width", 0);
 
 var drawLayer = d3.select("#drawLayer")
     .attr("x", 0).attr("y", 0)
     .style("position", "absolute")
-    .attr("height", 0).attr("width", 0)
+    .attr("height", 0).attr("width", 0);
 
 //append arrow
 drawLayer.append("svg:defs").append("svg:marker")
@@ -133,7 +134,6 @@ workSpace.append("svg:defs").append("svg:marker")
     .style("fill", "black");
 
 var nodeMenu = d3.select(".node-menu");
-
 //make the workspace under topspace
 
 //Add workspace text(interpretation of node map)
@@ -161,7 +161,7 @@ map.on('moveend', function () {
 
 var staContainer = d3.select("#staContainer")
 
-var initialNodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
+// var initialNodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 
 //define brush
 var brush = d3.brush()
@@ -332,6 +332,18 @@ document.getElementById("dataType").onchange = function (e) {
         d3.selectAll(".brush-child").classed("hide", false);
     }
 }
+function getMCCDict(){
+    axios.get('http://127.0.0.1:5000/MCCdict')
+    .catch(function (error) {
+        console.log(error);
+    })
+    .then(function (response) { // if success then update data
+        MCCDict = response.data;
+        console.log(MCCDict);
+        getNodeList("MCC");
+    });
+}
+getMCCDict();
 
 function getNodeList(name) {
     axios.post('http://127.0.0.1:5000/nodelist', {
@@ -343,7 +355,9 @@ function getNodeList(name) {
         })
     // return nodeList;
 }
-getNodeList("Restaurant");
+
+
+
 
 function drawTimeSelector(data, timeScale, type) {
     // getTimeData();
@@ -523,8 +537,6 @@ function drawTimeSelector(data, timeScale, type) {
                 createQuery(queryNode, Math.floor(randomConverter(x1)), "single", nodeList);
                 console.log(randomConverter(x1));
             }
-            
-            
         }
 
         function leftHandleOver() {
@@ -663,8 +675,6 @@ function drawTimeSelector(data, timeScale, type) {
     }    
 }
 
-
-
 function topNodeTab() {
     let tab = d3.select("#topNodesTab");
     let button = tab.selectAll(".toptab")
@@ -715,22 +725,23 @@ function clearToolState() {
 }
 
 function drawTopNodes(list) {
+    // console.log(MCCDict)
 
     var nodeList = list;
     let topNodeRadius = 20;
     let nodesyPos = 0.7 * topSpaceHeight + topNodeRadius
 
     // console.log(nodeList)
-    const xPosition = (d, i) => i * 50 + 60;
+    // const xPosition = i * 50 + 60;
     // console.log(d);
 
     var node = topSpace.selectAll(".topnodes")
         .data(nodeList)
-        .enter()
-        .append("g")
+        .enter().append("g")
         .attr("class", "topnodes")
-        .attr("x", xPosition)
-        .attr("y", "50%");
+        .attr("transform", (d,i) => "translate("+ (i * 50 + 60) + "," + nodesyPos+")")
+        // .attr("x", xPosition)
+        // .attr("y", "50%");
 
     //multinodes
     d3.select(".multi-nodes").on("click", function () {
@@ -786,20 +797,33 @@ function drawTopNodes(list) {
 
     node
         .append("circle")
-        .attr("cx", xPosition)
-        .attr("cy", nodesyPos)
         .attr("r", topNodeRadius);
 
     node
         .append('text')
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
-        .attr("x", xPosition)
-        .attr("y", nodesyPos)
-        .style('font-size', '13px')
+        .style('font-size', '10px')
         .attr('fill', 'white')
-        .text(d => d.slice(0, 3))
-
+        .attr("y", -topNodeRadius/3)
+        .text(d => MCCDict.filter(m => m.edited_description === d)[0].mcc)
+    
+    node
+        .append('text')
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .style('font-size', '10px')
+        .attr('fill', 'white')
+        .attr("y", topNodeRadius/4)
+        .text(d => nodeMultiWordsFormat(d))
+    
+    function nodeMultiWordsFormat(d) {
+        if (multiWordsFormat(d).length < 7) {
+            return multiWordsFormat(d)
+        } else {
+            return d.slice(0,5)+".."
+        }
+    }
     // getHeatmap()
 
     //Data exchange
@@ -830,36 +854,38 @@ function drawTopNodes(list) {
         d3.select("#multiNodeText").classed("hide", true);
     }
     //drag top nodes
-    function dragstarted(d) {
-
-        centerX = d3.select(this).select("circle").attr("cx");
-        centerY = d3.select(this).select("circle").attr("cy");
-
-        let draggingNode = globalDragLayer
+    function dragstarted(d) { 
+        globalDragLayer
             .attr("height", "100%")
             .attr("width", "100%")
+        let draggingNode = globalDragLayer
             .append("g")
             .attr("class", "dragging-node topnodes")
-            .attr("transform", `translate(${centerX},${centerY})`);
+            .attr("transform", d3.select(this).attr("transform"))
+            .datum(d);
 
         draggingNode.append("circle")
-            // .attr("cx", d3.select(this).select("circle").attr("cx"))
-            // .attr("cy", d3.select(this).select("circle").attr("cy"))
             .attr("r", topNodeRadius + 5);
         // .attr("stroke", "#CCC");
 
         draggingNode.append("text")
             .attr('text-anchor', 'middle')
             .attr('alignment-baseline', 'middle')
-            // .attr("x", d3.select(this).select("text").attr("x"))
-            // .attr("y", d3.select(this).select("text").attr("y"))
             .attr("fill", d3.select(this).select("text").attr("fill"))
-            .style('font-size', '15px')
-            .text(d.slice(0, 3))
+            .style('font-size', '12px')
+            .attr("y", -topNodeRadius/3)
+            .text(d => MCCDict.filter(m => m.edited_description === d)[0].mcc);
+
+        draggingNode.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .attr("fill", d3.select(this).select("text").attr("fill"))
+            .style('font-size', '12px')
+            .attr("y", topNodeRadius/4)
+            .text(d => nodeMultiWordsFormat(d))
 
         d3.select(this)
             .attr("opacity", 0.3)
-
     }
 
     function dragged(d) {
@@ -896,7 +922,7 @@ function drawTopNodes(list) {
                 // node.exit().remove();
                 // drawTopNodes(nodeList);
                 
-                node.attr("x", xPosition)
+                // node.attr("x", xPosition)
                 if (graphExist == false) {
                     createQuery(d, 4, "single", nodeList);
                 } else {
@@ -1397,10 +1423,10 @@ function drawTopNodes(list) {
                         .datum(packCount);
                     conContainer.append("text")
                         .text("OR")
-                        .attr("x", xPos).attr("y", yPos)
+                        .attr("x", xPos + rectWidth/2).attr("y", yPos - 3)
                         .attr("fill", "#393261")
                         .style("text-anchor", "middle")
-                        .style("font-size", 12)
+                        .style("font-size", 15)
                         // .attr("class", "")
                     conContainer
                         .lower()
@@ -1465,27 +1491,21 @@ function createQuery(d, timePoint, type, nodeList) {
     workSpace.selectAll("g").remove();
     // postQuery(d, 4);
     console.log(d)
-    postQuery(d, timePoint);
+    postQuery(d, timePoint, type);
     postSubQuery(timePoint + 3);
     // console.log(postQuery(d, 4));
     topSpace.selectAll(".topnodes").remove();
     drawTopNodes(nodeList)
-    setTimeout(() => {
-
-        // drawGraph("graph-first", nodeMap);
-        console.log(nodeMap_c);
-        drawGraph("graph-first", nodeMap_c, type);
-        secondGraphExist = false;
-    }, 350);
+    
     d3.select("#queryTitleContainer").classed("hide", false);
     if (type === "single") {
-        titletext.html("Routes of people who go to " + queryNode);
+        titletext.html("Routes of people who go to <b>" +queryNode + "(" + MCCDict.filter(m => m.edited_description === queryNode)[0].mcc + ")"+"</b>");
     } else {
         titletext.html("Packed Query");
     }
 }
 
-function postQuery(d, t) {
+function postQuery(d, t, type) {
     queryNode = d;
     // console.log(d);
     axios.post('http://127.0.0.1:5000/receivedatac', {
@@ -1498,6 +1518,12 @@ function postQuery(d, t) {
         .then(function (response) { // if success then update data
             nodeMap_c = response.data
             console.log(nodeMap_c)
+            setTimeout(() => {
+            drawGraph("graph-first", nodeMap_c, type);
+            console.log(nodeMap_c);
+            secondGraphExist = false;
+            }, 50);
+            
         })
 }
 
@@ -1521,6 +1547,14 @@ function getHeatmap() {
         });
 }
 
+function multiWordsFormat(d) {
+    if (d.split(' ').length > 1) {
+        return d.split(' ')[0] + ".."
+    } else {
+        return d.split(' ')[0]
+    }
+}
+
 function drawHeatmap(d) {
     let heatmapContainer = workContainer.select(".heatmap-container")
     let heatmapWidth = 0.2 * width;
@@ -1542,14 +1576,13 @@ function drawHeatmap(d) {
         heatmap.append("g")
             .attr("transform", `translate(${0.2 * heatmapWidth + 5},${0.85 * heatmapHeight + 3})`)
             .classed("heatmap-axis", true)
-            .call(d3.axisBottom(x).tickSize(0))
+            .call(d3.axisBottom(x).tickSize(0).tickFormat(d => multiWordsFormat(d)))
             .selectAll("text")
             .style("text-anchor", "start")
             .attr("transform", "rotate(90)")
             .select(".domamin").remove()
             .attr("stroke", "white")
             
-
         //y axis
         let y = d3.scaleBand()
             .range([0.85 * heatmapHeight, 0])
@@ -1559,7 +1592,7 @@ function drawHeatmap(d) {
         heatmap.append("g")
             .attr("transform", `translate(${0.2 * heatmapWidth},${0 * heatmapHeight})`)
             .classed("heatmap-axis", true)
-            .call(d3.axisLeft(y).tickSize(0))
+            .call(d3.axisLeft(y).tickSize(0).tickFormat(d => multiWordsFormat(d)))
             .select(".domamin").remove()
 
         let heatmapColorScale = d3.scaleSequential(d3.interpolateBlues)

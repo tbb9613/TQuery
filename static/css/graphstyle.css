@@ -56,13 +56,15 @@ button {
   top: calc(25%+50px);
   left: 50px;
   font-size: 13px;
+  max-width: 50%;
 }
 
 #queryTitleContainer {
   position: absolute;
   bottom: 10px;
   left: 50px;
-  font-size: 13px;
+  font-size: 12px;
+  max-width: 35%;
 }
 
 #filterContainer {
@@ -107,7 +109,8 @@ button {
 .sta-single{
   border-radius: 10px;
   box-shadow: 1px 1px 3px #ccc;
-  margin: 10px 5px;
+  margin: 5px 0px;
+  margin-right: 5px;
   padding: 8px;
   background-color: #fff;
   float: left;
@@ -123,10 +126,11 @@ button {
   background-color: #D85945;
   color: #fff;
   box-shadow: 1px 1px 2px #ccc;
-  margin: 10px;
+  margin-top: 5px;
   padding: 8px;
-  float: left;
   cursor: default;
+  display: table;
+  width: auto;
 }
 
 .query-title {
@@ -138,6 +142,7 @@ button {
   padding: 8px;
   float: left;
   cursor: default;
+  /* max-width: 90%; */
 }
 
 .node {
@@ -153,9 +158,16 @@ button {
 }
 
 .vertical-line {
-  stroke: #CCC;
-  stroke-width: 4px;
+  stroke: #999;
+  stroke-width: 3px;
   cursor: col-resize;
+  transition: all .15s;
+}
+
+.vertical-line:hover {
+  stroke: #666;
+  stroke-width: 4px;
+  transition: all .15s;
 }
 
 .horizontal-line{
@@ -672,6 +684,8 @@ input.filter-text-input:focus {
 
 circle.this-route{
   fill: #655AAF;
+  /* stroke: aliceblue; */
+  /* fill: #4A4666; */
 }
 
 line.this-route {

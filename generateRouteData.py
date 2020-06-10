@@ -8,7 +8,7 @@ a = []
 matrix = []
 heatmapMatrix = []
 
-locList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"]
+locList = ["Grocery Stores, Supermarkets", "Bakeries", "Fast Food Restaurants", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"]
 
 for j in range(len(locList)):
     prob = 1
@@ -37,7 +37,7 @@ heatmapProbMatrix.to_csv("heatmapProbMatrix.csv")
 
 allRoute = []
 routeLenth = 11
-for j in range(6):
+for j in range(10):
     for location in locList:
         station = location
         route = []

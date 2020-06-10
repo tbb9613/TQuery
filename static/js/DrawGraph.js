@@ -206,7 +206,7 @@ function drawGraph(graphid, graph, type) {
         xAxisBottom.call(d3.axisBottom(xBottom).ticks(bottomAxisWidth / 40).tickSize(3).tickSizeOuter(0))
             // .raise();
         // xAxisBottom.selectAll("text").remove();
-        xAxisBottom.attr("opacity", .3)
+        xAxisBottom.attr("opacity", .4)
     }
     drawBottomAxis();
     //Draw links & nodes
@@ -264,7 +264,7 @@ function drawGraph(graphid, graph, type) {
             .attr("fill", "slategray")
             .attr("x", d => graphCenter[0] + d.sequence * fistNodeDistance)
             .attr("y", graphCenter[1] + nodeTxtOffset + 15)
-            .text(d => d.place.slice(0, 3))
+            .text(d => multiWordsFormat(d.place))
             .style("font-size", "14px")
 
 
@@ -526,7 +526,7 @@ function drawGraph(graphid, graph, type) {
     nodeRight.append("text")
         .attr("class", "node-text")
         .attr("y", nodeTxtOffset)
-        .text(d => d.place.slice(0, 3));
+        .text(d => multiWordsFormat(d.place));
 
     //calculate the proportion of thisnode atv / total atv
     let inNodeHistScaler = d3.scaleLinear()
@@ -552,7 +552,7 @@ function drawGraph(graphid, graph, type) {
         .text(d => digitFormat(d.atv-atvmean))
         .attr("class", "innode-graph")
         .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
-        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D")
+        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
         
     let nodeLeft = node.selectAll(".node-left")
         .data(graph.node.filter(d => d.sequence == -1))
@@ -573,7 +573,7 @@ function drawGraph(graphid, graph, type) {
     nodeLeft.append("text")
         .attr("class", "node-text")
         .attr("y", nodeTxtOffset)
-        .text(d => d.place.slice(0, 3))
+        .text(d => multiWordsFormat(d.place))
     //in-node graph
     nodeLeft.append("rect")
         .attr("width", 0.8 * nodeRadius)
@@ -761,10 +761,10 @@ function drawGraph(graphid, graph, type) {
             graphContainer.selectAll("circle").classed("clicked", false);
             thisNode.classed("clicked", true);
             node.selectAll(".node-text").classed("clicked", false);
-            node.selectAll(".node-text").filter(t => t.sequence < -1 || t.sequence > 1).classed("text-hide", true);
+            // node.selectAll(".node-text").filter(t => t.sequence < -1 || t.sequence > 1).classed("text-hide", true);
             node.selectAll(".node-text").filter(t => t.target === d.target)
-                .attr("class", "text-hide node-text clicked")
-                .classed("text-hide", false)
+                .attr("class", "node-text clicked");
+                // .classed("text-hide", false)
         }
     }
 
@@ -836,7 +836,6 @@ function drawGraph(graphid, graph, type) {
         if (rseq > 2) {
             rseq -= 1
         }
-
     }
 
     function beforeminus() {
@@ -907,9 +906,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
                 .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
-                .attr("y2", 
-                    // d => parseFloat(linkRight.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
-                    (d,i) => LayoutScaler_Adjust(i, graph.link.filter(d => d.sequence == seq).length));
+                .attr("y2", 0);
 
             nodeRightplus[seq] = node.append("g")
                 .attr("id", `seq${seq}`)
@@ -919,7 +916,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", d => linkRightplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .attr("cy", (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
@@ -927,9 +924,7 @@ function drawGraph(graphid, graph, type) {
                 .on("mouseleave", NodeMouseLeave);
 
             linkRightplus[seq]
-                .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
-
-            console.log(d3.selectAll(`#seq${seq}`).sort())
+                .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"));
         } else {
             linkRightplus[seq] = link.append("g")
                 .attr("id", `seq${seq}`)
@@ -940,7 +935,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("x1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
                 .attr("y1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2")) + 80)
-                .attr("y2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+                .attr("y2", 0);
 
             nodeRightplus[seq] = node.append("g")
                 .attr("id", `seq${seq}`)
@@ -950,10 +945,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", (d,i) => 
-                    // parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length) : //dumb layout if too much nodes
-                    // parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
-                    LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length))
+                .attr("cy", (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length))
                 // .attr("cy", (d,i) => 100+ i * 40)
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
@@ -995,8 +987,8 @@ function drawGraph(graphid, graph, type) {
             .attr("class", "node-text")
             .attr("x", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
             .attr("y", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
-            .text(d => d.place.slice(0, 3))
-            .classed("text-hide", true)
+            .text(d => multiWordsFormat(d.place))
+            // .classed("text-hide", true)
 
         function dragged(d) {
             graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
@@ -1056,9 +1048,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
                 .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
                 .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
-                .attr("y2", 
-                // d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
-                (d,i) => LayoutScaler_Adjust(i, graph.link.filter(d => d.sequence == -seq).length));
+                .attr("y2", 0);
 
             nodeLeftplus[seq] = node.append("g")
                 .attr("id", `seq${-seq}`)
@@ -1068,7 +1058,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("y2"))
+                .attr("cy",  (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == -seq).length))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
@@ -1097,10 +1087,7 @@ function drawGraph(graphid, graph, type) {
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", (d,i) => 
-                    // parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) < (graphCenter[1]) ? 90 + i * 30 :
-                    // parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
-                    LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == -seq).length))
+                .attr("cy", (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == -seq).length))
                 .call(d3.drag().on("drag", dragged))
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
@@ -1138,8 +1125,8 @@ function drawGraph(graphid, graph, type) {
             .attr("class", "node-text")
             .attr("x", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
             .attr("y", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
-            .text(d => d.place.slice(0, 3))
-            .classed("text-hide", true)
+            .text(d => multiWordsFormat(d.place));
+            // .classed("text-hide", true)
 
 
         function dragged(d) {
@@ -1219,8 +1206,7 @@ function drawGraph(graphid, graph, type) {
     }
     function InNodeGraphMouseLeave(d) {
         inNodeTooltip
-            .style("opacity", 0)
-
+            .style("opacity", 0);
     }
 
     function NodeMouseOver(d) {
