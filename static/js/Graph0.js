@@ -75,6 +75,9 @@ var drawLayer = d3.select("#drawLayer")
     .style("position", "absolute")
     .attr("height", 0).attr("width", 0);
 
+var scatterFilter = d3.select("#scatterFilter")
+    .append("svg");
+
 //append arrow
 drawLayer.append("svg:defs").append("svg:marker")
     .attr("id", "triangleArrow")
@@ -99,8 +102,8 @@ var topSpace = topContainer.append("svg")
 topSpace.append("g")
     .attr("id", "topSpace")
     .append("rect")
-    .attr("fill", "#CCC")
-    .attr("opacity", .1)
+    .attr("fill", "#F9F9F9")
+    // .attr("opacity", .1)
     .attr("width", "100%")
     .attr("height", "100%");
 
@@ -124,6 +127,18 @@ workSpace.append("svg:defs").append("svg:marker")
 //horizontal def
 workSpace.append("svg:defs").append("svg:marker") 
     .attr("id", "triangleArrow-hor")
+    .attr("refX", 3)
+    .attr("refY", 3)
+    .attr("markerWidth", 30)
+    .attr("markerHeight", 30)
+    .attr("orient", "auto-start-reverse")
+    .append("path")
+    .attr("d", "M 0 0 6 3 0 6 1.5 3")
+    .style("fill", "black");
+
+//sfilter def
+scatterFilter.append("svg:defs").append("svg:marker") 
+    .attr("id", "triangleArrow-sfilter")
     .attr("refX", 3)
     .attr("refY", 3)
     .attr("markerWidth", 30)
@@ -391,7 +406,7 @@ function drawTimeSelector(data, timeScale, type) {
         top: topSpaceHeight * 0.15,
         right: 20,
         bottom: 30,
-        left: 35
+        left: topSpaceHeight * 0.1
     })
     
     // let data = timeTrans;
@@ -751,8 +766,8 @@ function drawTopNodes(list) {
     // console.log(MCCDict)
 
     var nodeList = list;
-    let topNodeRadius = 20;
-    let nodesyPos = 0.7 * topSpaceHeight + topNodeRadius
+    let topNodeXOffset = 0.6 * topSpaceHeight - 20, topNodeRadius = 20;
+    let nodesyPos = 0.65 * topSpaceHeight + topNodeRadius
 
     // console.log(nodeList)
     // const xPosition = i * 50 + 60;
@@ -764,10 +779,7 @@ function drawTopNodes(list) {
         .attr("class", "topnodes")
         .attr("transform", (d,i) => "translate("+ (i * 50 + 60) + "," + nodesyPos+")")
         .on("mouseover", d => showFullName(d))
-        // .on("mousemove", moveFullName)
         .on("mouseout", hideFullName);
-        // .attr("x", xPosition)
-        // .attr("y", "50%");
 
     //multinodes
     d3.select(".multi-nodes").on("click", function () {
@@ -1042,7 +1054,7 @@ function drawTopNodes(list) {
             drawTopNodes(nodeList)
             // .call(d3.drag().on("drag",draggedInMultiDraw))
         }
-        hideFullName()
+        hideFullName();
 
 
         // console.log("end");
@@ -1707,3 +1719,125 @@ function drawHeatmap(d) {
     isHeatmapActive = true;
 }
 
+function drawScatterFilter(){
+    var fakeData_scatter = d3.range(100)
+        .map(function() { return [Math.random()*2-1, Math.random()*2-1]; });
+    let sfilterHeight = 0.6 * topSpaceHeight, sfilterWidth = 0.6 * topSpaceHeight;
+    let sfilterMargin = 0.05 * topSpaceHeight, sfilterTop = 0.4 * topSpaceHeight;
+    let xlabelOffset = 6, ylabelOffset = 3;
+    scatterFilter
+        .attr("height", sfilterHeight).attr("width", sfilterWidth)
+        .call(d3.drag()
+            .on("start drag",changePointPos)
+            .on("end", endPoint));
+    scatterFilter.append("rect")
+        .attr("x", sfilterMargin)
+        .attr("y", sfilterMargin)
+        .attr("height", sfilterHeight).attr("width", sfilterWidth)
+        .attr("fill", "#F9F9F9")
+        // .attr("stroke", "black")
+        // .attr("stroke-width", 2);
+
+    let x = d3.scaleLinear()
+        .range([2 * sfilterMargin, sfilterWidth - sfilterMargin])
+        .domain([-1,1]);
+    let y = d3.scaleLinear()
+        .range([sfilterWidth - sfilterMargin, 2 * sfilterMargin])
+        .domain([-1,1]);
+
+    let xAxis = scatterFilter.append("g")
+        
+    xAxis.append("line")
+        .attr("class", "sfilter-axis")
+        .attr("x1", 2 * sfilterMargin).attr("x2", sfilterWidth-sfilterMargin)
+        .attr("y1", (sfilterHeight+sfilterMargin)/2).attr("y2", (sfilterHeight+sfilterMargin)/2)
+        .attr("marker-end", "url(#triangleArrow-sfilter)");
+    //add x labels
+    xAxis.append("text")
+        .attr("class", "sfilter-axis")
+        .attr("x", sfilterWidth-sfilterMargin)
+        .attr("y", (sfilterHeight+sfilterMargin)/2 + xlabelOffset)
+        .text("Freq");
+
+    xAxis.append("text")
+        .attr("class", "sfilter-axis")
+        .attr("x", sfilterWidth-sfilterMargin)
+        .attr("y", (sfilterHeight+sfilterMargin)/2 - xlabelOffset)
+        .style("opacity", .5)
+        .text("High");
+
+    xAxis.append("text")
+        .attr("class", "sfilter-axis")
+        .attr("x", 2 * sfilterMargin)
+        .attr("y", (sfilterHeight+sfilterMargin)/2 - xlabelOffset)
+        .style("opacity", .5)
+        .style("text-anchor", "start")
+        .text("Low");
+
+    let yAxis = scatterFilter.append("g")
+
+    yAxis.append("line")
+        .attr("class", "sfilter-axis")
+        .attr("x1", (sfilterWidth+sfilterMargin)/2).attr("x2", (sfilterWidth+sfilterMargin)/2)
+        .attr("y1", sfilterHeight-sfilterMargin).attr("y2", 2 * sfilterMargin)
+        .attr("marker-end", "url(#triangleArrow-sfilter)");
+    //add y labels
+    yAxis.append("text")
+        .attr("class", "sfilter-axis")
+        .attr("x", (sfilterWidth+sfilterMargin)/2 - ylabelOffset)
+        .attr("y", 2 * sfilterMargin)
+
+        .text("ATV");
+
+    yAxis.append("text")
+        .attr("class", "sfilter-axis")
+        .attr("x", (sfilterWidth+sfilterMargin)/2 + ylabelOffset)
+        .attr("y", 2 * sfilterMargin)
+        .style("opacity", .5)
+        .style("text-anchor", "start")
+        .text("High");
+
+    yAxis.append("text")
+        .attr("class", "sfilter-axis")
+        .attr("x", (sfilterWidth+sfilterMargin)/2 + ylabelOffset)
+        .attr("y", sfilterHeight-sfilterMargin)
+        .style("opacity", .5)
+        .style("text-anchor", "start")
+        .text("Low")
+
+    let drawPointLayer = scatterFilter.append("g")
+        .attr("class", "draw-point")
+        
+        // let radius = 2;
+    let selectPoint = drawPointLayer.append("circle")
+        .attr("class", "scfilter-select-point")
+        .attr("cx", (sfilterWidth+sfilterMargin)/2)
+        .attr("cy", (sfilterHeight+sfilterMargin)/2)
+        .attr("r", 3)
+        .attr("fill", "red");
+    
+    let scatters = scatterFilter.append("g")
+        .selectAll(".scfilter-scatter")
+        .data(fakeData_scatter)
+        .enter().append("circle")
+        .attr("class", "scfilter-scatter")
+        .attr("cx", d=> x(d[0])).attr("cy", d=> y(d[1]))
+        .attr("r", 1.5);
+    
+    console.log(fakeData_scatter)
+        
+    
+    function changePointPos(d){
+        let xPos = d3.event.x, yPos = d3.event.y;
+        // console.log(xPos, yPos)
+        selectPoint
+            .attr("cx", xPos).attr("cy", yPos)
+    }
+
+    function endPoint(){
+        let xValue = x.invert(d3.event.x), yValue = y.invert(d3.event.y);
+        console.log(xValue, yValue)
+    }
+}
+
+drawScatterFilter()

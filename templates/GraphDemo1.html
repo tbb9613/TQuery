@@ -74,54 +74,56 @@
           <!-- </div> -->
 
         </div>
+        <div id="filterContainer">
+          <!-- <span style="color: #666;">FILTER</span> -->
+            <div class="node-filter" id="TTVFilter">
+              <span >TTV:</span>
+              <input class="filter-text-input" type="text" placeholder="From"/>
+              <span >--</span>
+              <input class="filter-text-input" type="text" placeholder="To"/>
+              <button><i class="far fa-chart-bar"></i></button>
+            </div>
+            <div class="node-filter" id="ATVFilter">
+              <span >ATV:</span>
+              <input class="filter-text-input" type="text" placeholder="From"/>
+              <span >--</span>
+              <input class="filter-text-input" type="text" placeholder="To"/>
+              <button id="showFilterATV"><i class="far fa-chart-bar"></i></button>
+            </div>
+            <div class="node-filter" id="SingleTransFilter">
+              <span >Single Transaction Value:</span>
+              <input class="filter-text-input" type="text" placeholder="From"/>
+              <span >--</span>
+              <input class="filter-text-input" type="text" placeholder="To"/>
+              <button id="showFilterSTV"><i class="far fa-chart-bar"></i></button>
+            </div>
 
+            <div class="node-filter" id="CardAddress">
+              <div class="node-filter" style = "margin:0; margin-top: 4px;">
+                <span >Card Holder Address:</span>
+                <input class="filter-text-input post-code-input" type="text" placeholder="City/District"/>
+                <button><i class="fas fa-search"></i></button>
+              </div>
+
+              <div class="address-checkbox">
+                <span>Not this city</span>
+                  <input type="checkbox"/>
+              </div>
+              <div class="address-checkbox">
+                <span>Not this country</span>
+                  <input type="checkbox"/>
+              </div>
+            </div>
+            <div class="node-filter" id="BankFilter">
+              <span >Bank of Issue:</span>
+              <input class="filter-text-input bank-input" type="text" placeholder="Bank Name"/>
+            </div>
+        </div>
+        <div id="scatterFilter">
+          
+        </div>
       </div>
       <div id="mapContainer"></div>
-      <div id="filterContainer">
-        <!-- <span style="color: #666;">FILTER</span> -->
-          <div class="node-filter" id="TTVFilter">
-            <span >TTV:</span>
-            <input class="filter-text-input" type="text" placeholder="From"/>
-            <span >--</span>
-            <input class="filter-text-input" type="text" placeholder="To"/>
-            <button><i class="far fa-chart-bar"></i></button>
-          </div>
-          <div class="node-filter" id="ATVFilter">
-            <span >ATV:</span>
-            <input class="filter-text-input" type="text" placeholder="From"/>
-            <span >--</span>
-            <input class="filter-text-input" type="text" placeholder="To"/>
-            <button id="showFilterATV"><i class="far fa-chart-bar"></i></button>
-          </div>
-          <div class="node-filter" id="SingleTransFilter">
-            <span >Single Transaction Value:</span>
-            <input class="filter-text-input" type="text" placeholder="From"/>
-            <span >--</span>
-            <input class="filter-text-input" type="text" placeholder="To"/>
-            <button id="showFilterSTV"><i class="far fa-chart-bar"></i></button>
-          </div>
-
-          <div class="node-filter" id="CardAddress">
-            <div class="node-filter" style = "margin:0; margin-top: 4px;">
-              <span >Card Holder Address:</span>
-              <input class="filter-text-input post-code-input" type="text" placeholder="City/District"/>
-              <button><i class="fas fa-search"></i></button>
-            </div>
-
-            <div class="address-checkbox">
-              <span>Not this city</span>
-                <input type="checkbox"/>
-            </div>
-            <div class="address-checkbox">
-              <span>Not this country</span>
-                <input type="checkbox"/>
-            </div>
-          </div>
-          <div class="node-filter" id="BankFilter">
-            <span >Bank of Issue:</span>
-            <input class="filter-text-input bank-input" type="text" placeholder="Bank Name"/>
-          </div>
-      </div>
       <div id="workContainer">
         <svg id="drawLayer"></svg>
         <svg id="brushLayer"></svg>
