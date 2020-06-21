@@ -82,9 +82,9 @@ button {
   position: absolute;
   top: calc(13% - 20px);
   /* top:-webkit-calc(13% - 20px); */
-  width: 40%;
+  width: 41.5%;
   height: 40px;
-  left: 35px;
+  left: 20px;
   /* background-color: #0C0537; */
 }
 
@@ -110,6 +110,37 @@ button {
   width: 25%;
   top: 25%;
   right: 0;
+}
+
+#nodeListContainter {
+  position: absolute;
+  float: left;
+  top: 25%;
+  width: 25%;
+  height: 0;
+  background-color: #fff;
+  overflow: hidden;
+  /* height: 0px; */
+  transition: height .25s ease-in-out;
+}
+
+#showFullNodeList {
+  position: absolute;
+  /* right: calc(0.75 * 58.5% + 25%); */
+  float: left;
+  top: calc( 25% - 35px );
+  height: 5px;
+  width: 25%;
+  /* padding: 10px; */
+  cursor: pointer;
+  border: none;
+}
+
+
+
+.node-list-show {
+  height: 75% !important;
+  overflow: scroll;
 }
 
 .sta-single{
@@ -427,9 +458,6 @@ text.innode-graph{
 .brush-menu:active {
   background-color: #0C0537;
 }
-
-
-
 
 .toptab {
   height: 100%;

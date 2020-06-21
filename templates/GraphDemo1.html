@@ -20,6 +20,7 @@
   <script src="/static/laydate/laydate.js"></script>
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/mdui/0.4.3/css/mdui.min.css">
   <script src="//cdnjs.cloudflare.com/ajax/libs/mdui/0.4.3/js/mdui.min.js"></script>
+  
 </head>
 
 <body class="mdui-theme-accent-deep-purple">
@@ -31,8 +32,6 @@
       <!-- <svg id="brushLayer"></svg> -->
       
       <button class="add-graph"><i class="fas fa-columns"></i></button>
-
-
       <div id="topContainer">
         <div id="timeSelectorDropdown">
           <select class = "mdui-select" mdui-select="options" name="timePeriod" id="timePeriod">
@@ -120,7 +119,6 @@
             </div>
         </div>
         <div id="scatterFilter">
-          
         </div>
       </div>
       <div id="mapContainer"></div>
@@ -128,7 +126,6 @@
         <svg id="drawLayer"></svg>
         <svg id="brushLayer"></svg>
         <div id="multiNodeText" class="hide"></div>
-
         <div id = "staContainer" class="hide">
           <div class="sta-nodename"><span></span></div>
           <div class="sta-single"><span>Bank of Issue</span><br/></div>
@@ -195,10 +192,44 @@
             </div>
           </div>
         </div>
+
+      </div>
+      
+
+      <div id="nodeListContainter" class = "mdui-shadow-1">
+        
+      </div>
+      <div id="showFullNodeList" class="mdui-collapse">
+        <div class="mdui-collapse-item">
+          <div class="mdui-collapse-item-header">
+              <button class="mdui-btn mdui-ripple mdui-btn-block" id = "showFullListButton">Full List <i class="mdui-icon material-icons mdui-collapse-item-arrow">expand_more</i></button>
+          </div>
+          <div class="mdui-collapse-item-body"></div>
+        </div>
+
       </div>
   </div>
+  <script src="/static/js/template-web.js"></script>
+
+
+  <script id="nodeListTemp" type="text/html">
+    {% raw %}
+      <ul class="mdui-list mdui-list-dense">
+        {{ each list item }}
+        <li class="mdui-list-item mdui-ripple" onclick = "creatQueryFromList(this)">
+          <div class="mdui-list-item-content">
+            <div class="mdui-list-item-title">{{ item.node_name }}</div>
+            <div class="mdui-list-item-text">MCC: {{ item.mcc }}</div>
+          </div>
+          <i class="mdui-list-item-icon mdui-icon material-icons">arrow_forward</i>
+        </li>
+        {{ /each }}
+      </ul>
+    {% endraw %}
+  </script>
 
   <script src="/static/js/Graph0.js"></script>
   <script src="/static/js/DrawGraph.js"></script>
+
 
 </body>

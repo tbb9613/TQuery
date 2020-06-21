@@ -174,7 +174,9 @@ map.on('moveend', function () {
     // console.log(northEast, southWest);
 });
 
-var staContainer = d3.select("#staContainer")
+var staContainer = d3.select("#staContainer");
+
+var fullList = d3.select("#nodeListContainter");
 
 // var initialNodeList = ["Surpermarket", "Cafe", "Restaurant", "School", "Pharmacy", "Theatre", "Cinema"];
 
@@ -393,6 +395,7 @@ function getNodeList(name) {
         .then(function (response) { // if success then update data
             nodeList = response.data;
             drawTopNodes(nodeList);
+            
         })
     // return nodeList;
 }
@@ -724,9 +727,7 @@ function topNodeTab() {
         button.classed("toptab-active", false);
         d3.select(this).classed("toptab-active", true);
         let listName = d3.select(this).node().innerHTML;
-
-        topSpace.selectAll(".topnodes").remove();
-        getNodeList(listName)
+        getNodeList(listName);
     }
 
     function customWindow() {
@@ -762,9 +763,51 @@ function clearToolState() {
     drawUnDirectedLineMode = false;
 }
 
-function drawTopNodes(list) {
-    // console.log(MCCDict)
 
+
+function drawTopNodeDropDown(nodelist){
+    mdui.mutation();
+    let nodeListMCC = new(Array);
+        nodelist.forEach(
+            function(item){
+                nodeListMCC.push({"node_name":item,
+                    "mcc":MCCDict.filter(m => m.edited_description === item)[0].mcc }
+                )
+            }
+        ); 
+    let inputdata = {list: nodeListMCC};
+    console.log(inputdata)
+    let html = template("nodeListTemp", inputdata)
+    document.getElementById("nodeListContainter").innerHTML=html;
+    
+    d3.select("#showFullListButton").on("click", function(){
+        fullList.classed("node-list-show", !fullList.classed("node-list-show"));
+    })
+}
+
+var collapseButton = new mdui.Collapse('#showFullNodeList'); //config mdui
+function creatQueryFromList(a){
+    let d = a.children[1].children[0].innerHTML;
+    setTimeout(() => {
+            if (graphExist == false) {
+        createQuery(d, 4, "single", nodeList);
+        } else {
+            createQuery(d, 4, "single", nodeList);
+            graphLeftPlusExist = false;
+            graphRightPlusExist = false;
+        }
+    }, 250
+    )
+
+    
+    fullList.classed("node-list-show", !fullList.classed("node-list-show"));
+    collapseButton.closeAll();
+}
+
+function drawTopNodes(list) {
+    drawTopNodeDropDown(list);
+    // console.log(MCCDict)
+    topSpace.selectAll(".topnodes").remove();
     var nodeList = list;
     let topNodeXOffset = 0.6 * topSpaceHeight - 20, topNodeRadius = 20;
     let nodesyPos = 0.65 * topSpaceHeight + topNodeRadius
@@ -777,7 +820,7 @@ function drawTopNodes(list) {
         .data(nodeList)
         .enter().append("g")
         .attr("class", "topnodes")
-        .attr("transform", (d,i) => "translate("+ (i * 50 + 60) + "," + nodesyPos+")")
+        .attr("transform", (d,i) => "translate("+ (i * 50 + 40) + "," + nodesyPos+")")
         .on("mouseover", d => showFullName(d))
         .on("mouseout", hideFullName);
 
@@ -939,7 +982,6 @@ function drawTopNodes(list) {
         globalDragLayer.select(".dragging-node").attr("transform", `translate(${dpx},${dpy})`)
     }; //???????
 
-
     function dragended(d) {
         let endXPos = event.pageX,
             endYPos = event.pageY;
@@ -974,11 +1016,9 @@ function drawTopNodes(list) {
             }, 500)
 
         } else {
-            topSpace.selectAll(".topnodes").remove();
             drawTopNodes(nodeList);
             globalDragLayer.selectAll("g").remove();
             globalDragLayer.attr("width", 0).attr("height", 0);
-
         }
         hideFullName();
         console.log("end");
@@ -1723,7 +1763,7 @@ function drawScatterFilter(){
     var fakeData_scatter = d3.range(100)
         .map(function() { return [Math.random()*2-1, Math.random()*2-1]; });
     let sfilterHeight = 0.6 * topSpaceHeight, sfilterWidth = 0.6 * topSpaceHeight;
-    let sfilterMargin = 0.05 * topSpaceHeight, sfilterTop = 0.4 * topSpaceHeight;
+    let sfilterMargin = 0.025 * topSpaceHeight, sfilterTop = 0.4 * topSpaceHeight;
     let xlabelOffset = 6, ylabelOffset = 3;
     scatterFilter
         .attr("height", sfilterHeight).attr("width", sfilterWidth)
@@ -1734,9 +1774,7 @@ function drawScatterFilter(){
         .attr("x", sfilterMargin)
         .attr("y", sfilterMargin)
         .attr("height", sfilterHeight).attr("width", sfilterWidth)
-        .attr("fill", "#F9F9F9")
-        // .attr("stroke", "black")
-        // .attr("stroke-width", 2);
+        .attr("fill", "#F9F9F9");
 
     let x = d3.scaleLinear()
         .range([2 * sfilterMargin, sfilterWidth - sfilterMargin])
@@ -1836,8 +1874,9 @@ function drawScatterFilter(){
 
     function endPoint(){
         let xValue = x.invert(d3.event.x), yValue = y.invert(d3.event.y);
-        console.log(xValue, yValue)
+        console.log(xValue, yValue);
+        drawTopNodes(nodeList.reverse());
     }
 }
 
-drawScatterFilter()
+drawScatterFilter();
