@@ -151,6 +151,8 @@ scatterFilter.append("svg:defs").append("svg:marker")
 var nodeMenu = d3.select(".node-menu");
 //make the workspace under topspace
 
+var collapseButton = new mdui.Collapse('#showFullNodeList'); //config mdui
+
 //Add workspace text(interpretation of node map)
 var titletext = d3.select("#queryTitleContainer").select(".query-title").selectAll("span");
 
@@ -564,7 +566,7 @@ function drawTimeSelector(data, timeScale, type) {
             timeSelection = d3.event.selection;
             timeSec = (x.invert(timeSelection[1]) - x.invert(timeSelection[0]))/ 1000
             if (graphExist === true && secondGraphExist === false) {
-                workSpace.selectAll("g").remove();
+                // workSpace.selectAll("#graph-first").remove();
                 workContainer.selectAll(".tooltip").remove();
                 graphLeftPlusExist = false;
                 graphRightPlusExist = false;
@@ -763,8 +765,6 @@ function clearToolState() {
     drawUnDirectedLineMode = false;
 }
 
-
-
 function drawTopNodeDropDown(nodelist){
     mdui.mutation();
     let nodeListMCC = new(Array);
@@ -785,9 +785,8 @@ function drawTopNodeDropDown(nodelist){
     })
 }
 
-var collapseButton = new mdui.Collapse('#showFullNodeList'); //config mdui
 function creatQueryFromList(a){
-    let d = a.children[1].children[0].innerHTML;
+    let d = a.children[1].children[0].innerHTML; //get the node name
     setTimeout(() => {
             if (graphExist == false) {
         createQuery(d, 4, "single", nodeList);
@@ -799,7 +798,6 @@ function creatQueryFromList(a){
     }, 250
     )
 
-    
     fullList.classed("node-list-show", !fullList.classed("node-list-show"));
     collapseButton.closeAll();
 }
@@ -883,21 +881,15 @@ function drawTopNodes(list) {
 
     node
         .append('text')
-        .attr('text-anchor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .style('font-size', '10px')
-        .attr('fill', 'white')
+        .attr("class", "top-node-text")
         .attr("y", -topNodeRadius/3)
-        .text(d => MCCDict.filter(m => m.edited_description === d)[0].mcc)
+        .text(d => MCCDict.filter(m => m.edited_description === d)[0].mcc);
     
     node
         .append('text')
-        .attr('text-anchor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .style('font-size', '10px')
-        .attr('fill', 'white')
+        .attr("class", "top-node-text")
         .attr("y", topNodeRadius/4)
-        .text(d => nodeMultiWordsFormat(d))
+        .text(d => nodeMultiWordsFormat(d));
     
     function nodeMultiWordsFormat(d) {
         if (multiWordsFormat(d).length < 7) {
@@ -955,17 +947,13 @@ function drawTopNodes(list) {
         // .attr("stroke", "#CCC");
 
         draggingNode.append("text")
-            .attr('text-anchor', 'middle')
-            .attr('alignment-baseline', 'middle')
-            .attr("fill", d3.select(this).select("text").attr("fill"))
+            .attr("class", "top-node-text dragging-node")
             .style('font-size', '12px')
             .attr("y", -topNodeRadius/3)
             .text(d => MCCDict.filter(m => m.edited_description === d)[0].mcc);
 
         draggingNode.append('text')
-            .attr('text-anchor', 'middle')
-            .attr('alignment-baseline', 'middle')
-            .attr("fill", d3.select(this).select("text").attr("fill"))
+            .attr("class", "top-node-text dragging-node")
             .style('font-size', '12px')
             .attr("y", topNodeRadius/4)
             .text(d => nodeMultiWordsFormat(d))
@@ -988,7 +976,7 @@ function drawTopNodes(list) {
 
         if (endYPos > topSpaceHeight) { //judge height space
 
-            globalDragLayer.select(".text").select("text").remove();
+            globalDragLayer.selectAll(".text").select("text").remove();
             globalDragLayer.select(".dragging-node")
                 .transition().duration(200)
                 .attr("transform", `translate(${workSpaceWidth / 2},${topSpaceHeight + workSpaceHeight / 2})`)
@@ -997,7 +985,7 @@ function drawTopNodes(list) {
                 .transition().duration(500)
                 .attr("r", 200)
                 .attr("opacity", 0);
-            globalDragLayer.select(".dragging-node").select("text").attr("opacity", 0);
+            globalDragLayer.select(".dragging-node").selectAll("text").remove();
 
             setTimeout(() => {
                 globalDragLayer.selectAll("g").remove();
@@ -1048,7 +1036,7 @@ function drawTopNodes(list) {
                 .append("g")
                 .attr("class", "node-multi")
                 .datum(d)
-                .on("mouseover", d => showFullName(d.place))
+                .on("mouseover", d => showFullName(d))
                 // .on("mousemove", moveFullName)
                 .on("mouseout", hideFullName);
                 
@@ -1108,7 +1096,9 @@ function drawTopNodes(list) {
         d3.select(this).select("circle").attr("cy", dy);
         d3.select(this).selectAll("text").attr("x", dx);
         d3.select(this).select(".draw-layer-mcc").attr("y", dy - topNodeRadius/3);
-        d3.select(this).select(".draw-layer-name").attr("y", dy + topNodeRadius/4)
+        d3.select(this).select(".draw-layer-name").attr("y", dy + topNodeRadius/4);
+
+        moveFullName();
     }
 
     function drawUndirectedLine() {
@@ -1157,6 +1147,7 @@ function drawTopNodes(list) {
 
         function mouseup() {
             drawLayer.on("mousemove", null)
+            //first detect if there is a rect, if yes, piror line between rect and class them
             if (drawLayer.selectAll(".con-rect").size() > 1) {
                 drawLayer.selectAll(".con-rect")
                     .classed(`ud-con-from-${lineCount}`, function (d) {
@@ -1182,7 +1173,7 @@ function drawTopNodes(list) {
                         )
                     });
             }
-
+            //first if there is a rect
             if ((document.getElementsByClassName(`ud-con-from-${lineCount}`).length != 0) &&
                 (document.getElementsByClassName(`ud-con-to-${lineCount}`).length != 0)) {
                 let fromRect = drawLayer.select(`.ud-con-from-${lineCount}`);
@@ -1198,6 +1189,7 @@ function drawTopNodes(list) {
                 lineCount += 1;
                 line.lower();
             } else {
+                //if no rect, then it is a link between nodes
                 drawLayer.selectAll("circle")
                     .classed(`ud-from-${lineCount}`, function (d) {
                         return isInCircle(
@@ -1234,7 +1226,8 @@ function drawTopNodes(list) {
                     console.log(`${fromNode} to ${toNode}`);
                     d3.select("#multiNodeText").append("p")
                         .lower()
-                        .html(`${fromNode} to ${toNode}  OR  ${toNode} to ${fromNode}`)
+                        .html(`[ <u>${fromNode} (${getMCC(fromNode)})</u> <b>to</b> <u>${toNode} (${getMCC(toNode)})</u> ] 
+                        OR  [ <u>${toNode} (${getMCC(toNode)})</u> <b>to</b> <u>${fromNode} (${getMCC(fromNode)})</u> ]`)
                     linkmapList.push({
                         "source": fromNode,
                         "target": toNode,
@@ -1405,7 +1398,7 @@ function drawTopNodes(list) {
                     let toNode = drawLayer.select(`.d-to-${lineCount}`).datum();
                     d3.select("#multiNodeText").append("p")
                         .lower()
-                        .html(`${fromNode} to ${toNode}`)
+                        .html(`[ <u>${fromNode} (${getMCC(fromNode)})</u> <b>to</b> <u>${toNode} (${getMCC(toNode)})</u> ]`)
                     //push to linkmaplist for drawing
                     linkmapList.push({
                         "source": fromNode,
@@ -1584,60 +1577,7 @@ function drawTopNodes(list) {
     }
 };
 
-function createQuery(d, timePoint, type, nodeList) {
-    d3.select("#staContainer").classed("hide", true);
-    // workContainer.selectAll(".tooltip").remove();
-    workSpace.selectAll("g").remove();
-    // postQuery(d, 4);
-    console.log(d)
-    postQuery(d, timePoint, type);
-    postSubQuery(timePoint + 3);
-    // console.log(postQuery(d, 4));
-    topSpace.selectAll(".topnodes").remove();
-    drawTopNodes(nodeList)
-    
-    d3.select("#queryTitleContainer").classed("hide", false);
-    if (type === "single") {
-        titletext.html("Routes of people who go to <b>" +queryNode + "(" + MCCDict.filter(m => m.edited_description === queryNode)[0].mcc + ")"+"</b>");
-    } else {
-        titletext.html("Packed Query");
-    }
-}
 
-function postQuery(d, t, type) {
-    queryNode = d;
-    // console.log(d);
-    axios.post('http://127.0.0.1:5000/receivedatac', {
-            name: queryNode,
-            time: t
-        })
-        .catch(function (error) {
-            console.log(error);
-        })
-        .then(function (response) { // if success then update data
-            nodeMap_c = response.data
-            console.log(nodeMap_c)
-            setTimeout(() => {
-            drawGraph("graph-first", nodeMap_c, type);
-            console.log(nodeMap_c);
-            secondGraphExist = false;
-            }, 50);
-            
-        })
-}
-
-function postSubQuery(t) {
-    axios.post('http://127.0.0.1:5000/receivedatac', {
-            name: queryNode,
-            time: t
-        })
-        .catch(function (error) {
-            console.log(error);
-        })
-        .then(function (response) { // if success then update data
-            subNodeMap = response.data;
-        })
-}
 // drawLine("directed");
 function getHeatmap() {
     axios.get('http://127.0.0.1:5000/heatmap')
@@ -1652,6 +1592,10 @@ function multiWordsFormat(d) {
     } else {
         return d.split(' ')[0]
     }
+}
+
+function getMCC(d){
+    return MCCDict.filter(m => m.edited_description === d)[0].mcc;
 }
 
 function drawHeatmap(d) {
@@ -1824,7 +1768,6 @@ function drawScatterFilter(){
         .attr("class", "sfilter-axis")
         .attr("x", (sfilterWidth+sfilterMargin)/2 - ylabelOffset)
         .attr("y", 2 * sfilterMargin)
-
         .text("ATV");
 
     yAxis.append("text")

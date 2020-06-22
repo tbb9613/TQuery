@@ -3,9 +3,7 @@ function drawGraph(graphid, graph, type) {
 
     let graphRightPlusExist = false;
     let graphLeftPlusExist = false;
-    graphExist = true;
     
-
     d3.selectAll(".brush-child").classed("hide", true);
 
     const graphCenter = [workSpaceWidth / 2, workSpaceHeight / 2];
@@ -15,14 +13,6 @@ function drawGraph(graphid, graph, type) {
         .append("g")
         .attr("id", graphid)
     // .attr("y", "30%");
-
-    graphBg
-        .append("rect")
-        .classed("graph-background", true)
-        .attr("fill", "#CCC")
-        .attr("opacity", .25)
-        .attr("width", "100%")
-        .attr("height", "100%");
         // .on("click", function(){d3.select(".node-menu").classed("hide", true)})
 
     let graphContainer = graphBg.append("g")
@@ -139,7 +129,6 @@ function drawGraph(graphid, graph, type) {
     if (graphid === "graph-first") {
         d3.select(".add-graph")
             .on("click", addGraph)
-
         function addGraph() {
             secondGraphExist = true;
 
@@ -150,7 +139,8 @@ function drawGraph(graphid, graph, type) {
                 .attr("x", "45%")
 
             zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
-            zoom.scaleBy(graphBg, 0.7, [workSpaceWidth / 4, workSpaceHeight / 2])
+            zoom.scaleBy(graphBg, 0.8, [workSpaceWidth / 4, workSpaceHeight / 2])
+            //put graph 1 left and zoom
 
             drawGraph("graph-second", subNodeMap, "single")
             // callSecondBrush();
@@ -169,7 +159,7 @@ function drawGraph(graphid, graph, type) {
             .attr("x", "50%");
         const scalePoint = [0, 0]
         zoom.transform(graphBg, d3.zoomIdentity.translate(workSpaceWidth / 4, 0))
-        zoom.scaleBy(graphBg, 0.7, [3 * workSpaceWidth / 4, workSpaceHeight / 2])
+        zoom.scaleBy(graphBg, 0.8, [3 * workSpaceWidth / 4, workSpaceHeight / 2])
 
         workSpace.append("g")
             .append("line")
@@ -193,7 +183,6 @@ function drawGraph(graphid, graph, type) {
             .range([0, bottomAxisWidth]);
     function drawBottomAxis(){
         d3.selectAll(".bottom-axis").remove();
-
         let timeMin = timeSec / 60
         let timeHour = timeMin / 60
         // console.log(timeMin);
@@ -210,9 +199,11 @@ function drawGraph(graphid, graph, type) {
             .text("Max Time Interval");
             
         xAxisBottom.attr("opacity", .4);
-
     }
-    drawBottomAxis();
+    if (!graphExist){
+        drawBottomAxis();
+    };
+    
     //Draw links & nodes
     function MainLayoutScaler(subID, subC) {
         let scaler = d3.scaleLinear()
@@ -331,12 +322,15 @@ function drawGraph(graphid, graph, type) {
 
             previewNodeG
                 .append("text")
-                .text(d => d.id)
+                .text(d => multiWordsFormat(d.id))
                 .attr("x", 0).attr("y", 20)
                 .attr("fill", "white")
                 .attr("text-anchor", "middle")
                 .attr("alignment-baseline", "middle")
-                .attr("font-size", 10);
+                .attr("font-size", 10)
+                .on("mouseover", d => showFullName(d.id))
+                .on("mousemove", moveFullName)
+                .on("mouseout", hideFullName);
 
             // previewNodeG.append("title").text(d => d.id)
             // console.log(previewNode);
@@ -1045,7 +1039,6 @@ function drawGraph(graphid, graph, type) {
             // text.text('Place: ' + d.place)
         }
     }
-
     function drawLeftplus(seq) {
         graphLeftPlusExist = true;
         //add vertical line
@@ -1188,7 +1181,6 @@ function drawGraph(graphid, graph, type) {
         inNodeTooltip.style("opacity", 1);
 
     }
-
     function InNodeGraphMouseMove(d) {
         let dpx = event.pageX,
             dpy = event.pageY;
@@ -1565,4 +1557,7 @@ function drawGraph(graphid, graph, type) {
             drawsamplebar(id);
         }
     }
+
+    //all done, set graph exist indicator = true
+    graphExist = true;
 }
