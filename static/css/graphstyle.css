@@ -417,16 +417,12 @@ button,
   alignment-baseline: middle;
   text-anchor: middle;
   fill: white;
-  cursor: default;
   font-size: 10px;
 }
 
-.top-node-text {
-  cursor: grab;
-}
 
 .node-preview-text {
-  cursor: default;
+  cursor: default !important;
 }
 
 line.innode-graph{

@@ -1,67 +1,18 @@
 import pandas as pd
 from datetime import datetime
 import numpy as np
-def multiNodeQueryListCovert():
-    route = pd.read_csv("route.csv",index_col=0)
-    multiQueryLinks = pd.read_json("testmultilink.json", orient='records')
-    multiQueryNodes = pd.read_json("testmultinode.json", orient='records')
-    # print(multiQueryNodes)
-    querySeries = []
-    for node in multiQueryNodes["id"]:
-        thisSeries = []
-        thisTypeList = []
-        #if it is an independant node
-        if (~(multiQueryLinks["source"].eq(node).any()) & ~(multiQueryLinks["target"].eq(node).any())):
-            # print(node)
-            querySeries.append([node])
-        #if the node is the start of a link
-        elif (multiQueryLinks["source"].eq(node).any() & ~(multiQueryLinks["target"].eq(node).any())):
-            thisSeries.append(node)
-            #get the target
-            lastTarget = multiQueryLinks[multiQueryLinks["source"] == node]["target"].values[0]
-            thisSeries.append(lastTarget)
-            #get type
-            thisTypeList.append(multiQueryLinks[multiQueryLinks["source"] == node]["type"].values[0])
-            # print(lastTarget)
-            # if the target is another source
-            while multiQueryLinks["source"].eq(lastTarget).any():
-                thisTypeList.append(multiQueryLinks[multiQueryLinks["source"] == lastTarget]["type"].values[0])
-                lastTarget = multiQueryLinks[multiQueryLinks["source"] == lastTarget]["target"].values[0]
-                thisSeries.append(lastTarget)
-                
-                # thisTypeList.append)
-            #get unique values of type list
-            thisTypeList = list(set(thisTypeList))
-            #if directed + undirected
-            if len(thisTypeList)>1: 
-                querySeries.append(thisSeries)
-            else:
-                if thisTypeList == ["directed"]:
-                    querySeries.append(thisSeries)
-                elif thisTypeList == ["undirected"]:
-                    querySeries.append(thisSeries)
-                    # add a reversed list
-                    querySeries.append(list(reversed(thisSeries)))
-
-    print(querySeries)
-    # querySeries = ["Restaurant", "Restaurant"]
-    # print(querySeries)
-    timePoint = 3
-    for subSeries in querySeries:
-        maskDirected = (route.iloc[:,timePoint:timePoint+len(subSeries)] == subSeries).all(axis=1)
-        MCCQueryRoute = route[maskDirected] #Query
-        print(subSeries)
-        print(MCCQueryRoute.head())
 
 typeMCC = "Bakeries"
 time = 5
 
-route = pd.read_csv("route.csv",index_col=0)
+route = pd.read_csv("route_1.csv", header=[0,1], index_col=0)
 
 timePoint = time
-
-MCCQueryRoute = route[route.iloc[:,timePoint] == typeMCC] #Query
+print(route.head())
+MCCQueryRoute = route[route.loc[:,(str(timePoint), "mcc")] == typeMCC] #Query
 print(MCCQueryRoute)
+#WORK TILL HERE 0623
+
 
 #Generate primary source-target dataframe
 source = []

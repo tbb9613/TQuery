@@ -324,10 +324,7 @@ function drawGraph(graphid, graph, type) {
                 .append("text")
                 .text(d => multiWordsFormat(d.id))
                 .attr("x", 0).attr("y", 20)
-                .attr("fill", "white")
-                .attr("text-anchor", "middle")
-                .attr("alignment-baseline", "middle")
-                .attr("font-size", 10)
+                .attr("class", "node-preview-text")
                 .on("mouseover", d => showFullName(d.id))
                 .on("mousemove", moveFullName)
                 .on("mouseout", hideFullName);

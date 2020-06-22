@@ -34,7 +34,7 @@ function createQuery(d, timePoint, type, nodeList) {
 function postQuery(d, t, type) {
     queryNode = d;
     // console.log(d);
-    axios.post('http://127.0.0.1:5000/receivedatac', {
+    axios.post('http://127.0.0.1:5000/query_single', {
             name: queryNode,
             time: t
         })
@@ -54,7 +54,7 @@ function postQuery(d, t, type) {
 }
 
 function postSubQuery(t) {
-    axios.post('http://127.0.0.1:5000/receivedatac', {
+    axios.post('http://127.0.0.1:5000/query_single', {
             name: queryNode,
             time: t
         })
