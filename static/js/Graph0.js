@@ -803,6 +803,7 @@ function creatQueryFromList(a){
 }
 
 function drawTopNodes(list) {
+    
     drawTopNodeDropDown(list);
     // console.log(MCCDict)
     topSpace.selectAll(".topnodes").remove();

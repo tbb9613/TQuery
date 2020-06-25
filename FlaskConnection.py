@@ -32,7 +32,7 @@ def queryNode_single(typeMCC, time):
     # ids = []
 
     for i in range(len(MCCQueryRoute.columns)):
-        singleSequence = i - timePoint
+        singleSequence = i - timePoint #the number of sequence: eg. -4 / 4
         # print(MCCQueryRoute.iloc[:,i].index)
         if singleSequence != 0:
             for j in MCCQueryRoute.iloc[:,i].index:

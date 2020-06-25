@@ -752,7 +752,7 @@ function drawGraph(graphid, graph, type) {
         let thisNode = d3.select(this);
         console.log(node.selectAll("text"));
         if (d3.event.shiftKey) {
-            createQuery(d.place, 4, "single");
+            createQuery(d.place, 4, "single",  nodeList);
         } else {
             console.log("clicked");
             d3.select("#staContainer").classed("hide",false);
@@ -1209,7 +1209,7 @@ function drawGraph(graphid, graph, type) {
     function NodeMouseOver(d) {
         let hoveredNode = d3.select(this);
         let hoveredNodeParent = d3.select(this.parentNode);
-        // console.log(hoveredNodeParent);
+        console.log(hoveredNodeParent);
         node.selectAll("circle").filter(n => n.sequence !== 0).classed("not-this-route", true)
         link.selectAll("line").classed("not-this-route", true)
         link.selectAll("text").classed("not-this-route", true)
@@ -1249,8 +1249,8 @@ function drawGraph(graphid, graph, type) {
         hoveredNodeParent
             .append("text")
             .attr("class", "recenter-text hide")
-            .attr("x", d3.select(this).attr("cx"))
-            .attr("y", parseFloat(d3.select(this).attr("cy"))-30)
+            .attr("x", 0)
+            .attr("y", -30)
             .text("Click to center")
 
         if (d3.event.shiftKey){
