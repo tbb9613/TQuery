@@ -95,7 +95,6 @@ function drawGraph(graphid, graph, type) {
             menuAnd.on("click", function () {
                 console.log(selectedNodes);
             })
-
         }
     }
 
@@ -1209,7 +1208,7 @@ function drawGraph(graphid, graph, type) {
     function NodeMouseOver(d) {
         let hoveredNode = d3.select(this);
         let hoveredNodeParent = d3.select(this.parentNode);
-        console.log(hoveredNodeParent);
+        // console.log(hoveredNodeParent);
         node.selectAll("circle").filter(n => n.sequence !== 0).classed("not-this-route", true)
         link.selectAll("line").classed("not-this-route", true)
         link.selectAll("text").classed("not-this-route", true)

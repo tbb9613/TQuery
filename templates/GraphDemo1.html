@@ -105,17 +105,29 @@
               </div>
 
               <div class="address-checkbox">
-                <span>Not this city</span>
+                <span>Local</span>
                   <input type="checkbox"/>
               </div>
               <div class="address-checkbox">
-                <span>Not this country</span>
+                <span>Domestic</span>
+                  <input type="checkbox"/>
+              </div>
+              <div class="address-checkbox">
+                <span>inner-EU</span>
+                  <input type="checkbox"/>
+              </div>
+              <div class="address-checkbox">
+                <span>non-EU</span>
                   <input type="checkbox"/>
               </div>
             </div>
             <div class="node-filter" id="BankFilter">
               <span >Bank of Issue:</span>
               <input class="filter-text-input bank-input" type="text" placeholder="Bank Name"/>
+            </div>
+            <div class="node-filter" id="LockClient">
+              <span >Client Lock:</span>
+              <input class="filter-text-input bank-input" type="text" placeholder="Client Name"/>
             </div>
         </div>
         <div id="scatterFilter">
@@ -175,7 +187,6 @@
             <button class="mdui-btn mdui-ripple add-node-list">Add new</button>
           </div>
           <div class="nodelist-edit hide">
-            
             <span>SEARCH BY</span>
             <select class = "mdui-select" mdui-select="options">
               <option value="name">Merchant Name</option>
@@ -194,7 +205,6 @@
             </div>
           </div>
         </div>
-
       </div>
       
 
@@ -230,9 +240,9 @@
     {% endraw %}
   </script>
 
-  <script src="/static/js/Graph0.js"></script>
-  <script src="/static/js/Query.js"></script>
-  <script src="/static/js/DrawGraph.js"></script>
+  <script src="/static/js/Graph0 copy.js"></script>
+  <script src="/static/js/Query copy.js"></script>
+  <script src="/static/js/DrawGraph copy.js"></script>
 
 
 </body>

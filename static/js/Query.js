@@ -19,7 +19,9 @@ function createQuery(d, timePoint, type, nodeList) {
     console.log(d)
     postQuery(d, timePoint, type);
     postSubQuery(timePoint + 3);
-    // console.log(postQuery(d, 4));
+
+    postSingleQuery_test(d, 1);
+    postSingleQuery_test(d, -1);
     topSpace.selectAll(".topnodes").remove();
     drawTopNodes(nodeList)
     
@@ -50,7 +52,9 @@ function postQuery(d, t, type) {
             secondGraphExist = false;
             }, 50);
             
-        })
+        });
+    
+
 }
 
 function postSubQuery(t) {
@@ -65,3 +69,22 @@ function postSubQuery(t) {
             subNodeMap = response.data;
         })
 }
+
+
+
+
+
+function postSingleQuery_test(d, seq) {
+    axios.post('http://127.0.0.1:5000/query_single_new', {
+        name: d,
+        sequence: seq
+        // time: t
+    })
+    .catch(function (error) {
+        console.log(error);
+    })
+    .then(function (response) { // if success then update data
+        console.log(response.data)
+    });
+}
+

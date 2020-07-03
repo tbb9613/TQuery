@@ -2,15 +2,92 @@ import pandas as pd
 from flask import Flask, render_template, request, jsonify
 from datetime import timedelta
 import json
-
 import numpy as np
 import pandas as pd
 import random
+import itertools
 
 app = Flask(__name__)
 app.jinja_env.auto_reload = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds = 0)
+
+#read data and change data type
+record_with_tinterval = pd.read_csv("data_example_short.csv", index_col = 0)
+record_with_tinterval["mcc"] = record_with_tinterval["mcc"].astype("category")
+record_with_tinterval["time"] =  pd.to_datetime(record_with_tinterval["time"])
+record_with_tinterval["time_interval_to_next"] =  pd.to_timedelta(record_with_tinterval["time_interval_to_next"])
+record_with_tinterval["time_interval_from_last"] =  pd.to_timedelta(record_with_tinterval["time_interval_from_last"])
+
+def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
+    time_range_filtered = record_with_tinterval[(record_with_tinterval["time"] > startTime) & (record_with_tinterval["time"] < endTime)]
+    time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
+    #get largest min "max first position" of the queried MCC in the route as the left alignment position
+    data_mcc_query = time_range_filtered.loc[time_range_filtered["mcc"] == queryMCC]
+    grouped_data_query = data_mcc_query.groupby("name")
+    left_alignment_pos = grouped_data_query["step"].min().max()
+    need_alignment = grouped_data_query["step"].min().dropna() < left_alignment_pos
+    #calcu alignment offset
+    alignment_offset = left_alignment_pos - grouped_data_query["step"].min().dropna()
+    data_query_route = time_range_filtered[time_range_filtered["name"].isin(need_alignment.index)]
+    data_query_route.set_index("name", inplace = True)
+    data_query_route["offset"] = alignment_offset
+    data_query_route["step"] = data_query_route["step"] + data_query_route["offset"]
+    columns = ["mcc", "transaction_value", "time_interval_to_next", "time_interval_from_last"]
+    shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step")
+    #calculate absolute step pos
+    raw_step = single_sequence + left_alignment_pos
+    #last step targets
+
+    if single_sequence > 0:
+        source_step = raw_step-1
+        target_step = raw_step
+        #filter the data by time interval
+        filtered_routes = shaped_routes[(shaped_routes["time_interval_to_next"][source_step] < time_interval_limit) & (shaped_routes["time_interval_from_last"][target_step] < time_interval_limit)]
+        links = filtered_routes["mcc"][[source_step,target_step]].rename(columns = {source_step:"source", target_step:"target"})
+    elif single_sequence < 0:
+        source_step = raw_step+1
+        target_step = raw_step
+        filtered_routes = shaped_routes[(shaped_routes["time_interval_to_next"][target_step] < time_interval_limit) & (shaped_routes["time_interval_from_last"][source_step] < time_interval_limit)]
+        links = filtered_routes["mcc"][[source_step,target_step]].rename(columns = {source_step:"source", target_step:"target"})
+
+    #filter links into last step routes, then all the sources should be same as last steps' target
+    if abs(single_sequence) > 1:
+        links = links[links.index.isin(last_step_routes)]
+        
+    # add transaction value column
+    links["transaction_value"] = filtered_routes.xs(("transaction_value", target_step), axis=1)
+    # get nodes grouped
+    nodes_g = links.drop(columns = ["source"]).groupby(["target"]).count().rename(columns = {"transaction_value":"count"}).reset_index()
+    # capture nodes' route
+    nodes_g["route"] = links.drop(columns = ["source"]).groupby(["target"]).groups.values()
+    # get top nodes as nodes' result
+    nodes_result = nodes_g.nlargest(keep_rank_num, "count").reset_index(drop=True)
+    # avoid ndoe count = 0 but added by nlargest
+    nodes_result = nodes_result[nodes_result["count"] > 0]
+    nodes_result["route"] = nodes_result["route"].apply(lambda x: x.tolist())
+    # get routes of top nodes 
+    this_step_routes = []
+    for routes in nodes_result["route"]:
+        this_step_routes += routes
+    # get all links in this step's route
+    links = links[links.index.isin(this_step_routes)]
+    # get links grouped into source + target + count format df
+    links_g = links.reset_index().groupby(["source","target"]).count().reset_index().dropna().rename(columns = {"name":"count"})
+    # capture links' routes by people's identifier/name
+    links_g["route"] = links.groupby(["source","target"]).groups.values()
+    # add atv column
+    links_g["atv"] = links.groupby(["source","target"]).mean().reset_index().dropna()["transaction_value"]
+    # generate results
+    links_result = links_g.reset_index(drop = True).drop(columns = ["transaction_value"])
+    # convert route to list
+    links_result["route"] = links_result["route"].apply(lambda x: x.tolist())
+
+    link_result_dict = links_result.to_dict('records')
+    nodes_result_dict = nodes_result.to_dict('records')
+    # print(link_result_dict)
+    return jsonify(link = link_result_dict, node = nodes_result_dict, route_list = this_step_routes)
+    # return links_result.to_json(orient = "records")
 
 def queryNode_single(typeMCC, time):
     route = pd.read_csv("route.csv",index_col=0)
@@ -144,12 +221,13 @@ def queryNode_single(typeMCC, time):
     newNodeMap["target"] = targetPair
     # print(newNodeMap_1)
     newNodeMap.drop(columns = "links", inplace = True)
+    
     QueryLink = newNodeMap.to_dict('records')
     QueryNodeSelf = nodeSelf.to_dict('records')
     return jsonify(link = QueryLink, node = QueryNodeSelf)
 
 def Heatmap():
-    heatmap = pd.read_csv("heatmapProbMatrix.csv", index_col=0)
+    heatmap = pd.read_csv("heatmapProbMatrix copy.csv", index_col=0)
     heatmapSend = heatmap.to_json(orient = "records")
     # print(heatmapSend)
     return heatmapSend
@@ -185,6 +263,20 @@ def QuerySingle():
     QueryNodeMapOut = queryNode_single(getName, getTime)
     # print(QueryNodeMapOut)
     return QueryNodeMapOut
+
+@app.route('/query_single_new/', methods=['GET','POST'])
+def QuerySingleNew():
+    datagetjson = request.get_json(force=True)
+
+    start_time = pd.Timestamp(datagetjson["timeStart"])
+    end_time = pd.Timestamp(datagetjson["timeEnd"])
+    time_interval_limit = pd.offsets.Minute(100)
+    last_step_routes = datagetjson['list']
+    rank_num = 5 #max display num
+    mcc_name = datagetjson['name'] #querynode
+    single_seq = datagetjson['sequence']
+    # rank_num = datagetjson['maxshow']
+    return QuerySingleNode_new(start_time, end_time, mcc_name, single_seq, time_interval_limit, rank_num, last_step_routes)
 
 @app.route('/heatmap/', methods = ['GET', 'POST'])
 def postheatmap():

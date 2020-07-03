@@ -183,15 +183,16 @@ button {
 }
 
 .node {
-  stroke: rgb(145, 163, 182);
+  stroke: rgb(153, 175, 199);
   stroke-width: 2px;
-  fill: whitesmoke;
+  fill: white;
   /* fill: rgb(145, 163, 182);
   stroke: white; */
 }
 
 .link {
   stroke: #999;
+  opacity: .8;
 }
 
 .vertical-line {
@@ -403,12 +404,13 @@ button,
   alignment-baseline: middle;
   text-anchor: middle;
   fill:#393261;
+  font-size: 11px;
 }
 
 .node-text {
   alignment-baseline: middle;
   text-anchor: middle;
-  fill: slategray;
+  fill: rgb(89, 101, 112);
   cursor: default;
   font-size: 11px;
 }
@@ -619,7 +621,7 @@ input.filter-text-input:focus {
 }
 
 .address-checkbox {
-  float: right;
+  float: left;
   margin-left: 15px;
   /* margin-right: 10%; */
 }
