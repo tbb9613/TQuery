@@ -136,7 +136,20 @@ button {
   border: none;
 }
 
+#lineWeightFilter {
+  position: absolute;
+  top: 25%;
+  left: 40%;
+  width: 20%;
+}
 
+#linkVisTxt {
+  position: absolute;
+  top: 26.5%;
+  left: 60.5%;
+  font-size: 11px;
+  /* width: 20%; */
+}
 
 .node-list-show {
   height: 75% !important;
@@ -192,7 +205,7 @@ button {
 
 .link {
   stroke: #999;
-  opacity: .8;
+  opacity: .9;
 }
 
 .vertical-line {
@@ -777,6 +790,7 @@ circle.this-route{
 
 line.this-route {
   stroke:#4F4688;
+  opacity: 1 !important;
 }
 
 circle.not-this-route{
@@ -785,7 +799,7 @@ circle.not-this-route{
 }
 
 line.not-this-route{
-  opacity: .3;
+  opacity: .2 !important;
 }
 
 text.this-route{

@@ -827,6 +827,7 @@ function drawTopNodes(list) {
     d3.select(".multi-nodes").on("click", function () {
         if (!isMultiMode) {
             console.log("multi-mode");
+
             //reset Array
             packLinkList.length = 0;
             packLinks.length = 0;
@@ -835,9 +836,14 @@ function drawTopNodes(list) {
             isMultiMode = true;
             graphExist = false;
             drawLayer.attr("height", "100%").attr("width", "100%");
+            //remove existing vis
             workSpace.selectAll("g").remove();
             d3.selectAll("#queryTitleContainer").classed("hide", true);
+            //hide line vis filter
+            d3.select("#lineWeightFilter").classed("hide", true);
+            d3.select("#lineVisTxt").classed("hide", true);
             node.remove();
+            //redraw top nodes
             drawTopNodes(nodeList);
             d3.select(this).classed("tool-active", true);
             d3.select(".draw-undirected-line").on("click", drawUndirectedLine);

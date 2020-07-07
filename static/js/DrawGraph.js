@@ -1,8 +1,13 @@
 // drawGraph();
-function drawGraph(graphid, graph, type) {
+function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
+    
+    // graphLeftData = 
 
     let graphRightPlusExist = false;
     let graphLeftPlusExist = false;
+    // show link density filter
+    d3.select("#lineWeightFilter").classed("hide", false);
+    d3.select("#linkVisTxt").classed("hide", false);
     
     d3.selectAll(".brush-child").classed("hide", true);
 
@@ -31,10 +36,6 @@ function drawGraph(graphid, graph, type) {
     // zoom(graphBg);
     // graphBg.call(zoom).on("dblclick.zoom", null);
 
-    //display side tab menu
-    d3.select("#staTab").classed("hide", false)
-    //draw sta cards
-    let staCardHeight = 2 * staSpaceWidth / 3;
 
     brush.on("start", brushstart)
         .on("brush", brushed)
@@ -58,7 +59,6 @@ function drawGraph(graphid, graph, type) {
                     this.getBoundingClientRect().x + 0.5 * this.getBoundingClientRect().width,
                     this.getBoundingClientRect().y + 0.5 * this.getBoundingClientRect().height)
             })
-
         }
 
         function isInSelection(brush_coords, cx, cy) {
@@ -95,6 +95,7 @@ function drawGraph(graphid, graph, type) {
             menuAnd.on("click", function () {
                 console.log(selectedNodes);
             })
+
         }
     }
 
@@ -141,7 +142,7 @@ function drawGraph(graphid, graph, type) {
             zoom.scaleBy(graphBg, 0.8, [workSpaceWidth / 4, workSpaceHeight / 2])
             //put graph 1 left and zoom
 
-            drawGraph("graph-second", subNodeMap, "single")
+            drawGraph("graph-second", type, queryNode, timeStart, timeEnd);
             // callSecondBrush();
             console.log("clicked!")
 
@@ -211,13 +212,6 @@ function drawGraph(graphid, graph, type) {
         return scaler(subID);
     }
 
-    let linkScaler = d3.scaleLinear()
-        .range([1, 5])
-        .domain([1, d3.max(graph.link, d => d.count)])
-
-    let rightCountSum = d3.sum(graph.link.filter(d => d.sequence == 1), d => d.count)
-    let leftCountSum = d3.sum(graph.link.filter(d => d.sequence == -1), d => d.count)
-
     var verticalLine = graphContainer.append("g")
         .attr("id", "VerticalLines")
         .attr("opacity", .3);
@@ -239,43 +233,48 @@ function drawGraph(graphid, graph, type) {
 
 
     if (type === "single") {
+        let centerdata = [{
+            "target": queryCenter 
+        }]
+
         let centernode = node.append("g")
             .attr("id", "queryNode")
             .selectAll("circle")
-            .data(graph.node.filter(d => d.sequence == 0))
-            .enter().append("circle")
+            .data(centerdata).enter()
+            .append("circle")
             .attr("class", "center-node")
             .attr("r", 30)
-            .attr("cx", d => graphCenter[0] + d.sequence * fistNodeDistance)
+            .attr("cx", graphCenter[0])
             .attr("cy", graphCenter[1])
             .on("click", clicked);
 
         let textCenter = node.append("g")
             .selectAll("text")
-            .data(graph.node.filter(d => d.sequence == 0))
-            .enter().append("text")
+            .data(centerdata).enter()
+            .append("text")
             .attr("class", "node-text")
             .attr("fill", "slategray")
-            .attr("x", d => graphCenter[0] + d.sequence * fistNodeDistance)
+            .attr("x", graphCenter[0])
             .attr("y", graphCenter[1] + nodeTxtOffset + 15)
-            .text(d => multiWordsFormat(d.place))
+            .text(d => multiWordsFormat(d.target))
             .style("font-size", "14px")
-            .on("mouseover", d => showFullName(d.place))
+            .on("mouseover", d => showFullName(d.target))
             .on("mousemove", moveFullName)
             .on("mouseout", hideFullName);
-
-
+        
+        console.log(textCenter)
+        console.log(typeof queryCenter)
     } else {
         fistNodeDistance = 180;
         coeffTxtOffset = 0.8;
         let centernode = node.append("g")
             .attr("id", "queryNode")
             .selectAll("circle")
-            .data(graph.node.filter(d => d.sequence == 0))
+            .data(queryCenter)
             .enter().append("circle")
             .attr("class", "node-multi-center")
             .attr("r", 120)
-            .attr("cx", d => graphCenter[0] + d.sequence * fistNodeDistance)
+            .attr("cx", d => graphCenter[0])
             .attr("cy", graphCenter[1])
             .on("click", clicked);
 
@@ -394,6 +393,27 @@ function drawGraph(graphid, graph, type) {
         }
     }
 
+    var txtOffset = -15
+    var linkRight, linkLeft ,textRight, textLeft, nodeRight, nodeLeft, leftFirstList, rightFirstList
+    var leftMaxCnt, rightMaxCnt, totalMaxCnt
+    var inNodeHistScaler = d3.scaleLinear()
+        .range([-0.5 * nodeRadius, 0.5*nodeRadius])
+        .domain([-1, 1]).nice();
+    // get all list
+    var allList = new Array()
+    // axios.post('http://127.0.0.1:5000/nodelist', {
+    //     name: name
+    // })
+    // .then(function (response) { // if success then update data
+    //     allList = response.data;
+    //     drawFirstSteps(-1);
+    //     drawFirstSteps(1);
+    // })
+    var linkScaler
+    drawFirstSteps(-1);
+    drawFirstSteps(1);
+
+
     //add vertical line
     
     var verLiney = ({
@@ -413,19 +433,15 @@ function drawGraph(graphid, graph, type) {
     let centerVerline = verticalLine.append("g")  
         .attr("id", "seq0");
 
-    appendVerLine(centerVerline, graphCenter[0]);
-    
     let leftVerline = verticalLine.append("g")  
         .attr("id", "seq-1")
         .call(d3.drag().on("drag", vlineDragged));
-
-    appendVerLine(leftVerline, graphCenter[0]-fistNodeDistance);
 
     let rightVerline = verticalLine.append("g")  
         .attr("id", "seq1")
         .call(d3.drag().on("drag", vlineDragged));
 
-    appendVerLine(rightVerline, graphCenter[0]+fistNodeDistance);
+    
 
     //add horizontal line(interval indicator)
 
@@ -453,155 +469,171 @@ function drawGraph(graphid, graph, type) {
     var arrowOffset = 4;
     let leftHorline = horizontalLine.append("g")
         .attr("id", "seq-1");
-    appendHorLine(leftHorline, graphCenter[0]-arrowOffset, graphCenter[0]-fistNodeDistance+arrowOffset);
+    
     let rightHorline = horizontalLine.append("g")
         .attr("id", "seq1");
-    appendHorLine(rightHorline, graphCenter[0]+arrowOffset, graphCenter[0]+fistNodeDistance-arrowOffset);
-
-    //add other link and nodes
-    let linkRight = link.append("g")
-        .selectAll("line")
-        .data(graph.link.filter(d => d.sequence == 1))
-        .enter().append("line")
-        .attr("class", "link")
-        .attr("stroke-width", d => linkScaler(d.count))
-        .attr("x1", d => graphCenter[0])
-        .attr("y1", d => graphCenter[1])
-        .attr("x2", d => graphCenter[0] + d.sequence * fistNodeDistance)
-        .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, d.sublink_count));
-
-    let linkLeft = link.append("g")
-        .selectAll("line")
-        .data(graph.link.filter(d => d.sequence == -1))
-        .enter().append("line")
-        .attr("class", "link")
-        .attr("stroke-width", d => linkScaler(d.count))
-        .attr("x1", d => graphCenter[0])
-        .attr("y1", d => graphCenter[1])
-        .attr("x2", d => graphCenter[0] + d.sequence * fistNodeDistance)
-        .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, d.sublink_count));
-
-    var txtOffset = -15
-    let rightText = link.append("g")
-        .selectAll("text")
-        .data(graph.link.filter(d => d.sequence == 1)).enter()
-        .append("text")
-        .attr("class", "link-text link-text-main")
-        .attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * fistNodeDistance)
-        .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
-        .text(d => d.count * 10)
-        .classed("text-hide", true);
-
-    let leftText = link.append("g")
-        .selectAll("text")
-        .data(graph.link.filter(d => d.sequence == -1)).enter()
-        .append("text")
-        .attr("class", "link-text link-text-main")
-        .attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * fistNodeDistance)
-        .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, d.sublink_count))
-        .text(d => d.count * 10)
-        .classed("text-hide", true);
-        
-    let nodeRight = node.selectAll(".node-right")
-        .data(graph.node.filter(d => d.sequence == 1))
-        .enter().append("g")
-        .attr("class", "node-right")
-        .attr("transform",  d => "translate("+ linkRight.filter(l => l.target == d.target).attr("x2") + "," 
-            + linkRight.filter(l => l.target == d.target).attr("y2") + ")")
-        .call(d3.drag().on("drag", dragged));
-        
-    nodeRight
-        .append("circle")
-        .attr("class", "node")
-        .attr("r", nodeRadius)
-        .on("click", clicked)
-        .on("mouseover", NodeMouseOver)
-        .on("mousemove", NodeMouseMove)
-        .on("mouseleave", NodeMouseLeave);
-
-    nodeRight.append("text")
-        .attr("class", "node-text")
-        .attr("y", nodeTxtOffset)
-        .text(d => multiWordsFormat(d.place))
-        .on("mouseover", d => showFullName(d.place))
-        .on("mousemove", moveFullName)
-        .on("mouseout", hideFullName);
-
-    //calculate the proportion of thisnode atv / total atv
-    let inNodeHistScaler = d3.scaleLinear()
-        .range([-0.5 * nodeRadius, 0.5*nodeRadius])
-        .domain([-1, 1]).nice();
-    let atvmean = d3.mean(graph.node, d => d.atv);
-    let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
-
-    // console.log(digitFormat(atvmean));
-    nodeRight.append("rect")
-        .attr("width", 0.8 * nodeRadius)
-        .attr("x", -0.4 * nodeRadius)
-        .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
-        .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
-        .attr("class", "innode-graph")
-        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5");
-    //baseline
-    nodeRight.append("line")
-        .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
-        .attr("class", "innode-graph");
-    //number text with "+" "-"
-    nodeRight.append("text")
-        .text(d => digitFormat(d.atv-atvmean))
-        .attr("class", "innode-graph")
-        .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
-        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
-        
-    let nodeLeft = node.selectAll(".node-left")
-        .data(graph.node.filter(d => d.sequence == -1))
-        .enter().append("g")
-        .attr("class", "node-left")
-        .attr("transform",  d => "translate("+ linkLeft.filter(l => l.target == d.target).attr("x2") + "," 
-            + linkLeft.filter(l => l.target == d.target).attr("y2") + ")")
-        .call(d3.drag().on("drag", dragged))
     
-    nodeLeft.append("circle")
-        .attr("class", "node")
-        .attr("r", nodeRadius)
-        .on("click", clicked)
-        .on("mouseover", NodeMouseOver)
-        .on("mousemove", NodeMouseMove)
-        .on("mouseleave", NodeMouseLeave);
-    //add node name
-    nodeLeft.append("text")
-        .attr("class", "node-text")
-        .attr("y", nodeTxtOffset)
-        .text(d => multiWordsFormat(d.place))
-        .on("mouseover", d => showFullName(d.place))
-        .on("mousemove", moveFullName)
-        .on("mouseout", hideFullName);
-    //in-node graph
-    nodeLeft.append("rect")
-        .attr("width", 0.8 * nodeRadius)
-        .attr("x", -0.4 * nodeRadius)
-        .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
-        .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
-        .attr("class", "innode-graph")
-        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5")
-    //baseline
-    nodeLeft.append("line")
-        .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
-        .attr("class", "innode-graph")
-    //number text with "+" "-"
-    nodeLeft.append("text")
-        .text(d => digitFormat(d.atv-atvmean))
-        .attr("class", "innode-graph")
-        .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
-        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
+
+    //scale links
     
-    node.selectAll(".innode-graph")
-        .on("mouseover", InNodeGraphMouseOver)
-        .on("mousemove", InNodeGraphMouseMove)
-        .on("mouseleave", InNodeGraphMouseLeave);
+
+    // get and draw first links 
+    function drawFirstSteps(seq) {
+        axios.post('http://127.0.0.1:5000/query_single_new', {
+            name: queryCenter,
+            sequence: seq,
+            list: allList,
+            timeStart: timeStart,
+            timeEnd: timeEnd,
+            displaynum: 6
+            // time: t
+            })
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { // if success then update data
+                console.log(response.data);
+                // console.log(linkGroup, linkLeft, linkRight);
+                let linkGroup = link.append("g") //add links
+                    .selectAll("line")
+                    .data(response.data.link)
+                    .enter().append("line")
+                    .attr("class", "link")
+                    .attr("id", `seq${seq}`)
+                    .attr("stroke-width", 1)
+                    .attr("x1", d => graphCenter[0])
+                    .attr("y1", d => graphCenter[1])
+                    .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                    .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
+
+                let linkTextGroup = link.append("g") // add text on links
+                    .selectAll("text")
+                    .data(response.data.link).enter()
+                    .append("text")
+                    .attr("class", "link-text link-text-main")
+                    .attr("id", `seq${seq}`)
+                    .attr("x", d => graphCenter[0] + coeffTxtOffset * seq * fistNodeDistance)
+                    .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, response.data.link.length))
+                    .text(d => d.count)
+                    .classed("text-hide", true);
+                let nodeGroup = node.selectAll(`#seq${seq}`)
+                    .data(response.data.link)
+                    .enter().append("g")
+                    .attr("id", `seq${seq}`)
+                    .attr("transform",  d => "translate("+ linkGroup.filter(l => l.target == d.target).attr("x2") + "," 
+                        + linkGroup.filter(l => l.target == d.target).attr("y2") + ")");
+                    // .call(d3.drag().on("drag", dragged));
+                nodeGroup
+                    .append("circle")
+                    .attr("class", "node")
+                    .attr("r", nodeRadius)
+                    .on("click", clicked)
+                    .on("mouseover", NodeMouseOver)
+                    .on("mousemove", NodeMouseMove)
+                    .on("mouseleave", NodeMouseLeave);
+                nodeGroup.append("text")
+                    .attr("class", "node-text")
+                    .attr("y", nodeTxtOffset)
+                    .text(d => multiWordsFormat(d.target))
+                    .on("mouseover", d => showFullName(d.target))
+                    .on("mousemove", moveFullName)
+                    .on("mouseout", hideFullName);
+                //calculate the proportion of thisnode atv / total atv
+
+                let atvmean = d3.mean(response.data.link, d => d.atv);
+                let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
+                // console.log(digitFormat(atvmean));
+                nodeGroup.append("rect")
+                    .attr("width", 0.8 * nodeRadius)
+                    .attr("x", -0.4 * nodeRadius)
+                    .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
+                    .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
+                    .attr("class", "innode-graph")
+                    .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5");
+                //baseline
+                nodeGroup.append("line")
+                    .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
+                    .attr("class", "innode-graph");
+                //number text with "+" "-"
+                nodeGroup.append("text")
+                    .text(d => digitFormat(d.atv-atvmean))
+                    .attr("class", "innode-graph")
+                    .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
+                    .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
+                //add hover events
+                node.selectAll(".innode-graph")
+                    .on("mouseover", InNodeGraphMouseOver)
+                    .on("mousemove", InNodeGraphMouseMove)
+                    .on("mouseleave", InNodeGraphMouseLeave);
+                function InNodeGraphMouseOver(d){
+                    inNodeTooltip.style("opacity", 1);
+                }
+                function InNodeGraphMouseMove(d) {
+                    let dpx = event.pageX,
+                        dpy = event.pageY;
+                    let percentFormat = d3.format(".0%"),
+                        numFormat = d3.format(".1f");
+            
+                    inNodeTooltip
+                        .html(inNodeTooltipHtml(d))
+                        .style("top", dpy + "px")
+                        .style("left", dpx + "px");
+                    
+                    function inNodeTooltipHtml(d){
+                        if (d.atv-atvmean > 0) {
+                            return "ATV: " + "<span style = 'color:#C94CB0'>" + numFormat(d.atv) + "</span>; <br>" 
+                            + "<span style = 'color:#C94CB0'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
+                            + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+                        } else {
+                            return "ATV: "  + "<span style = 'color:#328347'>" + numFormat(d.atv) + "</span>; <br>" 
+                            + "<span style = 'color:#328347'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
+                            + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+                        }
+                    }
+                }
+                function InNodeGraphMouseLeave(d) {
+                        inNodeTooltip
+                            .style("opacity", 0);
+                    }
+                // let thisStepList = new Array();
+                // response.data.link.forEach(d => thisStepList.push(d.target));
+
+                if (seq === -1){
+                    linkLeft = linkGroup;
+                    nodeLeft = nodeGroup;
+                    textLeft = linkTextGroup;
+                    leftFirstList = response.data.route_list;
+                    leftMaxCnt = d3.sum(response.data.link, d => d.count)
+
+                } else if (seq === 1){
+                    linkRight = linkGroup;
+                    nodeRight = nodeGroup;
+                    textRight = linkTextGroup;
+                    rightFirstList = response.data.route_list;
+                    rightMaxCnt = d3.sum(response.data.link, d => d.count)
+                }
+
+                totalMaxCnt = Math.max(leftMaxCnt, rightMaxCnt);
+                if (!isNaN(totalMaxCnt)) {
+                    linkScaler = d3.scaleLinear()
+                        .range([0.5, 20])
+                        .domain([1, totalMaxCnt])
+                    link.selectAll("line")
+                        .transition().duration(300)
+                        .attr("stroke-width", d=> linkScaler(d.count))
+                }
+                appendVerLine(centerVerline, graphCenter[0]);
+                appendVerLine(leftVerline, graphCenter[0]-fistNodeDistance);
+                appendVerLine(rightVerline, graphCenter[0]+fistNodeDistance);
+                appendHorLine(leftHorline, graphCenter[0]-arrowOffset, graphCenter[0]-fistNodeDistance+arrowOffset);
+                appendHorLine(rightHorline, graphCenter[0]+arrowOffset, graphCenter[0]+fistNodeDistance-arrowOffset);
+            });
+    }
+
 
     //drag vertical line event
     function vlineDragged(d){
+        // console.log(linkLeft)
         // console.log(d3.event.x)
         let dLinex = d3.event.x;
         var thisLine = d3.select(this);
@@ -611,7 +643,7 @@ function drawGraph(graphid, graph, type) {
             + linkLeft.filter(l => l.target == d.target).attr("y2") + ")");
             linkLeft.attr("x2",dLinex);
             //move left text
-            leftText.attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * (graphCenter[0]-dLinex));
+            textLeft.attr("x", d => graphCenter[0] + coeffTxtOffset * (-1) * (graphCenter[0]-dLinex));
             //move horizontal line
             horLineMove(-1, -2);
             //if left plus line is drawn
@@ -625,7 +657,7 @@ function drawGraph(graphid, graph, type) {
             + linkRight.filter(l => l.target == d.target).attr("y2") + ")");
             linkRight.attr("x2",dLinex);
             //move right line text
-            rightText.attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * (dLinex-graphCenter[0]));
+            textRight.attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * (dLinex-graphCenter[0]));
             //move horizontal line
             horLineMove(1, 2);
             if (linkRightplus[2] != undefined) {
@@ -691,7 +723,7 @@ function drawGraph(graphid, graph, type) {
                 parseFloat(linkGroup.filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
     }
 
-    //drag node event
+    //drag node event: currently banned
     function dragged(d) {
         console.log(event.pageX)
         // console.log(d);
@@ -748,24 +780,28 @@ function drawGraph(graphid, graph, type) {
     //Click node event
 
     function clicked(d) {
-        let thisNode = d3.select(this);
-        console.log(node.selectAll("text"));
+        let thisNode = d3.select(this), thisNodeParent = d3.select(this.parentNode);
+        let thisText = d3.selectAll(`#${thisNodeParent.attr("id")}`)
+            .selectAll(".node-text").filter(t => d.target === t.target);
+            console.log(thisNodeParent)
+        // console.log(node.selectAll("text"));
         if (d3.event.shiftKey) {
-            createQuery(d.place, 4, "single",  nodeList);
+            createQuery(d.target, "single",  nodeList);
         } else {
-            console.log("clicked");
+            console.log(d,"clicked");
             d3.select("#staContainer").classed("hide",false);
             d3.selectAll(".sta-single").on("click",StaLabelClick);
             d3.select(".sta-nodename").select("span")
-                .html(d.place)
+                .html(d.target)
             // drawsta();
             // text.text('Place: ' + d.place)
             graphContainer.selectAll("circle").classed("clicked", false);
             thisNode.classed("clicked", true);
             node.selectAll(".node-text").classed("clicked", false);
             // node.selectAll(".node-text").filter(t => t.sequence < -1 || t.sequence > 1).classed("text-hide", true);
-            node.selectAll(".node-text").filter(t => t.target === d.target)
+            thisNodeParent.selectAll(".node-text")
                 .attr("class", "node-text clicked");
+            thisText.attr("class", "node-text clicked");
                 // .classed("text-hide", false)
         }
     }
@@ -774,6 +810,8 @@ function drawGraph(graphid, graph, type) {
     let nodeRightplus = new Array();
     let linkLeftplus = new Array();
     let nodeLeftplus = new Array();
+    let leftLastList = new Array();
+    let rightLastList = new Array();
     //Add steps control
     graphBg.append("g")
         .on("click", afterplus)
@@ -894,106 +932,142 @@ function drawGraph(graphid, graph, type) {
     function drawRightplus(seq) {
         graphRightPlusExist = true;
         //add vertical line
-        drawPlusVerticalLine(seq, seq-1, 80);
-        drawPlusHorizontalLine(seq, seq-1, 80);
 
-        //Calculate vertical layout
-        if (seq === 2) {
-            linkRightplus[seq] = link.append("g")
-                .attr("id", `seq${seq}`)
-                .selectAll("line")
-                .data(graph.link.filter(d => d.sequence == seq))
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
-                .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
-                .attr("y2", 0);
-
-            nodeRightplus[seq] = node.append("g")
-                .attr("id", `seq${seq}`)
-                .selectAll("circle")
-                .data(graph.node.filter(d => d.sequence == seq))
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 10)
-                .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length))
-                .call(d3.drag().on("drag", dragged))
-                .on("click", clicked)
-                .on("mouseover", NodeMouseOver)
-                .on("mousemove", NodeMouseMove)
-                .on("mouseleave", NodeMouseLeave);
-
-            linkRightplus[seq]
-                .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"));
+        var queryData
+        if (seq === 2){
+            queryData = {
+                name: queryCenter,
+                sequence: seq,
+                list: rightFirstList,
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
+            }
         } else {
-            linkRightplus[seq] = link.append("g")
-                .attr("id", `seq${seq}`)
-                .selectAll("line")
-                .data(graph.link.filter(d => d.sequence == seq))
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("x1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
-                .attr("y1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2")) + 80)
-                .attr("y2", 0);
-
-            nodeRightplus[seq] = node.append("g")
-                .attr("id", `seq${seq}`)
-                .selectAll("circle")
-                .data(graph.node.filter(d => d.sequence == seq))
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 10)
-                .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == seq).length))
-                // .attr("cy", (d,i) => 100+ i * 40)
-                .call(d3.drag().on("drag", dragged))
-                .on("click", clicked)
-                .on("mouseover", NodeMouseOver)
-                .on("mousemove", NodeMouseMove)
-                .on("mouseleave", NodeMouseLeave);
-            
-            //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-            // if  ((graph.node.filter(d => d.sequence == seq).length < 4) || (graph.node.filter(d => d.sequence == seq).length < (1+graph.node.filter(d => d.sequence == seq-1).length))) {
-            //     nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
-            // }
-
-            linkRightplus[seq]
-                .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
-            
-            console.log(graph.node.filter(d => d.sequence == seq).length)
+            queryData = {
+                name: queryCenter,
+                sequence: seq,
+                list: rightLastList[seq-1],
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
+            }
         }
-        // add link text
-        link.append("g")
-            .attr("id", `seq${seq}`)
-            .selectAll(".link-text-rightplus")
-            .data(graph.link.filter(d => d.sequence == seq)).enter()
-            .append("text")
-            .attr("class", "link-text link-text-rightplus")
-            .attr("x", d => 0.5 * (
-                parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
-                parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
-            .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
-                parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
-                parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
-            .text(d => d.count * 10)
-            .classed("text-hide", true)
-        //add node text
-        node.append("g")
-            .attr("id", `seq${seq}`)
-            .selectAll("text")
-            .data(graph.node.filter(d => d.sequence == seq))
-            .enter().append("text")
-            .attr("class", "node-text")
-            .attr("x", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
-            .attr("y", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
-            .text(d => multiWordsFormat(d.place))
-            .on("mouseover", d => showFullName(d.place))
-            .on("mousemove", moveFullName)
-            .on("mouseout", hideFullName);
-            // .classed("text-hide", true)
+        axios.post('http://127.0.0.1:5000/query_single_new', queryData)
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { 
+                console.log(response.data.node)
+                // get this step's node list
+                // let thisStepList = new Array();
+                // response.data.node.forEach(d => thisStepList.push(d.target));
+                rightLastList[seq] = response.data.route_list;
+                if (seq === 2) {
+                    linkRightplus[seq] = link.append("g")
+                        .attr("id", `seq${seq}`)
+                        .selectAll("line")
+                        .data(response.data.link)
+                        .enter().append("line")
+                        .attr("class", "link")
+                        .attr("stroke-width", 0)
+                        .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
+                        .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
+                        .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
+                        .attr("y2", 0);
+        
+                    nodeRightplus[seq] = node.append("g")
+                        .attr("id", `seq${seq}`)
+                        .selectAll("circle")
+                        .data(response.data.node)
+                        .enter().append("circle")
+                        .attr("class", "node")
+                        .attr("r", 10)
+                        .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
+                        .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
+                        // .call(d3.drag().on("drag", dragged))
+                        .on("click", clicked)
+                        .on("mouseover", NodeMouseOver)
+                        .on("mousemove", NodeMouseMove)
+                        .on("mouseleave", NodeMouseLeave);
+
+                } else {
+                    linkRightplus[seq] = link.append("g")
+                        .attr("id", `seq${seq}`)
+                        .selectAll("line")
+                        .data(response.data.link)
+                        .enter().append("line")
+                        .attr("class", "link")
+                        .attr("stroke-width", 0)
+                        .attr("x1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
+                        .attr("y1", d => linkRightplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
+                        .attr("x2", d => parseFloat(linkRightplus[seq - 1].filter(l => l.target == d.source).attr("x2")) + 80)
+                        .attr("y2", 0);
+        
+                    nodeRightplus[seq] = node.append("g")
+                        .attr("id", `seq${seq}`)
+                        .selectAll("circle")
+                        .data(response.data.node)
+                        .enter().append("circle")
+                        .attr("class", "node")
+                        .attr("r", 10)
+                        .attr("cx", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
+                        .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
+                        // .attr("cy", (d,i) => 100+ i * 40)
+                        // .call(d3.drag().on("drag", dragged))
+                        .on("click", clicked)
+                        .on("mouseover", NodeMouseOver)
+                        .on("mousemove", NodeMouseMove)
+                        .on("mouseleave", NodeMouseLeave);
+                    
+                    //if this step nodes amount < last step nodes amount, then do not apply dumb layout
+                    // if  ((graph.node.filter(d => d.sequence == seq).length < 4) || (graph.node.filter(d => d.sequence == seq).length < (1+graph.node.filter(d => d.sequence == seq-1).length))) {
+                    //     nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
+                    // }
+
+                }
+                linkRightplus[seq]
+                    .attr("y2", d => nodeRightplus[seq].filter(n => n.target === d.target).attr("cy"))
+                    .transition().duration(300)
+                    .attr("stroke-width", d => linkScaler(d.count))
+                // add link text
+                link.append("g")
+                    .attr("id", `seq${seq}`)
+                    .selectAll(".link-text-rightplus")
+                    .data(response.data.link).enter()
+                    .append("text")
+                    .attr("class", "link-text link-text-rightplus")
+                    .attr("x", d => 0.5 * (
+                        parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
+                        parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
+                    .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
+                        parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
+                        parseFloat(linkRightplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
+                    .text(d => d.count)
+                    .classed("text-hide", true)
+                //add node text
+                node.append("g")
+                    .attr("id", `seq${seq}`)
+                    .selectAll("text")
+                    .data(response.data.node)
+                    .enter().append("text")
+                    .attr("class", "node-text")
+                    .attr("x", d => linkRightplus[seq].filter(l => l.target == d.target).attr("x2"))
+                    .attr("y", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
+                    .text(d => multiWordsFormat(d.target))
+                    .on("mouseover", d => showFullName(d.target))
+                    .on("mousemove", moveFullName)
+                    .on("mouseout", hideFullName);
+                    // .classed("text-hide", true)
+                // keep link visibility settings
+                // changeLinkVisibility();
+                // add vertical line
+                drawPlusVerticalLine(seq, seq-1, 80);
+                drawPlusHorizontalLine(seq, seq-1, 80);
+            });
+        
+        //Calculate vertical layout
+
 
         function dragged(d) {
             graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
@@ -1028,114 +1102,144 @@ function drawGraph(graphid, graph, type) {
                         parseFloat(linkRightplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
                         parseFloat(linkRightplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
             }
-            //Reset text pos
 
-            // drawsta();
-
-            // text.text('Place: ' + d.place)
         }
     }
     function drawLeftplus(seq) {
         graphLeftPlusExist = true;
-        //add vertical line
-        drawPlusVerticalLine(-seq ,-seq+1, -80);
-        drawPlusHorizontalLine(-seq ,-seq+1, -80);
-
-        //Calculate vertical layout
-        if (seq == 2) {
-            linkLeftplus[seq] = link.append("g")
-                .attr("id", `seq${-seq}`)
-                .selectAll("line")
-                .data(graph.link.filter(d => d.sequence == -seq))
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
-                .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
-                .attr("y2", 0);
-
-            nodeLeftplus[seq] = node.append("g")
-                .attr("id", `seq${-seq}`)
-                .selectAll("circle")
-                .data(graph.node.filter(d => d.sequence == -seq))
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 10)
-                .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy",  (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == -seq).length))
-                .call(d3.drag().on("drag", dragged))
-                .on("click", clicked)
-                .on("mouseover", NodeMouseOver)
-                .on("mousemove", NodeMouseMove)
-                .on("mouseleave", NodeMouseLeave);
-
-            linkLeftplus[seq]
-                .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
+        var queryData
+        console.log(leftFirstList, rightFirstList);
+        if (seq === 2){
+            queryData = {
+                name: queryCenter,
+                sequence: -seq,
+                list: leftFirstList,
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
+            }
         } else {
-            linkLeftplus[seq] = link.append("g")
-                .attr("id", `seq${-seq}`)
-                .selectAll("line")
-                .data(graph.link.filter(d => d.sequence == -seq))
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("x1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
-                .attr("y1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2")) - 80)
-                .attr("y2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2")) + LayoutScaler(d.sub_id, d.sublink_count));
+            queryData = {
+                name: queryCenter,
+                sequence: -seq,
+                list: leftLastList[seq-1],
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
+            }
+        }
+        //Calculate vertical layout
+        axios.post('http://127.0.0.1:5000/query_single_new', queryData)
+        .catch(function (error) {
+            console.log(error);
+        })
+        .then(function (response) { 
 
-            nodeLeftplus[seq] = node.append("g")
-                .attr("id", `seq${-seq}`)
-                .selectAll("circle")
-                .data(graph.node.filter(d => d.sequence == -seq))
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 10)
-                .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
-                .attr("cy", (d,i) => LayoutScaler_Adjust(i, graph.node.filter(d => d.sequence == -seq).length))
-                .call(d3.drag().on("drag", dragged))
-                .on("click", clicked)
-                .on("mouseover", NodeMouseOver)
-                .on("mousemove", NodeMouseMove)
-                .on("mouseleave", NodeMouseLeave);
+            console.log(seq, response.data)
+            // let thisStepList = new Array();
+            // response.data.node.forEach(d => thisStepList.push(d.target));
+            leftLastList[seq] = response.data.route_list;
+            if (seq == 2) {
+                linkLeftplus[seq] = link.append("g")
+                    .attr("id", `seq${-seq}`)
+                    .selectAll("line")
+                    .data(response.data.link)
+                    .enter().append("line")
+                    .attr("class", "link")
+                    .attr("stroke-width", 0)
+                    .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
+                    .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
+                    .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
+                    .attr("y2", 0);
 
-            //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-            // if  ((graph.node.filter(d => d.sequence == -seq).length < 4) || (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length))) {
-            //     nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
-            // }
+                nodeLeftplus[seq] = node.append("g")
+                    .attr("id", `seq${-seq}`)
+                    .selectAll("circle")
+                    .data(response.data.node)
+                    .enter().append("circle")
+                    .attr("class", "node")
+                    .attr("r", 10)
+                    .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
+                    .attr("cy",  (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
+                    // .call(d3.drag().on("drag", dragged))
+                    .on("click", clicked)
+                    .on("mouseover", NodeMouseOver)
+                    .on("mousemove", NodeMouseMove)
+                    .on("mouseleave", NodeMouseLeave);
+
+            } else {
+                linkLeftplus[seq] = link.append("g")
+                    .attr("id", `seq${-seq}`)
+                    .selectAll("line")
+                    .data(response.data.link)
+                    .enter().append("line")
+                    .attr("class", "link")
+                    .attr("stroke-width", 0)
+                    .attr("x1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2"))
+                    .attr("y1", d => linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("y2"))
+                    .attr("x2", d => parseFloat(linkLeftplus[seq - 1].filter(l => l.target == d.source).attr("x2")) - 80)
+                    .attr("y2", 0);
+
+                nodeLeftplus[seq] = node.append("g")
+                    .attr("id", `seq${-seq}`)
+                    .selectAll("circle")
+                    .data(response.data.node)
+                    .enter().append("circle")
+                    .attr("class", "node")
+                    .attr("r", 10)
+                    .attr("cx", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
+                    .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
+                    // .call(d3.drag().on("drag", dragged))
+                    .on("click", clicked)
+                    .on("mouseover", NodeMouseOver)
+                    .on("mousemove", NodeMouseMove)
+                    .on("mouseleave", NodeMouseLeave);
+
+                //if this step nodes amount < last step nodes amount, then do not apply dumb layout
+                // if  ((graph.node.filter(d => d.sequence == -seq).length < 4) || (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length))) {
+                //     nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
+                // }
+            }
             linkLeftplus[seq]
                 .attr("y2", d => nodeLeftplus[seq].filter(n => n.target === d.target).attr("cy"))
-        }
-        //add text
-        link.append("g")
-            .attr("id", `seq${-seq}`)
-            .selectAll(".link-text-leftplus")
-            .data(graph.link.filter(d => d.sequence == -seq)).enter()
-            .append("text")
-            .attr("class", "link-text-leftplus link-text")
-            .attr("x", d => 0.5 * (
-                parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
-                parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
-            .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
-                parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
-                parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
-            .text(d => d.count * 10)
-            .classed("text-hide", true)
+                .transition().duration(300)
+                    .attr("stroke-width", d => linkScaler(d.count))
 
-        node.append("g")
-            .attr("id", `seq${-seq}`)
-            .selectAll("text")
-            .data(graph.node.filter(d => d.sequence == -seq))
-            .enter().append("text")
-            .attr("class", "node-text")
-            .attr("x", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
-            .attr("y", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
-            .text(d => multiWordsFormat(d.place))
-            .on("mouseover", d => showFullName(d.place))
-            .on("mousemove", moveFullName)
-            .on("mouseout", hideFullName);
+            //add text
+            link.append("g")
+                .attr("id", `seq${-seq}`)
+                .selectAll(".link-text-leftplus")
+                .data(response.data.link)
+                .enter().append("text")
+                .attr("class", "link-text-leftplus link-text")
+                .attr("x", d => 0.5 * (
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
+                .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
+                    parseFloat(linkLeftplus[seq].filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
+                .text(d => d.count)
+                .classed("text-hide", true)
+
+            node.append("g")
+                .attr("id", `seq${-seq}`)
+                .selectAll("text")
+                .data(response.data.node)
+                .enter().append("text")
+                .attr("class", "node-text")
+                .attr("x", d => linkLeftplus[seq].filter(l => l.target == d.target).attr("x2"))
+                .attr("y", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
+                .text(d => multiWordsFormat(d.target))
+                .on("mouseover", d => showFullName(d.target))
+                .on("mousemove", moveFullName)
+                .on("mouseout", hideFullName);
+                // .classed("text-hide", true)
+            // keep link visibility settings
+            // add vertical line
+            drawPlusVerticalLine(-seq ,-seq+1, -80);
+            drawPlusHorizontalLine(-seq ,-seq+1, -80);    
             
-            // .classed("text-hide", true)
-
+        })    
 
         function dragged(d) {
             // console.log(d);
@@ -1173,48 +1277,17 @@ function drawGraph(graphid, graph, type) {
             }
         }
     }
-    function InNodeGraphMouseOver(d){
-        inNodeTooltip.style("opacity", 1);
 
-    }
-    function InNodeGraphMouseMove(d) {
-        let dpx = event.pageX,
-            dpy = event.pageY;
-        let percentFormat = d3.format(".0%"),
-            numFormat = d3.format(".1f");
-
-        inNodeTooltip
-            .html(inNodeTooltipHtml(d))
-            .style("top", dpy + "px")
-            .style("left", dpx + "px");
-        
-        function inNodeTooltipHtml(d){
-            if (d.atv-atvmean > 0) {
-                return "ATV: " + "<span style = 'color:#C94CB0'>" + numFormat(d.atv) + "</span>; <br>" 
-                + "<span style = 'color:#C94CB0'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
-                + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
-            } else {
-                return "ATV: "  + "<span style = 'color:#328347'>" + numFormat(d.atv) + "</span>; <br>" 
-                + "<span style = 'color:#328347'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
-                + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
-            }
-        }
-    }
-    function InNodeGraphMouseLeave(d) {
-        inNodeTooltip
-            .style("opacity", 0);
-    }
 
     function NodeMouseOver(d) {
         let hoveredNode = d3.select(this);
         let hoveredNodeParent = d3.select(this.parentNode);
         // console.log(hoveredNodeParent);
-        node.selectAll("circle").filter(n => n.sequence !== 0).classed("not-this-route", true)
+        node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true)
         link.selectAll("line").classed("not-this-route", true)
-        link.selectAll("text").classed("not-this-route", true)
-
+        // link.selectAll("text").classed("not-this-route", true)
+        // console.log(d)
         d.route.forEach(function (r) {
-            // console.log(r)
             node.selectAll("circle").filter(".not-this-route")
                 .classed("this-route", n => isInRoute(r, n.route))
             node.selectAll("circle").filter(".this-route")
@@ -1459,101 +1532,18 @@ function drawGraph(graphid, graph, type) {
             drawsamplepie(svg, svgWidth, svgHeight);
         }
     }
-
-    function drawsamplebar(id) {
-        let fakeData = [{
-                "label": "one",
-                "value": 20
-            },
-            {
-                "label": "two",
-                "value": 50
-            },
-            {
-                "label": "three",
-                "value": 30
-            }
-        ];
-        let sampleBar = staSpace.select(id).append("g")
-            .attr("class", "sampleBar")
-            .attr('transform', `translate(${ staSpaceWidth / 4},
-                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/4)})`)
-
-        let barWidth = staSpaceWidth / 2
-        let barHeight = staCardHeight / 2
-
-        let xScale = d3.scaleLinear()
-            .domain([0, d3.max(fakeData, d => d.value)])
-            .range([0, barWidth]);
-
-        let yScale = d3.scaleBand()
-            // .rangeRoundBands([barHeight, 0], .1)
-            .domain(fakeData.map(d => d.label))
-            .range([0, barHeight])
-            .padding(.3);
-
-        sampleBar.selectAll("rect").data(fakeData)
-            .enter().append("rect")
-            .attr("y", d => yScale(d.label))
-            .attr("width", d => xScale(d.value))
-            .attr("height", yScale.bandwidth())
-            .attr("fill", "#1771D8")
-            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
-
-        staSpace.select(id)
-            .append("g")
-            .attr("class", "sampleBar")
-            .attr('transform', `translate(${ staSpaceWidth / 5},
-                ${(parseFloat(staSpace.select(id).attr("y")) + staCardHeight/8)})`)
-            .append("text")
-            .text(d => d.category + " " + id)
-            .attr("x", 10)
-            .attr("y", 10)
-
-        function dragstarted(d) {
-            //Draw a same path on drag layer
-            globalDragLayer
-                .attr("height", "100%")
-                .attr("width", "100%")
-                .append("rect")
-                .attr("fill", d3.select(this).attr("fill"))
-                .attr("width", d3.select(this).attr("width"))
-                .attr("height", d3.select(this).attr("height"))
-                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
-                .attr("stroke", "white")
-
-            d3.select(this)
-                .attr("opacity", 0)
-        }
-
-        function dragged(d) {
-            dpx = d3.event.pageX;
-            dpy = d3.event.pageY;
-            globalDragLayer.selectAll("rect")
-                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
-        }
-
-        function dragended(d) {
-            let endXPos = event.pageX,
-                endYPos = event.pageY;
-            if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
-                endXPos > conditionBoxPos.x &&
-                endYPos < conditionBoxPos.y + conditionBoxPos.height &&
-                endYPos > conditionBoxPos.y) {
-                conditionCount += 1;
-                conditionBox.select("text").text(`Conditions(${conditionCount})`)
-                    .attr("opacity", 1).attr("fill", "#CACACA");
-                conditionBox.select("rect").attr("opacity", .8)
-                    .attr("fill", "#40496C");
-            }
-            globalDragLayer.selectAll("rect").remove();
-            globalDragLayer.attr("width", 0).attr("height", 0);
-            staSpace.select(id).selectAll("g").remove();
-            // graphContainer.attr("transform", "translate("+(-workSpaceWidth/4)+","+0+(")"));
-            drawsamplebar(id);
-        }
-    }
-
     //all done, set graph exist indicator = true
     graphExist = true;
+}
+
+function changeLinkVisibility() {
+    let value = document.getElementById("linkVis").value;
+    let allLink = d3.selectAll(".link")
+    let maxLinkCount = d3.max(allLink.data(), d => d.count);
+    let scaler = d3.scalePow().exponent(3).range([0.9, maxLinkCount+1]).domain([0, 100]);
+    let txt = d3.select("#linkVisTxt").select("span")
+    console.log(scaler(100-value))
+    allLink.filter(l => l.count > scaler(100-value)).transition().duration(200).style("opacity", .9);
+    allLink.filter(l => l.count < scaler(100-value)).transition().duration(200).style("opacity", .2);
+    txt.html("count > "+ Math.floor(scaler(100-value)));
 }
