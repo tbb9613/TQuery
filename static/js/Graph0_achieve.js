@@ -197,7 +197,18 @@ drawHeatmap();
 var tooltipFullNodeName = d3.select("#mainContainer").append("div")
         // .attr("x", 0).attr("y", 0)
         .attr("class", "tooltip-full-node-name hide");
+
+//add other tooltips
+var shiftTooltip = workContainer.append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0)
+
+var inNodeTooltip = workContainer.append("div")
+    .attr("class", "tooltip innode-tooltip")
+    .style("opacity", 0);
+
 function showFullName(d){
+
     let pgX = event.pageX, pgY = event.pageY;
     tooltipFullNodeName.style("left", `${pgX+5}px`)
         .style("top", `${pgY+5}px`)
@@ -214,14 +225,7 @@ function moveFullName(){
 function hideFullName(d){
     tooltipFullNodeName.classed("hide", true);
 }
-//add other tooltips
-var shiftTooltip = workContainer.append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0)
 
-var inNodeTooltip = workContainer.append("div")
-    .attr("class", "tooltip innode-tooltip")
-    .style("opacity", 0)
 
 //TIME SELECTOR
 function getTimeData(timeScale) {

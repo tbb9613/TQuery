@@ -16,8 +16,8 @@ pd.options.mode.chained_assignment = None
 
 #read data and change data type
 record_with_tinterval = pd.read_csv("data_example_short_with_type.csv", index_col = 0)
-record_with_tinterval["mcc"] = record_with_tinterval["mcc"].astype("category")
-record_with_tinterval["transaction_type"] = record_with_tinterval["transaction_type"].astype("category")
+# record_with_tinterval["mcc"] = record_with_tinterval["mcc"].astype("category")
+# record_with_tinterval["transaction_type"] = record_with_tinterval["transaction_type"].astype("category")
 record_with_tinterval["time"] =  pd.to_datetime(record_with_tinterval["time"])
 record_with_tinterval["time_interval_to_next"] =  pd.to_timedelta(record_with_tinterval["time_interval_to_next"])
 record_with_tinterval["time_interval_from_last"] =  pd.to_timedelta(record_with_tinterval["time_interval_from_last"])
@@ -67,7 +67,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     # get nodes grouped
     nodes_g = links[columns_transaction_value].groupby(["target"]).count().rename(columns = {"transaction_value":"count"}).reset_index()
     # capture nodes' route
-    nodes_g["route"] = links.groupby(["target"]).groups.values()
+    nodes_g["route"] = links[columns_transaction_value].groupby(["target"]).groups.values()
     # filter: node count >0
     nodes_g = nodes_g[nodes_g["count"] > 0].reset_index(drop=True)
     # group to deal with transaction type
@@ -89,7 +89,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     nodes_result = nodes_g.nlargest(keep_rank_num, "count").reset_index(drop=True)
     # convert array to list - for jsonify
     nodes_result["route"] = nodes_result["route"].apply(lambda x: x.tolist())
-    for row in nodes_result.loc[nodes_result["offline_route"].isna(), "online_route"].index:
+    for row in nodes_result.loc[nodes_result["offline_route"].isna(), "offline_route"].index:
         nodes_result.at[row, "offline_route"] = np.array([])
     for row in nodes_result.loc[nodes_result["online_route"].isna(), "online_route"].index:
         nodes_result.at[row, "online_route"] = np.array([])
@@ -102,7 +102,9 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     for routes in nodes_result["route"]:
         this_step_routes += routes
     # get all links in this step's route
+    print(len(links))
     links = links[links.index.isin(this_step_routes)]
+    print(len(links))
     # get links grouped into source + target + count format df
     links_g = links.reset_index().groupby(["source","target"]).count().dropna().rename(columns = {"name":"count"}).reset_index()
     # capture links' routes by people's identifier/name
@@ -111,10 +113,12 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     links_g["atv"] = links[["source", "target", "transaction_value"]].groupby(["source","target"]).mean().dropna().reset_index()["transaction_value"]
     links_transtype_groupby = links[columns_transaction_type].groupby(by = ["source", "target", "transaction_type"])
     links_transtype = links_transtype_groupby.count().dropna()
+    # print(links_transtype)
+    # print(links_transtype_groupby.groups)
     # group to deal with transaction type
     links_transtype["type_routes"] = list(links_transtype_groupby.groups.values())
-    links_transtype_cnt = links_transtype.unstack()["transaction_value"].reset_index(drop=True)
-    links_transtype_routes = links_transtype.unstack()["type_routes"].reset_index(drop=True)
+    links_transtype_cnt = links_transtype.unstack()["transaction_value"].reset_index().sort_values(by = ["source", "target"]).reset_index()
+    links_transtype_routes = links_transtype.unstack()["type_routes"].reset_index().sort_values(by = ["source", "target"]).reset_index()
     # add trans type count
     links_g["offline_count"] = links_transtype_cnt["offline"]
     links_g["online_count"] = links_transtype_cnt["online"]
@@ -125,16 +129,20 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     links_result = links_g.reset_index(drop = True).drop(columns = ["transaction_value"])
     # print(links_result)
     # print(links_result["offline_route"].isna())
+    
     # convert array to list
     links_result["route"] = links_result["route"].apply(lambda x: x.tolist())
     #fill null list
-    for row in links_result.loc[links_result["offline_route"].isna(), "online_route"].index:
+    for row in links_result.loc[links_result["offline_route"].isna(), "offline_route"].index:
         links_result.at[row, "offline_route"] = np.array([])
     for row in links_result.loc[links_result["online_route"].isna(), "online_route"].index:
         links_result.at[row, "online_route"] = np.array([])
     links_result["offline_count"].fillna(0, inplace = True)
     links_result["online_count"].fillna(0, inplace = True)
-
+    allroute = []
+    allroutetype = []
+    for rows in links_result.iterrows():
+        print(rows)
     links_result["offline_route"] = links_result["offline_route"].apply(lambda x: x.tolist())
     links_result["online_route"] = links_result["online_route"].apply(lambda x: x.tolist())
 

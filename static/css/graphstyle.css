@@ -208,6 +208,25 @@ button {
   opacity: .9;
 }
 
+.this-route-online, .link-online-trans {
+  stroke: #F7CE3E;
+  opacity: .9;
+}
+
+circle.this-route-online {
+  stroke: rgb(153, 175, 199);
+  fill: #F7CE3E
+}
+
+.this-route-offline, .link-offline-trans {
+  stroke: #1A2930;
+}
+
+circle.this-route-offline {
+  stroke: rgb(153, 175, 199);
+  fill: #1A2930
+}
+
 .vertical-line {
   stroke: #999;
   stroke-width: 3px;
@@ -462,7 +481,7 @@ text.innode-graph{
 
 .innode-tooltip {
   font-size: 11px;
-  width: 70px;
+  max-width: 80px;
   text-align: left;
   hyphens: auto;
   border-radius: 5%;
@@ -795,11 +814,11 @@ line.this-route {
 
 circle.not-this-route{
   /* fill: rgba(162, 178, 194, 0.75); */
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 line.not-this-route{
-  opacity: .2 !important;
+  opacity: .1 !important;
 }
 
 text.this-route{
