@@ -176,7 +176,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         d3.selectAll(".link-trans-type").classed("hide", !d3.selectAll(".link-trans-type").classed("hide"));
         d3.selectAll(".innode-type-pie").classed("hide", !d3.selectAll(".innode-type-pie").classed("hide"));
         // mdui.mutation();
-        if (!d3.selectAll(".link-trans-type").classed("hide")) { // if the status is show
+        if (pieViewFlag) { // if the status is show
             mdui.snackbar({
                 message: 'Pie view of transaction types enbabled'
             });
@@ -185,7 +185,32 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 message: 'Pie view of transaction types disabled'
             });
         }
-
+    }
+    d3.select("#timeIntervalView").on("click", toggleTimeIntervalView);
+    function toggleTimeIntervalView(){
+        timeIntervalFlag = !timeIntervalFlag;
+        d3.selectAll(".horizontal-line").classed("hide", !d3.selectAll(".horizontal-line").classed("hide"));
+        d3.selectAll(".vertical-line").classed("hide", !d3.selectAll(".vertical-line").classed("hide"));
+        d3.selectAll(".horizontal-line-text").classed("hide", !d3.selectAll(".horizontal-line-text").classed("hide"));
+        d3.selectAll(".horizontal-line-text-unit").classed("hide", !d3.selectAll(".horizontal-line-text-unit").classed("hide"));
+        d3.selectAll(".bottom-axis").classed("hide", !d3.selectAll(".bottom-axis").classed("hide"));
+        // mdui.mutation();
+        if (timeIntervalFlag) { // if the status is show
+            mdui.snackbar({
+                message: 'Time interval filter enbabled'
+            });
+        } else {
+            mdui.snackbar({
+                message: 'Time interval filter disabled'
+            });
+        }
+    }
+    function showAllTimeInterval(){
+        d3.selectAll(".horizontal-line").classed("hide", false);
+        d3.selectAll(".vertical-line").classed("hide", false);
+        d3.selectAll(".horizontal-line-text").classed("hide", false);
+        d3.selectAll(".horizontal-line-text-unit").classed("hide", false);
+        d3.selectAll(".bottom-axis").classed("hide", false);
     }
 
     //Draw Bottom Axis according to time selector data
@@ -206,7 +231,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         // console.log(xBottom(0));
         let xAxisBottom = workSpace.append("g")
             .attr("transform", `translate(${bottomAxisMargin.left}, ${bottomAxisMargin.top})`)
-            .attr("class", "bottom-axis");
+            .attr("class", "bottom-axis hide");
         xAxisBottom.call(d3.axisBottom(xBottom).ticks(bottomAxisWidth / 40).tickSize(3).tickSizeOuter(0))
             // .raise();
         // xAxisBottom.selectAll("text").remove();
@@ -438,7 +463,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         .attr("y1", verLiney.y1)
         .attr("x2", xPos)
         .attr("y2", verLiney.y2)
-        .attr("class", "vertical-line");
+        .attr("class", "vertical-line hide");
     }
 
     let centerVerline = verticalLine.append("g")  
@@ -456,7 +481,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
     function appendHorLine(selection, x1pos, x2pos){
         selection.append("line")
-            .attr("class", "horizontal-line")
+            .attr("class", "horizontal-line hide")
             .attr("x1", x1pos)
             .attr("y1", verLiney.y1+5)
             .attr("x2", x2pos)
@@ -467,12 +492,12 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         selection.append("text")
             .attr("x", (x1pos + x2pos)/2)
             .attr("y", verLiney.y1)
-            .attr("class", "horizontal-line-text")
+            .attr("class", "horizontal-line-text hide")
             .text(d3.format(".0f")(xBottom(graphCenter[0]+arrowOffset*2) - xBottom(graphCenter[0]) + Math.abs(xBottom(x2pos)-xBottom(x1pos))));
         selection.append("text")
             .attr("x", (x1pos + x2pos)/2)
             .attr("y", verLiney.y1+15)
-            .attr("class", "horizontal-line-text-unit")
+            .attr("class", "horizontal-line-text-unit hide")
             .text("mins");
     }
     var arrowOffset = 4;
@@ -883,6 +908,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .attr("y1", d => graphCenter[1] - linkOffsetCalc(d, totalLink, d.online_count))
                     .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq-1").filter(l => l.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count));
             }
+            if (timeIntervalFlag) {
+                showAllTimeInterval()
+            }
         }
     };
 
@@ -1234,10 +1262,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             })
             .then(function (response) { 
                 renderGraph(response)
-                // get this step's node list
-                // let thisStepList = new Array();
-                // response.data.node.forEach(d => thisStepList.push(d.target));
-                
+                if (timeIntervalFlag) {
+                    showAllTimeInterval();
+                }
             });
         } else {
             if (seq === 2){
@@ -1266,10 +1293,12 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             })
             .then(function (response) { 
                 renderGraph(response);
+                if (timeIntervalFlag) {
+                    showAllTimeInterval()
+                }
             });
+
         }
-
-
         function renderGraph(response){
             console.log(seq, response.node)
             rightLastList[seq] = response.data.route_list;
@@ -1371,12 +1400,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         .on("mouseover", NodeMouseOver)
                         .on("mousemove", NodeMouseMove)
                         .on("mouseleave", NodeMouseLeave);
-                    
-                    //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-                    // if  ((graph.node.filter(d => d.sequence == seq).length < 4) || (graph.node.filter(d => d.sequence == seq).length < (1+graph.node.filter(d => d.sequence == seq-1).length))) {
-                    //     nodeRightplus[seq].attr("cy", d => parseFloat(linkRightplus[seq].filter(l => l.target == d.target).attr("y2")))
-                    // }
-
                 }
 
                 let totalLink = linkRightplus[seq].selectAll(".link-total")
@@ -1437,7 +1460,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     d3.selectAll(".innode-type-pie").classed("hide", false);
                 }
         }
-
     }
     function drawLeftplus(seq) {
         graphLeftPlusExist = true;
@@ -1468,7 +1490,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 console.log(error);
             })
             .then(function (response) { 
-                renderGraph(response)
+                renderGraph(response);
+                if (timeIntervalFlag) {
+                    showAllTimeInterval()
+                }
             })  
         } else {
             if (seq === 2){
@@ -1497,7 +1522,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 console.log(error);
             })
             .then(function (response) { 
-                renderGraph(response)
+                renderGraph(response);
+                if (timeIntervalFlag) {
+                    showAllTimeInterval()
+                }
             })          
         }
 
@@ -1772,7 +1800,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         link.selectAll("line").classed("not-this-route", false)
         link.selectAll("text").classed("this-route", false)
         link.selectAll("text").classed("not-this-route", false)
-
     }
 
     workSpace.selectAll("#conditionBox").remove();

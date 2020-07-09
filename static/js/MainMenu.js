@@ -43,6 +43,7 @@ var graphExist = false;
 var secondGraphExist = false;
 var conditionCount = 0;
 var pieViewFlag = false;
+var timeIntervalFlag = false;
 
 var MCCDict
 // console.log(MCCDict)
