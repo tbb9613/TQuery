@@ -30,8 +30,21 @@
     </div>
     <!-- <div id="leftContainer"> -->
       <!-- <svg id="brushLayer"></svg> -->
-      
-      <button class="add-graph"><i class="fas fa-columns"></i></button>
+      <div class="mdui-fab-wrapper" id="exampleFab" mdui-fab = "options">
+        <button class="mdui-fab mdui-ripple">
+          <!-- default icon -->
+          <i class="mdui-icon material-icons">add</i>
+          <!-- icon after open -->
+          <i class="mdui-icon mdui-fab-opened material-icons">add_circle_outline</i>
+        </button>
+        <div class="mdui-fab-dial">
+          <!-- <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-pink"><i class="mdui-icon material-icons">backup</i></button> -->
+          <!-- <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-red"><i class="mdui-icon material-icons">bookmark</i></button> -->
+          <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-orange" id = "addGraph"><i class="mdui-icon fas fa-columns"></i></button>
+          <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-indigo-900" id = "pieView"><i class="mdui-icon material-icons">pie_chart_outlined</i></button>
+        </div>
+      </div>
+      <!-- <button class="mdui-fab mdui-fab-mini mdui-fab-fixed add-graph"><i class="fas fa-columns"></i></button> -->
       <div id="topContainer">
         <div id="timeSelectorDropdown">
           <select class = "mdui-select" mdui-select="options" name="timePeriod" id="timePeriod">
@@ -245,6 +258,7 @@
   </script>
 
   <script src="/static/js/MainMenu.js"></script>
+  <script src="/static/js/HeatMap.js"></script>
   <script src="/static/js/Query.js"></script>
   <script src="/static/js/DrawGraph.js"></script>
 

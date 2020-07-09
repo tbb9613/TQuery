@@ -1,50 +1,50 @@
 ,place1,place2,prob
-0,"Grocery Stores, Supermarkets","Grocery Stores, Supermarkets",0.12885652794196487
-1,Bakeries,"Grocery Stores, Supermarkets",0.18448037989365085
-2,Fast Food Restaurants,"Grocery Stores, Supermarkets",0.3293676953927441
-3,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances","Grocery Stores, Supermarkets",0.08177621660741755
-4,Drug Stores and Pharmacies,"Grocery Stores, Supermarkets",0.1280791329764663
-5,Book Stores,"Grocery Stores, Supermarkets",0.06546401512717057
-6,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local","Grocery Stores, Supermarkets",0.08197603206058574
-7,"Grocery Stores, Supermarkets",Bakeries,0.07842088002205257
-8,Bakeries,Bakeries,0.09279232276953313
-9,Fast Food Restaurants,Bakeries,0.18340064217150537
-10,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Bakeries,0.11835748010985533
-11,Drug Stores and Pharmacies,Bakeries,0.4141189589253893
-12,Book Stores,Bakeries,0.0553496372563375
-13,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Bakeries,0.05756007874532672
-14,"Grocery Stores, Supermarkets",Fast Food Restaurants,0.14387134758940154
-15,Bakeries,Fast Food Restaurants,0.00014406058839708683
-16,Fast Food Restaurants,Fast Food Restaurants,0.17143765751996493
-17,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Fast Food Restaurants,0.10989314931295886
-18,Drug Stores and Pharmacies,Fast Food Restaurants,0.35827816072333507
-19,Book Stores,Fast Food Restaurants,0.16431428619326016
-20,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Fast Food Restaurants,0.052061338072682206
-21,"Grocery Stores, Supermarkets","Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.06313153799399332
-22,Bakeries,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.12379684546599803
-23,Fast Food Restaurants,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.17697484853406475
-24,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances","Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.05234939161858204
-25,Drug Stores and Pharmacies,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.2517822948442292
-26,Book Stores,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.1913236583127418
-27,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local","Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.14064142323039094
-28,"Grocery Stores, Supermarkets",Drug Stores and Pharmacies,0.13049860194066498
-29,Bakeries,Drug Stores and Pharmacies,0.22548764059696438
-30,Fast Food Restaurants,Drug Stores and Pharmacies,0.042637715720694545
-31,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Drug Stores and Pharmacies,0.0860002106293648
-32,Drug Stores and Pharmacies,Drug Stores and Pharmacies,0.2785939538278388
-33,Book Stores,Drug Stores and Pharmacies,0.09640808096944237
-34,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Drug Stores and Pharmacies,0.14037379631503016
-35,"Grocery Stores, Supermarkets",Book Stores,0.12104376054264515
-36,Bakeries,Book Stores,0.020940619996775312
-37,Fast Food Restaurants,Book Stores,0.1902958404954682
-38,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Book Stores,0.4244390763116703
-39,Drug Stores and Pharmacies,Book Stores,0.1553952899130745
-40,Book Stores,Book Stores,0.06578370921222187
-41,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Book Stores,0.022101703528144667
-42,"Grocery Stores, Supermarkets","Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.10586465597186562
-43,Bakeries,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.10765650158692415
-44,Fast Food Restaurants,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.10576835931380302
-45,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances","Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.22354952444727416
-46,Drug Stores and Pharmacies,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.08414828007274386
-47,Book Stores,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.02740834935897088
-48,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local","Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.3456043292484182
+0,"Grocery Stores, Supermarkets","Grocery Stores, Supermarkets",0.11504524469620041
+1,Bakeries,"Grocery Stores, Supermarkets",0.02603036573476074
+2,Fast Food Restaurants,"Grocery Stores, Supermarkets",0.22013463116026824
+3,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances","Grocery Stores, Supermarkets",0.3458327678665876
+4,Drug Stores and Pharmacies,"Grocery Stores, Supermarkets",0.004849692412904375
+5,Book Stores,"Grocery Stores, Supermarkets",0.09317785563216387
+6,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local","Grocery Stores, Supermarkets",0.19492944249711486
+7,"Grocery Stores, Supermarkets",Bakeries,0.10052593231866241
+8,Bakeries,Bakeries,0.12165774120899613
+9,Fast Food Restaurants,Bakeries,0.19681675761531092
+10,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Bakeries,0.06713390676336269
+11,Drug Stores and Pharmacies,Bakeries,0.3476682667748968
+12,Book Stores,Bakeries,0.021555551509887083
+13,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Bakeries,0.1446418438088839
+14,"Grocery Stores, Supermarkets",Fast Food Restaurants,0.011756321073805599
+15,Bakeries,Fast Food Restaurants,0.0022876747416902903
+16,Fast Food Restaurants,Fast Food Restaurants,0.45271474065101397
+17,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Fast Food Restaurants,0.1646262091736496
+18,Drug Stores and Pharmacies,Fast Food Restaurants,0.28760280521757425
+19,Book Stores,Fast Food Restaurants,0.00752173336899901
+20,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Fast Food Restaurants,0.07349051577326716
+21,"Grocery Stores, Supermarkets","Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.1510713006184014
+22,Bakeries,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.026173217007332352
+23,Fast Food Restaurants,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.3177940448137831
+24,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances","Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.2878035623813819
+25,Drug Stores and Pharmacies,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.09386573922502303
+26,Book Stores,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.0187483151375174
+27,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local","Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",0.10454382081656086
+28,"Grocery Stores, Supermarkets",Drug Stores and Pharmacies,0.13054015925188536
+29,Bakeries,Drug Stores and Pharmacies,0.09024566283492644
+30,Fast Food Restaurants,Drug Stores and Pharmacies,0.23788460910585188
+31,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Drug Stores and Pharmacies,0.12663048515635097
+32,Drug Stores and Pharmacies,Drug Stores and Pharmacies,0.3017968088093107
+33,Book Stores,Drug Stores and Pharmacies,0.03256388948745243
+34,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Drug Stores and Pharmacies,0.08033838535422227
+35,"Grocery Stores, Supermarkets",Book Stores,0.004071206537751824
+36,Bakeries,Book Stores,0.29733003000590325
+37,Fast Food Restaurants,Book Stores,0.2648198522941337
+38,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances",Book Stores,0.14381276023010098
+39,Drug Stores and Pharmacies,Book Stores,0.0800759362088811
+40,Book Stores,Book Stores,0.15140608413371323
+41,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",Book Stores,0.058484130589515876
+42,"Grocery Stores, Supermarkets","Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.039738347353958314
+43,Bakeries,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.2623928528891509
+44,Fast Food Restaurants,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.007586718449214316
+45,"Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances","Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.3335072393564068
+46,Drug Stores and Pharmacies,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.06156535950346065
+47,Book Stores,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.05850889837156562
+48,"Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local","Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local",0.23670058407624348

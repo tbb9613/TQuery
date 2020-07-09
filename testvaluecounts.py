@@ -42,16 +42,8 @@ def multiNodeQueryListCovert():
                     querySeries.append(thisSeries)
                     # add a reversed list
                     querySeries.append(list(reversed(thisSeries)))
-
     print(querySeries)
-    # querySeries = ["Restaurant", "Restaurant"]
-    # print(querySeries)
-    timePoint = 3
-    for subSeries in querySeries:
-        maskDirected = (route.iloc[:,timePoint:timePoint+len(subSeries)] == subSeries).all(axis=1)
-        MCCQueryRoute = route[maskDirected] #Query
-        print(subSeries)
-        print(MCCQueryRoute.head())
+
 
 typeMCC = "Bakeries"
 time = 5

@@ -31,7 +31,9 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
 function packedQuery(d) {
     // console.log(nodeList);
     // console.log(linkmapList);
-    console.log(packList);
+    data = {
+
+    }
     console.log(packLinks);
     console.log(packNodes);
     let timeStart = "2020-04-30 10:00:00", 
@@ -69,55 +71,4 @@ function packedQuery(d) {
     d3.select("#multiNodeText").classed("hide", true);
 }
 
-function postQuery(d, t, type) {
-    queryNode = d;
-    // console.log(d);
-    axios.post('http://127.0.0.1:5000/query_single', {
-            name: queryNode,
-            time: t
-        })
-        .catch(function (error) {
-            console.log(error);
-        })
-        .then(function (response) { // if success then update data
-            nodeMap_c = response.data
-            console.log(nodeMap_c)
-            setTimeout(() => {
-            drawGraph("graph-first", nodeMap_c, type);
-            console.log(nodeMap_c);
-            secondGraphExist = false;
-            }, 50);
-            
-        });
-    
-
-}
-
-function postSubQuery(t) {
-    axios.post('http://127.0.0.1:5000/query_single', {
-            name: queryNode,
-            time: t
-        })
-        .catch(function (error) {
-            console.log(error);
-        })
-        .then(function (response) { // if success then update data
-            subNodeMap = response.data;
-        })
-}
-
-function postSingleQuery_test(d, seq, timeStart, timeEnd) {
-    axios.post('http://127.0.0.1:5000/query_single_new', {
-        name: d,
-        sequence: seq,
-        timeStart: timeStart,
-        timeEnd: timeEnd
-    })
-    .catch(function (error) {
-        console.log(error);
-    })
-    .then(function (response) { // if success then update data
-        console.log(response.data)
-    });
-}
 

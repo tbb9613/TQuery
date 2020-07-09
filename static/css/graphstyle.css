@@ -378,20 +378,6 @@ circle.this-route-offline {
   cursor: ew-resize;
 }
 
-
-.add-graph {
-  position: absolute;
-  bottom: 5%;
-  right: 5%;
-  border: none;
-  color: white;
-  padding: 10px;
-  text-align: center;
-  background-color: gray;
-  display: inline-block;
-  /* transition: ease-in-out .3s; */
-}
-
 .add-graph:hover {
   background-color: darkgrey;
   box-shadow: aliceblue;

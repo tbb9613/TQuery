@@ -1,6 +1,6 @@
 // drawGraph();
 function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
-    
+    packLinkData = copy(packLinks), packNodeData = copy(packNodes);
     // graphLeftData = 
 
     let graphRightPlusExist = false;
@@ -127,7 +127,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
     //add graph
     if (graphid === "graph-first") {
-        d3.select(".add-graph")
+        d3.select("#addGraph")
             .on("click", addGraph)
         function addGraph() {
             secondGraphExist = true;
@@ -150,8 +150,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             d3.selectAll(".brush-child").classed("hide", false)
         }
     } else if (graphid === "graph-second") {
-        d3.select(".add-graph")
-            .classed("hide", true);
+        // d3.select("#addGraph")
+            // .classed("hide", true);
 
         graphBg.attr("width", "50%")
         graphBg.selectAll(".graph-background")
@@ -170,6 +170,23 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("stroke", "black")
             .attr("stroke-width", "3px");
     }
+    d3.select("#pieView").on("click", togglePieView);
+    function togglePieView(){
+        pieViewFlag = !pieViewFlag;
+        d3.selectAll(".link-trans-type").classed("hide", !d3.selectAll(".link-trans-type").classed("hide"));
+        d3.selectAll(".innode-type-pie").classed("hide", !d3.selectAll(".innode-type-pie").classed("hide"));
+        // mdui.mutation();
+        if (!d3.selectAll(".link-trans-type").classed("hide")) { // if the status is show
+            mdui.snackbar({
+                message: 'Pie view of transaction types enbabled'
+            });
+        } else {
+            mdui.snackbar({
+                message: 'Pie view of transaction types disabled'
+            });
+        }
+
+    }
 
     //Draw Bottom Axis according to time selector data
     var bottomAxisWidth = 0.85 * width;
@@ -186,7 +203,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         let timeMin = timeSec / 60
         let timeHour = timeMin / 60
         // console.log(timeMin);
-        console.log(xBottom(0));
+        // console.log(xBottom(0));
         let xAxisBottom = workSpace.append("g")
             .attr("transform", `translate(${bottomAxisMargin.left}, ${bottomAxisMargin.top})`)
             .attr("class", "bottom-axis");
@@ -261,10 +278,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .on("mouseover", d => showFullName(d.target))
             .on("mousemove", moveFullName)
             .on("mouseout", hideFullName);
-        
-        console.log(textCenter)
-        console.log(typeof queryCenter)
+
+
     } else {
+
         fistNodeDistance = 180;
         coeffTxtOffset = 0.8;
         let centernode = node.append("g")
@@ -277,14 +294,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("cx", d => graphCenter[0])
             .attr("cy", graphCenter[1])
             .on("click", clicked);
-
         drawPreview();
         function drawPreview(){
-            console.log(packLinks, packNodes);
-            if (packLinks.length < 2) {
+            if (packLinkData.length < 2) {
             //draw node map
-            // const width = workSpaceWidth,
-            //     height = ;
             var svgMNode = graphContainer
                 .append("g")
                 .attr("id", "#multiNodePreview")
@@ -299,14 +312,14 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             var previewLink = svgMNode.append("g")
                 .attr("class", "node-multi-pre-link")
                 .selectAll("line")
-                .data(packLinks[0])
+                .data(packLinkData[0])
                 .enter()
                 .append("line")
                 .attr("marker-end", d => (d.type === "directed") ? "url(#triangleArrow-p)" : null);
 
             var previewNodeG = svgMNode.append("g")
                 .selectAll(".prev-node-g")
-                .data(packNodes).enter()
+                .data(packNodeData).enter()
                 .append("g")
                 .classed("prev-node-g", true)
                 .call(d3.drag()
@@ -331,11 +344,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             // console.log(previewNode);
 
             simulation
-                .nodes(packNodes)
+                .nodes(packNodeData)
                 .on("tick", ticked);
 
             simulation.force("link")
-                .links(packLinks[0]);
+                .links(packLinkData[0]);
 
             function ticked() {
                 previewLink
@@ -375,9 +388,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 d.fx = null;
                 d.fy = null;
             }
+            // console.log(packLinks)
         } else {
             //draw pack
-
         }
         }
 
@@ -410,9 +423,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     //     drawFirstSteps(1);
     // })
     var linkScaler
+    
     drawFirstSteps(-1);
     drawFirstSteps(1);
-
     //add vertical line    
     var verLiney = ({
         y1: workSpaceHeight-bottomAxisMargin.top - 10,
@@ -475,362 +488,402 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
     // get and draw first links 
     function drawFirstSteps(seq) {
-        axios.post('http://127.0.0.1:5000/query_single_new', {
-            name: queryCenter,
-            sequence: seq,
-            list: allList,
-            timeStart: timeStart,
-            timeEnd: timeEnd,
-            displaynum: 6
-            // time: t
-            })
-            .catch(function (error) {
-                console.log(error);
-            })
-            .then(function (response) { // if success then update data
-                console.log(response.data);
-                // console.log(linkGroup, linkLeft, linkRight);
-                let linkGroup = link.append("g") //add links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-total")
-                    .attr("id", `seq${seq}`)
-                    .attr("stroke-width", 1)
-                    .attr("x1", d => graphCenter[0])
-                    .attr("y1", d => graphCenter[1])
-                    .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
-                    .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
-                
-                let transTypeLinkGroup = link.append("g")
-                    .attr("class", "link-trans-type-g")
-                
-                transTypeLinkGroup.append("g") //add links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-online-trans link-trans-type")
-                    .attr("id", `seq${seq}`)
-                    .attr("stroke-width", 1)
-                    .attr("x1", d => graphCenter[0])
-                    // .attr("y1", d => graphCenter[1])
-                    .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
-                    // .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
+        if (type === "single") {
+            axios.post('http://127.0.0.1:5000/query_single_new',{
+                name: queryCenter,
+                sequence: seq,
+                list: allList,
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
+                // time: t
+                })
+                .catch(function (error) {
+                    console.log(error);
+                })
+                .then(function (response) { // if success then update data
+                    console.log(response.data);
                     
+                    renderGraph(response);
+                });
+        } else {
+            console.log(packLinks, packNodes);
+            
+            axios.post('http://127.0.0.1:5000/query_packed',{
+                links: packLinks,
+                nodes: packNodes,
+                sequence: seq,
+                list: allList,
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
+                // time: t
+                })
+                .catch(function (error) {
+                    console.log(error);
+                })
+                .then(function (response) { // if success then update data
+                    console.log(response.data);
+                    
+                    renderGraph(response);
+                    
+                });
+        }
+        function renderGraph(response){
+            let linkGroup = link.append("g") //add links
+                .selectAll("line")
+                .data(response.data.link)
+                .enter().append("line")
+                .attr("class", "link link-total")
+                .attr("id", `seq${seq}`)
+                .attr("stroke-width", 1)
+                .attr("x1", d => graphCenter[0])
+                .attr("y1", d => graphCenter[1])
+                .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
+            
+            let transTypeLinkGroup = link.append("g")
+                .attr("class", "link-trans-type-g")
+            
+            transTypeLinkGroup.append("g") //add links
+                .selectAll("line")
+                .data(response.data.link)
+                .enter().append("line")
+                .attr("class", "link link-online-trans link-trans-type hide")
+                .attr("id", `seq${seq}`)
+                .attr("stroke-width", 1)
+                .attr("x1", d => graphCenter[0])
+                // .attr("y1", d => graphCenter[1])
+                .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                // .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
                 
-                transTypeLinkGroup.append("g") //add type links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-offline-trans link-trans-type")
-                    .attr("id", `seq${seq}`)
-                    .attr("stroke-width", 1)
-                    .attr("x1", d => graphCenter[0])
-                    // .attr("y1", d => graphCenter[1])
-                    .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
-                    // .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
+            
+            transTypeLinkGroup.append("g") //add type links
+                .selectAll("line")
+                .data(response.data.link)
+                .enter().append("line")
+                .attr("class", "link link-offline-trans link-trans-type hide")
+                .attr("id", `seq${seq}`)
+                .attr("stroke-width", 1)
+                .attr("x1", d => graphCenter[0])
+                // .attr("y1", d => graphCenter[1])
+                .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                // .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
 
-                let linkTextGroup = link.append("g") // add text on links
-                    .selectAll("text")
-                    .data(response.data.link).enter()
-                    .append("text")
-                    .attr("class", "link-text link-text-main")
-                    .attr("id", `seq${seq}`)
-                    .attr("x", d => graphCenter[0] + coeffTxtOffset * seq * fistNodeDistance)
-                    .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, response.data.link.length))
-                    .text(d => d.count)
-                    .classed("text-hide", true);
-                let nodeGroup = node.selectAll(`#seq${seq}`)
-                    .data(response.data.link)
-                    .enter().append("g")
-                    .attr("id", `seq${seq}`)
-                    .attr("transform",  d => "translate("+ linkGroup.filter(l => l.target == d.target).attr("x2") + "," 
-                        + linkGroup.filter(l => l.target == d.target).attr("y2") + ")");
-                    // .call(d3.drag().on("drag", dragged));
-                nodeGroup
-                    .append("circle")
-                    .attr("class", "node")
-                    .attr("r", nodeRadius)
-                    .on("click", clicked)
-                    .on("mouseover", NodeMouseOver)
-                    .on("mousemove", NodeMouseMove)
-                    .on("mouseleave", NodeMouseLeave);
+            let linkTextGroup = link.append("g") // add text on links
+                .selectAll("text")
+                .data(response.data.link).enter()
+                .append("text")
+                .attr("class", "link-text link-text-main")
+                .attr("id", `seq${seq}`)
+                .attr("x", d => graphCenter[0] + coeffTxtOffset * seq * fistNodeDistance)
+                .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, response.data.link.length))
+                .text(d => d.count)
+                .classed("text-hide", true);
+            let nodeGroup = node.selectAll(`#seq${seq}`)
+                .data(response.data.link)
+                .enter().append("g")
+                .attr("id", `seq${seq}`)
+                .attr("transform",  d => "translate("+ linkGroup.filter(l => l.target == d.target).attr("x2") + "," 
+                    + linkGroup.filter(l => l.target == d.target).attr("y2") + ")");
+                // .call(d3.drag().on("drag", dragged));
+            nodeGroup
+                .append("circle")
+                .attr("class", "node")
+                .attr("r", nodeRadius)
+                .on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mousemove", NodeMouseMove)
+                .on("mouseleave", NodeMouseLeave);
+            nodeGroup.append("text")
+                .attr("class", "node-text")
+                .attr("y", nodeTxtOffset)
+                .text(d => multiWordsFormat(d.target))
+                .on("mouseover", d => showFullName(d.target))
+                .on("mousemove", moveFullName)
+                .on("mouseout", hideFullName);
+            
+            //calculate the proportion of thisnode atv / total atv
+            function drawATVBar(){
+                let atvmean = d3.mean(response.data.link, d => d.atv);
+                let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
+                // console.log(digitFormat(atvmean));
+                nodeGroup.append("rect")
+                    .attr("width", 0.8 * nodeRadius)
+                    .attr("x", -0.4 * nodeRadius)
+                    .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
+                    .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
+                    .attr("class", "innode-graph innnode-atv-bar")
+                    .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5");
+                //baseline
+                nodeGroup.append("line")
+                    .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
+                    .attr("class", "innode-graph innnode-atv-bar");
+                //number text with "+" "-"
                 nodeGroup.append("text")
-                    .attr("class", "node-text")
-                    .attr("y", nodeTxtOffset)
-                    .text(d => multiWordsFormat(d.target))
-                    .on("mouseover", d => showFullName(d.target))
-                    .on("mousemove", moveFullName)
-                    .on("mouseout", hideFullName);
-                //calculate the proportion of thisnode atv / total atv
-                function drawATVBar(){
-                    let atvmean = d3.mean(response.data.link, d => d.atv);
-                    let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
-                    // console.log(digitFormat(atvmean));
-                    nodeGroup.append("rect")
-                        .attr("width", 0.8 * nodeRadius)
-                        .attr("x", -0.4 * nodeRadius)
-                        .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
-                        .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
-                        .attr("class", "innode-graph innnode-atv-bar")
-                        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5");
-                    //baseline
-                    nodeGroup.append("line")
-                        .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
-                        .attr("class", "innode-graph innnode-atv-bar");
-                    //number text with "+" "-"
-                    nodeGroup.append("text")
-                        .text(d => digitFormat(d.atv-atvmean))
-                        .attr("class", "innode-graph innnode-atv-bar")
-                        .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
-                        .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
-                    //add hover events
-                    node.selectAll(".innnode-atv-bar")
-                        .on("mouseover", InNodeGraphMouseOver)
-                        .on("mousemove", InNodeGraphMouseMove)
-                        .on("mouseleave", InNodeGraphMouseLeave);
-                    function InNodeGraphMouseOver(d){
-                        inNodeTooltip.style("opacity", 1);
-                    }
-                    function InNodeGraphMouseMove(d) {
-                        let dpx = event.pageX,
-                            dpy = event.pageY;
-                        let percentFormat = d3.format(".0%"),
-                            numFormat = d3.format(".1f");
-                
-                        inNodeTooltip
-                            .html(inNodeTooltipHtml(d))
-                            .style("top", dpy + "px")
-                            .style("left", dpx + "px");
-                        
-                        function inNodeTooltipHtml(d){
-                            if (d.atv-atvmean > 0) {
-                                return "ATV: " + "<span style = 'color:#C94CB0'>" + numFormat(d.atv) + "</span>; <br>" 
-                                + "<span style = 'color:#C94CB0'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
-                                + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
-                            } else {
-                                return "ATV: "  + "<span style = 'color:#328347'>" + numFormat(d.atv) + "</span>; <br>" 
-                                + "<span style = 'color:#328347'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
-                                + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
-                            }
+                    .text(d => digitFormat(d.atv-atvmean))
+                    .attr("class", "innode-graph innnode-atv-bar")
+                    .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
+                    .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
+                //add hover events
+                node.selectAll(".innnode-atv-bar")
+                    .on("mouseover", InNodeGraphMouseOver)
+                    .on("mousemove", InNodeGraphMouseMove)
+                    .on("mouseleave", InNodeGraphMouseLeave);
+                function InNodeGraphMouseOver(d){
+                    inNodeTooltip.style("opacity", 1);
+                }
+                function InNodeGraphMouseMove(d) {
+                    let dpx = event.pageX,
+                        dpy = event.pageY;
+                    let percentFormat = d3.format(".0%"),
+                        numFormat = d3.format(".1f");
+            
+                    inNodeTooltip
+                        .html(inNodeTooltipHtml(d))
+                        .style("top", dpy + "px")
+                        .style("left", dpx + "px");
+                    
+                    function inNodeTooltipHtml(d){
+                        if (d.atv-atvmean > 0) {
+                            return "ATV: " + "<span style = 'color:#C94CB0'>" + numFormat(d.atv) + "</span>; <br>" 
+                            + "<span style = 'color:#C94CB0'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
+                            + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+                        } else {
+                            return "ATV: "  + "<span style = 'color:#328347'>" + numFormat(d.atv) + "</span>; <br>" 
+                            + "<span style = 'color:#328347'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
+                            + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
                         }
-                    }
-                    function InNodeGraphMouseLeave(d) {
-                            inNodeTooltip
-                                .style("opacity", 0);
                     }
                 }
-                drawATVBar();
-                function drawTypePie(){
-                    let pieColorScale = d3.scaleOrdinal().domain([0,1])
-                        .range(["#F7CE3E", "#1A2930"]);
-                    let arcSample = d3.arc().outerRadius(20).innerRadius(15);
-                    // Convert raw data to pie data format
-                    function pieData(d){
-                        let data = [{
-                            "label": "Online",
-                            "value": d.online_count,
-                            "percentage": d.online_count/d.count,
-                            "route": d.online_route
-                        },
-                        {
-                            "label": "Offline",
-                            "value": d.offline_count,
-                            "percentage": d.offline_count/d.count,
-                            "route": d.offline_route
-                        }];
-                        return data
-                    } 
-                    let spConverter = d3.pie().value(d => d.value)
-                        .sort(null).sortValues(null);
-
-                    nodeGroup.selectAll("path")
-                        .data(d => spConverter(pieData(d)))
-                        .enter().append("path")
-                        .attr("class", "innode-graph innode-type-pie")
-                        .attr("fill", (d, i) => pieColorScale(i))
-                        .attr("d", arcSample)
-                        .on("mouseover", InNodeGraphMouseOver)
-                        .on("mousemove", InNodeGraphMouseMove)
-                        .on("mouseleave", InNodeGraphMouseLeave)
-                        .on("click", InNodeGraphClick);
-                    
-                    function InNodeGraphMouseOver(d){
-                        resetStyle();
-                        node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true)
-                        link.selectAll("line").classed("not-this-route", true)
-                        d3.selectAll(".innode-type-pie").style("opacity", .5);
-                        d3.select(this).style("opacity", 1)
-
-                        d.data.route.forEach(function (r) {
-                            node.selectAll("circle").filter(".not-this-route")
-                                .classed("this-route", n => isInRoute(r, n.route))
-                            node.selectAll("circle").filter(".this-route")
-                                .classed("not-this-route", !(n => isInRoute(r, n.route)))
-                            link.selectAll("line").filter(".not-this-route")
-                                .classed("this-route", l => isInRoute(r, l.route))
-                            link.selectAll("line").filter(".this-route")
-                                .classed("not-this-route", !(l => isInRoute(r, l.route)))
-                        });
-                        // check singe person is in group or not
-                        function isInRoute(single, group) {
-                            if (group.indexOf(single) !== -1) {
-                                // console.log(single, group, true);
-                                return true
-                            } else {
-                                // console.log(single, group, false);
-                                return false
-                            }
-                        }
-                        inNodeTooltip.style("opacity", 1);
-                    }
-
-                    function InNodeGraphMouseMove(d) {
-                        let dpx = event.pageX,
-                            dpy = event.pageY;
-                        let percentFormat = d3.format(".0%"),
-                            numFormat = d3.format(".0f");
-                
-                        inNodeTooltip
-                            .html(inNodeTooltipHtml(d))
-                            .style("top", dpy + "px")
-                            .style("left", dpx + "px");
-                        
-                        function inNodeTooltipHtml(d){
-                            if (d.data.label === "Offline") {
-                                return "<span style = 'color:#3A6B83'> Offline </span>" + "<span style = 'color:#3A6B83'>" + numFormat(d.data.value) + "(" + percentFormat(d.data.percentage) + ")</span>" 
-                            } else if (d.data.label === "Online") {
-                                return "<span style = 'color:#DDAD01'> Online </span>" + "<span style = 'color:#DDAD01'>" + numFormat(d.data.value) + "(" + percentFormat(d.data.percentage) + ")</span>" 
-                            }
-                        };
-                    }
-                    function InNodeGraphMouseLeave(d) {
+                function InNodeGraphMouseLeave(d) {
                         inNodeTooltip
                             .style("opacity", 0);
-                        //reset all route styles
-                        d3.selectAll(".innode-type-pie").style("opacity", null)
-                        node.selectAll("circle").classed("this-route-online", false);
-                        node.selectAll("circle").classed("this-route-offline", false);
-                        node.selectAll("circle").classed("this-route", false);
-                        node.selectAll("circle").classed("not-this-route", false);
-                        link.selectAll("line").classed("this-route-online", false);
-                        link.selectAll("line").classed("this-route-offline", false);
-                        link.selectAll("line").classed("not-this-route", false);
-                        link.selectAll("line").classed("this-route", false);
-                        link.selectAll("text").classed("this-route", false);
-                        link.selectAll("text").classed("not-this-route", false);    
+                }
+            }
+            drawATVBar();
+            function drawTypePie(){
+                let pieColorScale = d3.scaleOrdinal().domain([0,1])
+                    .range(["#F7CE3E", "#1A2930"]);
+                let arcSample = d3.arc().outerRadius(20).innerRadius(15);
+                // Convert raw data to pie data format
+                function pieData(d){
+                    let data = [{
+                        "label": "Online",
+                        "value": d.online_count,
+                        "percentage": d.online_count/d.count,
+                        "route": d.online_route
+                    },
+                    {
+                        "label": "Offline",
+                        "value": d.offline_count,
+                        "percentage": d.offline_count/d.count,
+                        "route": d.offline_route
+                    }];
+                    return data
+                } 
+                let spConverter = d3.pie().value(d => d.value)
+                    .sort(null).sortValues(null);
+
+                nodeGroup.selectAll("path")
+                    .data(d => spConverter(pieData(d)))
+                    .enter().append("path")
+                    .attr("class", "innode-graph innode-type-pie hide")
+                    .attr("fill", (d, i) => pieColorScale(i))
+                    .attr("d", arcSample)
+                    .on("mouseover", InNodeGraphMouseOver)
+                    .on("mousemove", InNodeGraphMouseMove)
+                    .on("mouseleave", InNodeGraphMouseLeave)
+                    .on("click", InNodeGraphClick);
+                
+                function InNodeGraphMouseOver(d){
+                    resetStyle();
+                    node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true)
+                    link.selectAll("line").classed("not-this-route", true)
+                    d3.selectAll(".innode-type-pie").style("opacity", .5);
+                    d3.select(this).style("opacity", 1)
+
+                    d.data.route.forEach(function (r) {
+                        node.selectAll("circle").filter(".not-this-route")
+                            .classed("this-route", n => isInRoute(r, n.route))
+                        node.selectAll("circle").filter(".this-route")
+                            .classed("not-this-route", !(n => isInRoute(r, n.route)))
+                        link.selectAll("line").filter(".not-this-route")
+                            .classed("this-route", l => isInRoute(r, l.route))
+                        link.selectAll("line").filter(".this-route")
+                            .classed("not-this-route", !(l => isInRoute(r, l.route)))
+                    });
+                    // check singe person is in group or not
+                    function isInRoute(single, group) {
+                        if (group.indexOf(single) !== -1) {
+                            // console.log(single, group, true);
+                            return true
+                        } else {
+                            // console.log(single, group, false);
+                            return false
+                        }
                     }
-                    function InNodeGraphClick(d){
-                        resetStyle();
-                        node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true)
-                        link.selectAll("line").classed("not-this-route", true)
-                        d3.selectAll(".innode-type-pie").style("opacity", .5);
-                        d3.select(this).style("opacity", 1)
+                    inNodeTooltip.style("opacity", 1);
+                }
+
+                function InNodeGraphMouseMove(d) {
+                    let dpx = event.pageX,
+                        dpy = event.pageY;
+                    let percentFormat = d3.format(".0%"),
+                        numFormat = d3.format(".0f");
+            
+                    inNodeTooltip
+                        .html(inNodeTooltipHtml(d))
+                        .style("top", dpy + "px")
+                        .style("left", dpx + "px");
+                    
+                    function inNodeTooltipHtml(d){
                         if (d.data.label === "Offline") {
-                            d3.selectAll(".innode-type-pie")
-                                .filter(d => d.data.label === "Online").style("opacity", 0);
-                            d.data.route.forEach(function (r) {
-                            node.selectAll("circle").filter(".not-this-route")
-                                .classed("this-route-offline", n => isInRoute(r, n.offline_route))
-                            node.selectAll("circle").filter(".this-route-offline")
-                                .classed("not-this-route", !(n => isInRoute(r, n.offline_route)))
-                            link.selectAll(".link-offline-trans").filter(".not-this-route")
-                                .classed("this-route-offline", l => isInRoute(r, l.offline_route))
-                            link.selectAll(".link-offline-trans").filter(".this-route-offline")
-                                .classed("not-this-route", !(l => isInRoute(r, l.offline_route)))
-                        });
+                            return "<span style = 'color:#3A6B83'> Offline </span>" + "<span style = 'color:#3A6B83'>" + numFormat(d.data.value) + "(" + percentFormat(d.data.percentage) + ")</span>" 
                         } else if (d.data.label === "Online") {
-                            d3.selectAll(".innode-type-pie")
-                                .filter(d => d.data.label === "Offline").style("opacity", 0);
-                            d.data.route.forEach(function (r) {
-                            node.selectAll("circle").filter(".not-this-route")
-                                .classed("this-route-online", n => isInRoute(r, n.online_route))
-                            node.selectAll("circle").filter(".this-route-online")
-                                .classed("not-this-route", !(n => isInRoute(r, n.online_route)))
-                            link.selectAll(".link-online-trans").filter(".not-this-route")
-                                .classed("this-route-online", l => isInRoute(r, l.online_route))
-                            link.selectAll(".link-online-trans").filter(".this-route-online")
-                                .classed("not-this-route", !(l => isInRoute(r, l.online_route)))
-                        })}
-                        // check singe person is in group or not
-                        function isInRoute(single, group) {
-                            if (group.indexOf(single) !== -1) {
-                                // console.log(single, group, true);
-                                return true
-                            } else {
-                                // console.log(single, group, false);
-                                return false
-                            }
+                            return "<span style = 'color:#DDAD01'> Online </span>" + "<span style = 'color:#DDAD01'>" + numFormat(d.data.value) + "(" + percentFormat(d.data.percentage) + ")</span>" 
                         }
                     };
-
-                    function resetStyle(){
-                        //reset style
-                        d3.selectAll(".innode-type-pie").style("opacity", null)
-                        node.selectAll("circle").classed("this-route-online", false);
-                        node.selectAll("circle").classed("this-route-offline", false);
-                        node.selectAll("circle").classed("this-route", false);
-                        node.selectAll("circle").classed("not-this-route", false);
-                        link.selectAll("line").classed("this-route-online", false);
-                        link.selectAll("line").classed("this-route-offline", false);
-                        link.selectAll("line").classed("not-this-route", false);
-                        link.selectAll("line").classed("this-route", false);
-                        link.selectAll("text").classed("this-route", false);
-                        link.selectAll("text").classed("not-this-route", false);  
+                }
+                function InNodeGraphMouseLeave(d) {
+                    inNodeTooltip
+                        .style("opacity", 0);
+                    //reset all route styles
+                    d3.selectAll(".innode-type-pie").style("opacity", null)
+                    node.selectAll("circle").classed("this-route-online", false);
+                    node.selectAll("circle").classed("this-route-offline", false);
+                    node.selectAll("circle").classed("this-route", false);
+                    node.selectAll("circle").classed("not-this-route", false);
+                    link.selectAll("line").classed("this-route-online", false);
+                    link.selectAll("line").classed("this-route-offline", false);
+                    link.selectAll("line").classed("not-this-route", false);
+                    link.selectAll("line").classed("this-route", false);
+                    link.selectAll("text").classed("this-route", false);
+                    link.selectAll("text").classed("not-this-route", false);    
+                }
+                //THIS DOESN'T WORK I STAY UP WHOLE NIGHT BUT FIALED
+                function InNodeGraphClick(d){
+                    resetStyle();
+                    node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true)
+                    link.selectAll("line").classed("not-this-route", true)
+                    d3.selectAll(".innode-type-pie").style("opacity", .5);
+                    d3.select(this).style("opacity", 1)
+                    if (d.data.label === "Offline") {
+                        d3.selectAll(".innode-type-pie")
+                            .filter(d => d.data.label === "Online").style("opacity", 0);
+                        d.data.route.forEach(function (r) {
+                        node.selectAll("circle").filter(".not-this-route")
+                            .classed("this-route-offline", n => isInRoute(r, n.offline_route))
+                        node.selectAll("circle").filter(".this-route-offline")
+                            .classed("not-this-route", !(n => isInRoute(r, n.offline_route)))
+                        link.selectAll(".link-offline-trans").filter(".not-this-route")
+                            .classed("this-route-offline", l => isInRoute(r, l.offline_route))
+                        link.selectAll(".link-offline-trans").filter(".this-route-offline")
+                            .classed("not-this-route", !(l => isInRoute(r, l.offline_route)));
+                        
+                    });
+                    } else if (d.data.label === "Online") {
+                        d3.selectAll(".innode-type-pie")
+                            .filter(d => d.data.label === "Offline").style("opacity", 0);
+                        d.data.route.forEach(function (r) {
+                        node.selectAll("circle").filter(".not-this-route")
+                            .classed("this-route-online", n => isInRoute(r, n.online_route))
+                        node.selectAll("circle").filter(".this-route-online")
+                            .classed("not-this-route", !(n => isInRoute(r, n.online_route)))
+                        link.selectAll(".link-online-trans").filter(".not-this-route")
+                            .classed("this-route-online", l => isInRoute(r, l.online_route))
+                        link.selectAll(".link-online-trans").filter(".this-route-online")
+                            .classed("not-this-route", !(l => isInRoute(r, l.online_route)))
+                        
+                    })}
+                    // check singe person is in group or not
+                    function isInRoute(single, group) {
+                        if (single == "people316") {
+                            console.log(single, group);
+                        }
+                        if (group.indexOf(single) !== -1) {
+                            console.log(single, group);
+                            
+                            return true
+                        } else {
+                            // console.log(single, group, false);
+                            return false
+                        }
                     }
+                };
+
+                function resetStyle(){
+                    //reset style
+                    d3.selectAll(".innode-type-pie").style("opacity", null)
+                    node.selectAll("circle").classed("this-route-online", false);
+                    node.selectAll("circle").classed("this-route-offline", false);
+                    node.selectAll("circle").classed("this-route", false);
+                    node.selectAll("circle").classed("not-this-route", false);
+                    link.selectAll("line").classed("this-route-online", false);
+                    link.selectAll("line").classed("this-route-offline", false);
+                    link.selectAll("line").classed("not-this-route", false);
+                    link.selectAll("line").classed("this-route", false);
+                    link.selectAll("text").classed("this-route", false);
+                    link.selectAll("text").classed("not-this-route", false);  
                 }
-                drawTypePie();
-                // let thisStepList = new Array();
-                // response.data.link.forEach(d => thisStepList.push(d.target));
+            }
+            drawTypePie();
 
-                if (seq === -1){
-                    linkLeft = linkGroup;
-                    nodeLeft = nodeGroup;
-                    textLeft = linkTextGroup;
-                    leftFirstList = response.data.route_list;
-                    leftMaxCnt = d3.sum(response.data.link, d => d.count)
+            if (pieViewFlag) {
+                d3.selectAll(".link-trans-type").classed("hide", false);
+                d3.selectAll(".innode-type-pie").classed("hide", false);
+            }
+            // let thisStepList = new Array();
+            // response.data.link.forEach(d => thisStepList.push(d.target));
 
-                } else if (seq === 1){
-                    linkRight = linkGroup;
-                    nodeRight = nodeGroup;
-                    textRight = linkTextGroup;
-                    rightFirstList = response.data.route_list;
-                    rightMaxCnt = d3.sum(response.data.link, d => d.count)
-                }
+            if (seq === -1){
+                linkLeft = linkGroup;
+                nodeLeft = nodeGroup;
+                textLeft = linkTextGroup;
+                leftFirstList = response.data.route_list;
+                leftMaxCnt = d3.sum(response.data.link, d => d.count)
 
-                totalMaxCnt = Math.max(leftMaxCnt, rightMaxCnt);
-                if (!isNaN(totalMaxCnt)) {
-                    linkScaler = d3.scalePow().exponent(.6)
-                        .range([0.25, 20])
-                        .domain([1, totalMaxCnt])
+            } else if (seq === 1){
+                linkRight = linkGroup;
+                nodeRight = nodeGroup;
+                textRight = linkTextGroup;
+                rightFirstList = response.data.route_list;
+                rightMaxCnt = d3.sum(response.data.link, d => d.count)
+            }
 
-                    let totalLink = link.selectAll(".link-total")
-                    let onlineLink = link.selectAll(".link-online-trans");
-                    let offlineLink = link.selectAll(".link-offline-trans");
+            totalMaxCnt = Math.max(leftMaxCnt, rightMaxCnt);
+            if (!isNaN(totalMaxCnt)) {
+                linkScaler = d3.scalePow().exponent(.6)
+                    .range([0.25, 20])
+                    .domain([1, totalMaxCnt])
 
-                    totalLink
-                        .transition().duration(300)
-                        .attr("stroke-width", d=> linkScaler(d.count));
-                    offlineLink
-                        .transition().duration(300)
-                        .attr("stroke-width", d=> linkScaler(d.offline_count));
-                    onlineLink
-                        .transition().duration(300)
-                        .attr("stroke-width", d=> linkScaler(d.online_count));
-                    offlineLink.filter("#seq1")
-                        .attr("y1", d => graphCenter[1] + linkOffsetCalc(d, totalLink, d.offline_count))
-                        .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq1").filter(l => l.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count));
-                    offlineLink.filter("#seq-1")
-                        .attr("y1", d => graphCenter[1] + linkOffsetCalc(d, totalLink, d.offline_count))
-                        .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq-1").filter(l => l.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count));
-                    onlineLink.filter("#seq1")
-                        .attr("y1", d => graphCenter[1] - linkOffsetCalc(d, totalLink, d.online_count))
-                        .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq1").filter(l => l.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count));
-                    onlineLink.filter("#seq-1")
-                        .attr("y1", d => graphCenter[1] - linkOffsetCalc(d, totalLink, d.online_count))
-                        .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq-1").filter(l => l.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count));
-                }
-            });
+                let totalLink = link.selectAll(".link-total")
+                let onlineLink = link.selectAll(".link-online-trans");
+                let offlineLink = link.selectAll(".link-offline-trans");
+
+                totalLink
+                    .transition().duration(300)
+                    .attr("stroke-width", d=> linkScaler(d.count));
+                offlineLink
+                    .transition().duration(300)
+                    .attr("stroke-width", d=> linkScaler(d.offline_count));
+                onlineLink
+                    .transition().duration(300)
+                    .attr("stroke-width", d=> linkScaler(d.online_count));
+                offlineLink.filter("#seq1")
+                    .attr("y1", d => graphCenter[1] + linkOffsetCalc(d, totalLink, d.offline_count))
+                    .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq1").filter(l => l.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count));
+                offlineLink.filter("#seq-1")
+                    .attr("y1", d => graphCenter[1] + linkOffsetCalc(d, totalLink, d.offline_count))
+                    .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq-1").filter(l => l.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count));
+                onlineLink.filter("#seq1")
+                    .attr("y1", d => graphCenter[1] - linkOffsetCalc(d, totalLink, d.online_count))
+                    .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq1").filter(l => l.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count));
+                onlineLink.filter("#seq-1")
+                    .attr("y1", d => graphCenter[1] - linkOffsetCalc(d, totalLink, d.online_count))
+                    .attr("y2", (d, i) => parseFloat(totalLink.filter("#seq-1").filter(l => l.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count));
+            }
+        }
     };
 
     function linkOffsetCalc(d, totalLinkGroup, offsetCount){
@@ -1008,7 +1061,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             console.log(thisNodeParent)
         // console.log(node.selectAll("text"));
         if (d3.event.shiftKey) {
-            createQuery(d.target, "single",  nodeList);
+            createQuery(d.target, "single", nodeList, timeStart, timeEnd);
         } else {
             console.log(d,"clicked");
             d3.select("#staContainer").classed("hide",false);
@@ -1155,35 +1208,71 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         //add vertical line
 
         var queryData
-        if (seq === 2){
-            queryData = {
-                name: queryCenter,
-                sequence: seq,
-                list: rightFirstList,
-                timeStart: timeStart,
-                timeEnd: timeEnd,
-                displaynum: 6
+        if (type === "single"){
+            if (seq === 2){
+                queryData = {
+                    name: queryCenter,
+                    sequence: seq,
+                    list: rightFirstList,
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
+            } else {
+                queryData = {
+                    name: queryCenter,
+                    sequence: seq,
+                    list: rightLastList[seq-1],
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
             }
-        } else {
-            queryData = {
-                name: queryCenter,
-                sequence: seq,
-                list: rightLastList[seq-1],
-                timeStart: timeStart,
-                timeEnd: timeEnd,
-                displaynum: 6
-            }
-        }
-        axios.post('http://127.0.0.1:5000/query_single_new', queryData)
+            axios.post('http://127.0.0.1:5000/query_single_new', queryData)
             .catch(function (error) {
                 console.log(error);
             })
             .then(function (response) { 
-                console.log(response.data.node)
+                renderGraph(response)
                 // get this step's node list
                 // let thisStepList = new Array();
                 // response.data.node.forEach(d => thisStepList.push(d.target));
-                rightLastList[seq] = response.data.route_list;
+                
+            });
+        } else {
+            if (seq === 2){
+                queryData = {
+                    links: packLinks,
+                    nodes: packNodes,
+                    list: rightFirstList,
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
+            } else {
+                queryData = {
+                    links: packLinks,
+                    nodes: packNodes,
+                    sequence: seq,
+                    list: rightLastList[seq-1],
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
+            }
+            axios.post('http://127.0.0.1:5000/query_packed', queryData)
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { 
+                renderGraph(response);
+            });
+        }
+
+
+        function renderGraph(response){
+            console.log(seq, response.node)
+            rightLastList[seq] = response.data.route_list;
                 if (seq === 2) {
                     linkRightplus[seq] = link.append("g")
                         .attr("id", `seq${seq}`);
@@ -1203,7 +1292,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         .selectAll("line")
                         .data(response.data.link)
                         .enter().append("line")
-                        .attr("class", "link link-offline-trans link-trans-type")
+                        .attr("class", "link link-offline-trans link-trans-type hide")
                         .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
                         .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
                         .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
@@ -1212,7 +1301,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         .selectAll("line")
                         .data(response.data.link)
                         .enter().append("line")
-                        .attr("class", "link link-online-trans link-trans-type")
+                        .attr("class", "link link-online-trans link-trans-type hide")
                         .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
                         .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
                         .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
@@ -1252,7 +1341,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         .selectAll("line")
                         .data(response.data.link)
                         .enter().append("line")
-                        .attr("class", "link link-offline-trans link-trans-type")
+                        .attr("class", "link link-offline-trans link-trans-type hide")
                         .attr("x1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
                         .attr("y1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
                         .attr("x2", d => parseFloat(linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) + 80)
@@ -1261,7 +1350,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         .selectAll("line")
                         .data(response.data.link)
                         .enter().append("line")
-                        .attr("class", "link link-online-trans link-trans-type")
+                        .attr("class", "link link-online-trans link-trans-type hide")
                         .attr("x1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
                         .attr("y1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
                         .attr("x2", d => parseFloat(linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) + 80)
@@ -1342,78 +1431,81 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 // add vertical line
                 drawPlusVerticalLine(seq, seq-1, 80);
                 drawPlusHorizontalLine(seq, seq-1, 80);
-            });
-        
-        //Calculate vertical layout
 
-
-        function dragged(d) {
-            graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
-            d.x = d3.event.x, d.y = d3.event.y;
-            // let originX = d3.select
-            d3.select(this).attr("stroke", "#18569C");
-            d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            node.selectAll(".node-text").filter(t => t.target === d.target)
-                .attr("x", d.x).attr("y", d.y + nodeTxtOffset * 0.6);
-            linkRightplus[seq].filter(
-                l => l.source == d.target
-            ).attr("x1", d.x).attr("y1", d.y);
-            linkRightplus[seq].filter(
-                l => l.target == d.target
-            ).attr("x2", d.x).attr("y2", d.y);
-            link.selectAll("text").filter(t => t.target === d.target)
-                .attr("x", t => 0.5 * (
-                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
-                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
-                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
-                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
-                    parseFloat(linkRightplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))));
-            if (linkRightplus[seq + 1] != undefined) {
-                linkRightplus[seq + 1].filter(
-                    l => l.source == d.target
-                ).attr("x1", d.x).attr("y1", d.y);
-                link.selectAll("text").filter(t => t.source === d.target)
-                    .attr("x", t => 0.5 * (
-                        parseFloat(linkRightplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
-                        parseFloat(linkRightplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
-                    .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
-                        parseFloat(linkRightplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
-                        parseFloat(linkRightplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
-            }
-
+                if (pieViewFlag) {
+                    d3.selectAll(".link-trans-type").classed("hide", false);
+                    d3.selectAll(".innode-type-pie").classed("hide", false);
+                }
         }
+
     }
     function drawLeftplus(seq) {
         graphLeftPlusExist = true;
         var queryData
         console.log(leftFirstList, rightFirstList);
-        if (seq === 2){
-            queryData = {
-                name: queryCenter,
-                sequence: -seq,
-                list: leftFirstList,
-                timeStart: timeStart,
-                timeEnd: timeEnd,
-                displaynum: 6
+        if (type === "single") {
+            if (seq === 2){
+                queryData = {
+                    name: queryCenter,
+                    sequence: -seq,
+                    list: leftFirstList,
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
+            } else {
+                queryData = {
+                    name: queryCenter,
+                    sequence: -seq,
+                    list: leftLastList[seq-1],
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
             }
+            axios.post('http://127.0.0.1:5000/query_single_new', queryData)
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { 
+                renderGraph(response)
+            })  
         } else {
-            queryData = {
-                name: queryCenter,
-                sequence: -seq,
-                list: leftLastList[seq-1],
-                timeStart: timeStart,
-                timeEnd: timeEnd,
-                displaynum: 6
-            }
+            if (seq === 2){
+                queryData = {
+                    links: packLinks,
+                    nodes: packNodes,
+                    sequence: -seq,
+                    list: leftFirstList,
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
+            } else {
+                queryData = {
+                    links: packLinks,
+                    nodes: packNodes,
+                    sequence: -seq,
+                    list: leftLastList[seq-1],
+                    timeStart: timeStart,
+                    timeEnd: timeEnd,
+                    displaynum: 6
+                }
+            }    
+            axios.post('http://127.0.0.1:5000/query_packed', queryData)
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { 
+                renderGraph(response)
+            })          
         }
-        //Calculate vertical layout
-        axios.post('http://127.0.0.1:5000/query_single_new', queryData)
-        .catch(function (error) {
-            console.log(error);
-        })
-        .then(function (response) { 
 
+        //Calculate vertical layout
+  
+        function renderGraph(response){
             console.log(seq, response.data)
+
             // let thisStepList = new Array();
             // response.data.node.forEach(d => thisStepList.push(d.target));
             leftLastList[seq] = response.data.route_list;
@@ -1436,7 +1528,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .selectAll("line")
                     .data(response.data.link)
                     .enter().append("line")
-                    .attr("class", "link link-offline-trans link-trans-type")
+                    .attr("class", "link link-offline-trans link-trans-type hide")
                     .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
                     .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
                     .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
@@ -1445,7 +1537,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .selectAll("line")
                     .data(response.data.link)
                     .enter().append("line")
-                    .attr("class", "link link-online-trans link-trans-type")
+                    .attr("class", "link link-online-trans link-trans-type hide")
                     .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
                     .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
                     .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
@@ -1485,7 +1577,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .selectAll("line")
                     .data(response.data.link)
                     .enter().append("line")
-                    .attr("class", "link link-offline-trans link-trans-type")
+                    .attr("class", "link link-offline-trans link-trans-type hide")
                     .attr("x1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
                     .attr("y1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
                     .attr("x2", d => parseFloat(linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) - 80)
@@ -1494,7 +1586,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .selectAll("line")
                     .data(response.data.link)
                     .enter().append("line")
-                    .attr("class", "link link-online-trans link-trans-type")
+                    .attr("class", "link link-online-trans link-trans-type hide")
                     .attr("x1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
                     .attr("y1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
                     .attr("x2", d => parseFloat(linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) - 80)
@@ -1571,42 +1663,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             // add vertical line
             drawPlusVerticalLine(-seq ,-seq+1, -80);
             drawPlusHorizontalLine(-seq ,-seq+1, -80);    
-            
-        })    
-        function dragged(d) {
-            // console.log(d);
-            graphContainer.selectAll("circle").attr("stroke", "#fff") // reset the style
-            d.x = d3.event.x, d.y = d3.event.y;
-            d3.select(this).attr("stroke", "#18569C");
-            d3.select(this).attr("cx", d.x).attr("cy", d.y);
-            node.selectAll(".node-text").filter(t => t.target === d.target)
-                .attr("x", d.x).attr("y", d.y + nodeTxtOffset * 0.6);
-            // console.log(link.selectAll(`seq${seq}`), linkRightplus[seq])
-            linkLeftplus[seq].filter(
-                l => l.source == d.target
-            ).attr("x1", d.x).attr("y1", d.y);
-            linkLeftplus[seq].filter(
-                l => l.target == d.target
-            ).attr("x2", d.x).attr("y2", d.y);
-            link.selectAll("text").filter(t => t.target === d.target)
-                .attr("x", t => 0.5 * (
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
-                .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
-                    parseFloat(linkLeftplus[seq].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
-            if (seq < lseq && linkLeftplus[seq + 1] != undefined) {
-                linkLeftplus[seq + 1].filter(
-                    l => l.source == d.target
-                ).attr("x1", d.x).attr("y1", d.y);
-                link.selectAll("text").filter(t => t.source === d.target)
-                    .attr("x", t => 0.5 * (
-                        parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("x1")) +
-                        parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("x2"))))
-                    .attr("y", (t, i) => txtOffset / 2 + 0.5 * (
-                        parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
-                        parseFloat(linkLeftplus[seq + 1].filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
-            }
+            if (pieViewFlag) {
+                d3.selectAll(".link-trans-type").classed("hide", false);
+                d3.selectAll(".innode-type-pie").classed("hide", false);
+            }    
         }
     }
 
