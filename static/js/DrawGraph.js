@@ -557,7 +557,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         function renderGraph(response){
             let linkGroup = link.append("g") //add links
                 .selectAll("line")
-                .data(response.data.link)
+                .data(response.data.node)
                 .enter().append("line")
                 .attr("class", "link link-total")
                 .attr("id", `seq${seq}`)
@@ -565,14 +565,14 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .attr("x1", d => graphCenter[0])
                 .attr("y1", d => graphCenter[1])
                 .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
-                .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
+                .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.node.length));
             
             let transTypeLinkGroup = link.append("g")
                 .attr("class", "link-trans-type-g")
             
             transTypeLinkGroup.append("g") //add links
                 .selectAll("line")
-                .data(response.data.link)
+                .data(response.data.node)
                 .enter().append("line")
                 .attr("class", "link link-online-trans link-trans-type hide")
                 .attr("id", `seq${seq}`)
@@ -585,7 +585,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             
             transTypeLinkGroup.append("g") //add type links
                 .selectAll("line")
-                .data(response.data.link)
+                .data(response.data.node)
                 .enter().append("line")
                 .attr("class", "link link-offline-trans link-trans-type hide")
                 .attr("id", `seq${seq}`)
@@ -597,16 +597,16 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
             let linkTextGroup = link.append("g") // add text on links
                 .selectAll("text")
-                .data(response.data.link).enter()
+                .data(response.data.node).enter()
                 .append("text")
                 .attr("class", "link-text link-text-main")
                 .attr("id", `seq${seq}`)
                 .attr("x", d => graphCenter[0] + coeffTxtOffset * seq * fistNodeDistance)
-                .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, response.data.link.length))
+                .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, response.data.node.length))
                 .text(d => d.count)
                 .classed("text-hide", true);
             let nodeGroup = node.selectAll(`#seq${seq}`)
-                .data(response.data.link)
+                .data(response.data.node)
                 .enter().append("g")
                 .attr("id", `seq${seq}`)
                 .attr("transform",  d => "translate("+ linkGroup.filter(l => l.target == d.target).attr("x2") + "," 
@@ -866,14 +866,14 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 nodeLeft = nodeGroup;
                 textLeft = linkTextGroup;
                 leftFirstList = response.data.route_list;
-                leftMaxCnt = d3.sum(response.data.link, d => d.count)
+                leftMaxCnt = d3.sum(response.data.node, d => d.count)
 
             } else if (seq === 1){
                 linkRight = linkGroup;
                 nodeRight = nodeGroup;
                 textRight = linkTextGroup;
                 rightFirstList = response.data.route_list;
-                rightMaxCnt = d3.sum(response.data.link, d => d.count)
+                rightMaxCnt = d3.sum(response.data.node, d => d.count)
             }
 
             totalMaxCnt = Math.max(leftMaxCnt, rightMaxCnt);
@@ -1210,7 +1210,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("y1", verLiney.y1)
             .attr("x2", verLineXpos)
             .attr("y2", verLiney.y2)
-            .attr("class", "vertical-line");
+            .attr("class", "vertical-line hide");
     }
 
     function drawPlusHorizontalLine(seq, lastseq, gap){

@@ -234,7 +234,7 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
             unique_length = unique_length.append(unique_this)
             this_index = step_group.index
             all_index.append(this_index)
-            packed_data_query_route.append(packed_data_query_route_this)
+            packed_data_query_route = packed_data_query_route.append(packed_data_query_route_this)
         
     # find max alignment position
     max_alignment_pos = packed_data_query_route["alignment_pos"].max()

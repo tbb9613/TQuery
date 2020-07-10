@@ -791,10 +791,12 @@ function drawTopNodeDropDown(nodelist){
 function creatQueryFromList(a){
     let d = a.children[1].children[0].innerHTML; //get the node name
     setTimeout(() => {
-            if (graphExist == false) {
-        createQuery(d, 4, "single", nodeList);
+        let timeStart = "2020-04-30 10:00:00", 
+        timeEnd = "2020-04-30 18:00:00";
+        if (graphExist == false) {
+        createQuery(d, "single", nodeList, timeStart, timeEnd);
         } else {
-            createQuery(d, 4, "single", nodeList);
+            createQuery(d, "single", nodeList, timeStart, timeEnd);
             graphLeftPlusExist = false;
             graphRightPlusExist = false;
         }

@@ -31,9 +31,6 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
 function packedQuery(d) {
     // console.log(nodeList);
     // console.log(linkmapList);
-    data = {
-
-    }
     console.log(packLinks);
     console.log(packNodes);
     let timeStart = "2020-04-30 10:00:00", 
