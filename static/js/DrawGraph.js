@@ -1234,7 +1234,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     function drawRightplus(seq) {
         graphRightPlusExist = true;
         //add vertical line
-
         var queryData
         if (type === "single"){
             if (seq === 2){
@@ -1302,105 +1301,60 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         function renderGraph(response){
             console.log(seq, response.node)
             rightLastList[seq] = response.data.route_list;
+            let prevLinkGroup
                 if (seq === 2) {
-                    linkRightplus[seq] = link.append("g")
-                        .attr("id", `seq${seq}`);
-                    // add total link
-                    linkRightplus[seq].append("g")
-                        .selectAll("line")
-                        .data(response.data.link)
-                        .enter().append("line")
-                        .attr("class", "link link-total")
-                        .attr("stroke-width", 0)
-                        .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
-                        .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
-                        .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
-                        .attr("y2", 0);
-                    
-                    linkRightplus[seq].append("g") //add type links
-                        .selectAll("line")
-                        .data(response.data.link)
-                        .enter().append("line")
-                        .attr("class", "link link-offline-trans link-trans-type hide")
-                        .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
-                        .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
-                        .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
-                        .attr("y2", 0);
-                    linkRightplus[seq].append("g") //add type links
-                        .selectAll("line")
-                        .data(response.data.link)
-                        .enter().append("line")
-                        .attr("class", "link link-online-trans link-trans-type hide")
-                        .attr("x1", d => linkRight.filter(n => n.target == d.source).attr("x2"))
-                        .attr("y1", d => linkRight.filter(n => n.target == d.source).attr("y2"))
-                        .attr("x2", d => parseFloat(linkRight.filter(n => n.target == d.source).attr("x2")) + 80)
-                        .attr("y2", 0);       
-                    
-                    nodeRightplus[seq] = node.append("g")
-                        .attr("id", `seq${seq}`)
-                        .selectAll("circle")
-                        .data(response.data.node)
-                        .enter().append("circle")
-                        .attr("class", "node")
-                        .attr("r", 10)
-                        .attr("cx", d => linkRightplus[seq].selectAll(".link-total").filter(l => l.target == d.target).attr("x2"))
-                        .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
-                        // .call(d3.drag().on("drag", dragged))
-                        .on("click", clicked)
-                        .on("mouseover", NodeMouseOver)
-                        .on("mousemove", NodeMouseMove)
-                        .on("mouseleave", NodeMouseLeave);
-
+                    prevLinkGroup = linkRight;
                 } else {
-                    linkRightplus[seq] = link.append("g")
-                        .attr("id", `seq${seq}`)
-
-                    linkRightplus[seq].append("g")
-                        .selectAll("line")
-                        .data(response.data.link)
-                        .enter().append("line")
-                        .attr("class", "link link-total")
-                        .attr("stroke-width", 0)
-                        .attr("x1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
-                        .attr("y1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
-                        .attr("x2", d => parseFloat(linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) + 80)
-                        .attr("y2", 0);
-
-                    linkRightplus[seq].append("g") //add type links
-                        .selectAll("line")
-                        .data(response.data.link)
-                        .enter().append("line")
-                        .attr("class", "link link-offline-trans link-trans-type hide")
-                        .attr("x1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
-                        .attr("y1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
-                        .attr("x2", d => parseFloat(linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) + 80)
-                        .attr("y2", 0);
-                    linkRightplus[seq].append("g") //add type links
-                        .selectAll("line")
-                        .data(response.data.link)
-                        .enter().append("line")
-                        .attr("class", "link link-online-trans link-trans-type hide")
-                        .attr("x1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
-                        .attr("y1", d => linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
-                        .attr("x2", d => parseFloat(linkRightplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) + 80)
-                        .attr("y2", 0);
-
-                    nodeRightplus[seq] = node.append("g")
-                        .attr("id", `seq${seq}`)
-                        .selectAll("circle")
-                        .data(response.data.node)
-                        .enter().append("circle")
-                        .attr("class", "node")
-                        .attr("r", 10)
-                        .attr("cx", d => linkRightplus[seq].selectAll(".link-total").filter(l => l.target == d.target).attr("x2"))
-                        .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
-                        // .attr("cy", (d,i) => 100+ i * 40)
-                        // .call(d3.drag().on("drag", dragged))
-                        .on("click", clicked)
-                        .on("mouseover", NodeMouseOver)
-                        .on("mousemove", NodeMouseMove)
-                        .on("mouseleave", NodeMouseLeave);
-                }
+                    prevLinkGroup = linkRightplus[seq - 1].selectAll(".link-total");
+                };
+                console.log(prevLinkGroup);
+                linkRightplus[seq] = link.append("g")
+                    .attr("id", `seq${seq}`);
+                // add total link
+                linkRightplus[seq].append("g")
+                    .selectAll("line")
+                    .data(response.data.link)
+                    .enter().append("line")
+                    .attr("class", "link link-total")
+                    .attr("stroke-width", 0)
+                    .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+                    .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+                    .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + 80)
+                    .attr("y2", 0);
+                
+                linkRightplus[seq].append("g") //add type links
+                    .selectAll("line")
+                    .data(response.data.link)
+                    .enter().append("line")
+                    .attr("class", "link link-offline-trans link-trans-type hide")
+                    .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+                    .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+                    .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + 80)
+                    .attr("y2", 0);
+                linkRightplus[seq].append("g") //add type links
+                    .selectAll("line")
+                    .data(response.data.link)
+                    .enter().append("line")
+                    .attr("class", "link link-online-trans link-trans-type hide")
+                    .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+                    .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+                    .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + 80)
+                    .attr("y2", 0);       
+                
+                nodeRightplus[seq] = node.append("g")
+                    .attr("id", `seq${seq}`)
+                    .selectAll("circle")
+                    .data(response.data.node)
+                    .enter().append("circle")
+                    .attr("class", "node")
+                    .attr("r", 10)
+                    .attr("cx", d => linkRightplus[seq].selectAll(".link-total").filter(l => l.target == d.target).attr("x2"))
+                    .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
+                    // .call(d3.drag().on("drag", dragged))
+                    .on("click", clicked)
+                    .on("mouseover", NodeMouseOver)
+                    .on("mousemove", NodeMouseMove)
+                    .on("mouseleave", NodeMouseLeave);
 
                 let totalLink = linkRightplus[seq].selectAll(".link-total")
                 totalLink
@@ -1410,13 +1364,13 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
                 linkRightplus[seq].selectAll(".link-offline-trans")
                     .attr("y1", d => parseFloat(totalLink.filter(l => l.source === d.source && l.target === d.target).attr("y1")) + linkOffsetCalc(d, totalLink, d.offline_count))
-                    .attr("y2", d => parseFloat(nodeRightplus[seq].filter(n => n.target === d.target).attr("cy")) + linkOffsetCalc(d, totalLink, d.offline_count))
+                    .attr("y2", d => parseFloat(totalLink.filter(n => n.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count))
                     .transition().duration(300)
                     .attr("stroke-width", d=> linkScaler(d.offline_count));
                     
                 linkRightplus[seq].selectAll(".link-online-trans")
                     .attr("y1", d => parseFloat(totalLink.filter(l => l.source === d.source && l.target === d.target).attr("y1")) - linkOffsetCalc(d, totalLink, d.online_count))
-                    .attr("y2", d => parseFloat(nodeRightplus[seq].filter(n => n.target === d.target).attr("cy")) - linkOffsetCalc(d, totalLink, d.online_count))
+                    .attr("y2", d => parseFloat(totalLink.filter(n => n.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count))
                     .transition().duration(300)
                     .attr("stroke-width", d=> linkScaler(d.online_count));
                 
@@ -1530,116 +1484,65 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         }
 
         //Calculate vertical layout
-  
         function renderGraph(response){
             console.log(seq, response.data)
 
             // let thisStepList = new Array();
             // response.data.node.forEach(d => thisStepList.push(d.target));
             leftLastList[seq] = response.data.route_list;
-            if (seq == 2) {
-                linkLeftplus[seq] = link.append("g")
-                    .attr("id", `seq${-seq}`)
-
-                linkLeftplus[seq].append("g")
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-total")
-                    .attr("stroke-width", 0)
-                    .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
-                    .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
-                    .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
-                    .attr("y2", 0);
-
-                linkLeftplus[seq].append("g") //add type links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-offline-trans link-trans-type hide")
-                    .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
-                    .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
-                    .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
-                    .attr("y2", 0);
-                linkLeftplus[seq].append("g") //add type links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-online-trans link-trans-type hide")
-                    .attr("x1", d => linkLeft.filter(n => n.target == d.source).attr("x2"))
-                    .attr("y1", d => linkLeft.filter(n => n.target == d.source).attr("y2"))
-                    .attr("x2", d => parseFloat(linkLeft.filter(n => n.target == d.source).attr("x2")) - 80)
-                    .attr("y2", 0);     
-
-                nodeLeftplus[seq] = node.append("g")
-                    .attr("id", `seq${-seq}`)
-                    .selectAll("circle")
-                    .data(response.data.node)
-                    .enter().append("circle")
-                    .attr("class", "node")
-                    .attr("r", 10)
-                    .attr("cx", d => linkLeftplus[seq].selectAll(".link-total").filter(l => l.target == d.target).attr("x2"))
-                    .attr("cy",  (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
-                    // .call(d3.drag().on("drag", dragged))
-                    .on("click", clicked)
-                    .on("mouseover", NodeMouseOver)
-                    .on("mousemove", NodeMouseMove)
-                    .on("mouseleave", NodeMouseLeave);
-
+            let prevLinkGroup
+            if (seq === 2) {
+                prevLinkGroup = linkLeft;
             } else {
-                linkLeftplus[seq] = link.append("g")
-                    .attr("id", `seq${-seq}`)
-                
-                linkLeftplus[seq].append("g")
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-total")
-                    .attr("stroke-width", 0)
-                    .attr("x1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
-                    .attr("y1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
-                    .attr("x2", d => parseFloat(linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) - 80)
-                    .attr("y2", 0);
+                prevLinkGroup = linkLeftplus[seq - 1].selectAll(".link-total");
+            };
+            linkLeftplus[seq] = link.append("g")
+                .attr("id", `seq${-seq}`)
 
-                linkLeftplus[seq].append("g") //add type links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-offline-trans link-trans-type hide")
-                    .attr("x1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
-                    .attr("y1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
-                    .attr("x2", d => parseFloat(linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) - 80)
-                    .attr("y2", 0);
-                linkLeftplus[seq].append("g") //add type links
-                    .selectAll("line")
-                    .data(response.data.link)
-                    .enter().append("line")
-                    .attr("class", "link link-online-trans link-trans-type hide")
-                    .attr("x1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2"))
-                    .attr("y1", d => linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("y2"))
-                    .attr("x2", d => parseFloat(linkLeftplus[seq - 1].selectAll(".link-total").filter(l => l.target == d.source).attr("x2")) - 80)
-                    .attr("y2", 0);
+            linkLeftplus[seq].append("g")
+                .selectAll("line")
+                .data(response.data.link)
+                .enter().append("line")
+                .attr("class", "link link-total")
+                .attr("stroke-width", 0)
+                .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+                .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) - 80)
+                .attr("y2", 0);
 
-                nodeLeftplus[seq] = node.append("g")
-                    .attr("id", `seq${-seq}`)
-                    .selectAll("circle")
-                    .data(response.data.node)
-                    .enter().append("circle")
-                    .attr("class", "node")
-                    .attr("r", 10)
-                    .attr("cx", d => linkLeftplus[seq].selectAll(".link-total").filter(l => l.target == d.target).attr("x2"))
-                    .attr("cy", (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
-                    // .call(d3.drag().on("drag", dragged))
-                    .on("click", clicked)
-                    .on("mouseover", NodeMouseOver)
-                    .on("mousemove", NodeMouseMove)
-                    .on("mouseleave", NodeMouseLeave);
+            linkLeftplus[seq].append("g") //add type links
+                .selectAll("line")
+                .data(response.data.link)
+                .enter().append("line")
+                .attr("class", "link link-offline-trans link-trans-type hide")
+                .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+                .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) - 80)
+                .attr("y2", 0);
+            linkLeftplus[seq].append("g") //add type links
+                .selectAll("line")
+                .data(response.data.link)
+                .enter().append("line")
+                .attr("class", "link link-online-trans link-trans-type hide")
+                .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+                .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+                .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) - 80)
+                .attr("y2", 0);     
 
-                //if this step nodes amount < last step nodes amount, then do not apply dumb layout
-                // if  ((graph.node.filter(d => d.sequence == -seq).length < 4) || (graph.node.filter(d => d.sequence == -seq).length < (1+graph.node.filter(d => d.sequence == -seq+1).length))) {
-                //     nodeLeftplus[seq].attr("cy", d => parseFloat(linkLeftplus[seq].filter(l => l.target == d.target).attr("y2")))
-                // }
-            }
+            nodeLeftplus[seq] = node.append("g")
+                .attr("id", `seq${-seq}`)
+                .selectAll("circle")
+                .data(response.data.node)
+                .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", 10)
+                .attr("cx", d => linkLeftplus[seq].selectAll(".link-total").filter(l => l.target == d.target).attr("x2"))
+                .attr("cy",  (d,i) => LayoutScaler_Adjust(i, response.data.node.length))
+                // .call(d3.drag().on("drag", dragged))
+                .on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mousemove", NodeMouseMove)
+                .on("mouseleave", NodeMouseLeave);
 
             let totalLink = linkLeftplus[seq].selectAll(".link-total")
             totalLink
