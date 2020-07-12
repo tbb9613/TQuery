@@ -204,7 +204,7 @@ button {
 }
 
 .link {
-  stroke: #999;
+  stroke: #888;
   opacity: .9;
 }
 
@@ -433,11 +433,20 @@ button,
 }
 
 .node-text {
+  stroke-width: 2.5;
+  stroke: whitesmoke;
+  paint-order: stroke fill;
   alignment-baseline: middle;
   text-anchor: middle;
-  fill: rgb(89, 101, 112);
+  fill: #333;
   cursor: default;
   font-size: 11px;
+}
+
+.legend-text {
+  alignment-baseline: baseline;
+  font-size: 12px;
+  fill: #333;
 }
 
 .node-preview-text, .top-node-text {
@@ -793,16 +802,22 @@ text.sfilter-axis {
   stroke: white;
 }
 
-
 circle.this-route{
-  fill: #655AAF;
+  fill: #5E37A5;
   /* stroke: aliceblue; */
   /* fill: #4A4666; */
 }
 
 line.this-route {
-  stroke:#4F4688;
+  stroke:#5E37A5;
   opacity: 1 !important;
+}
+
+text.this-route {
+  stroke-width: 4;
+  stroke: whitesmoke;
+  /* make the stroke outside */
+  paint-order: stroke fill;
 }
 
 circle.not-this-route{

@@ -46,17 +46,18 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
         target_step = raw_step
         #filter the data by time interval
         filtered_routes = shaped_routes[(shaped_routes["time_interval_to_next"][source_step] < time_interval_limit) & (shaped_routes["time_interval_from_last"][target_step] < time_interval_limit)]
-        links = filtered_routes["mcc"][[source_step,target_step]].rename(columns = {source_step:"source", target_step:"target"})
-    else:
+    elif single_sequence < 0:
         source_step = raw_step+1
         target_step = raw_step
         filtered_routes = shaped_routes[(shaped_routes["time_interval_to_next"][target_step] < time_interval_limit) & (shaped_routes["time_interval_from_last"][source_step] < time_interval_limit)]
-        links = filtered_routes["mcc"][[source_step,target_step]].rename(columns = {source_step:"source", target_step:"target"})
-
+    else:
+        source_step = raw_step+1
+        target_step = raw_step
+        filtered_routes = shaped_routes
+    links = filtered_routes["mcc"][[source_step,target_step]].rename(columns = {source_step:"source", target_step:"target"})
     #filter links into last step routes, then all the sources should be same as last steps' target
     if abs(single_sequence) > 1:
         links = links[links.index.isin(last_step_routes)]
-        
     # add transaction value column
     links["transaction_value"] = filtered_routes.xs(("transaction_value", target_step), axis=1)
     links["transaction_type"] = filtered_routes.xs(("transaction_type", target_step), axis=1)
@@ -97,48 +98,53 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     nodes_result["online_count"].fillna(0, inplace = True)
     nodes_result["offline_route"] = nodes_result["offline_route"].apply(lambda x: x.tolist())
     nodes_result["online_route"] = nodes_result["online_route"].apply(lambda x: x.tolist())
-    # get routes of top nodes 
-    this_step_routes = []
-    for routes in nodes_result["route"]:
-        this_step_routes += routes
-    # get all links in this step's route
-    links = links[links.index.isin(this_step_routes)]
-    # get links grouped into source + target + count format df
-    links_g = links.groupby(["source","target"]).count().rename(columns = {"merchant":"count"}).reset_index().dropna()
-    # capture links' routes by people's identifier/name
-    links_g["route"] = links.groupby(["source","target"]).groups.values()
-    # add atv column
-    links_g["atv"] = links[["source", "target", "transaction_value"]].groupby(["source","target"]).mean().dropna().reset_index()["transaction_value"]
-    links_transtype_groupby = links[columns_transaction_type].groupby(by = ["source", "target", "transaction_type"])
-    links_transtype = links_transtype_groupby.count().dropna()
-    # group to deal with transaction type
-    links_transtype["type_routes"] = list(links_transtype_groupby.groups.values())
-    links_transtype_cnt = links_transtype.unstack()["transaction_value"].reset_index().sort_values(by = ["source", "target"]).reset_index()
-    links_transtype_routes = links_transtype.unstack()["type_routes"].reset_index().sort_values(by = ["source", "target"]).reset_index()
-    # add trans type count
-    links_g["offline_count"] = links_transtype_cnt["offline"]
-    links_g["online_count"] = links_transtype_cnt["online"]
-    # add trans type traj id
-    links_g["offline_route"] = links_transtype_routes["offline"]
-    links_g["online_route"] = links_transtype_routes["online"]
-    # generate results
-    links_result = links_g.reset_index(drop = True).drop(columns = ["transaction_value"])
     
-    # convert array to list
-    links_result["route"] = links_result["route"].apply(lambda x: x.tolist())
-    #fill null list
-    for row in links_result.loc[links_result["offline_route"].isna(), "offline_route"].index:
-        links_result.at[row, "offline_route"] = np.array([])
-    for row in links_result.loc[links_result["online_route"].isna(), "online_route"].index:
-        links_result.at[row, "online_route"] = np.array([])
-    links_result["offline_count"].fillna(0, inplace = True)
-    links_result["online_count"].fillna(0, inplace = True)
-    links_result["offline_route"] = links_result["offline_route"].apply(lambda x: x.tolist())
-    links_result["online_route"] = links_result["online_route"].apply(lambda x: x.tolist())
+    if single_sequence != 0 :
+        # get routes of top nodes 
+        this_step_routes = []
+        for routes in nodes_result["route"]:
+            this_step_routes += routes
+        # get all links in this step's route
+        links = links[links.index.isin(this_step_routes)]
+        # get links grouped into source + target + count format df
+        links_g = links.groupby(["source","target"]).count().rename(columns = {"merchant":"count"}).reset_index().dropna()
+        # capture links' routes by people's identifier/name
+        links_g["route"] = links.groupby(["source","target"]).groups.values()
+        # add atv column
+        links_g["atv"] = links[["source", "target", "transaction_value"]].groupby(["source","target"]).mean().dropna().reset_index()["transaction_value"]
+        links_transtype_groupby = links[columns_transaction_type].groupby(by = ["source", "target", "transaction_type"])
+        links_transtype = links_transtype_groupby.count().dropna()
+        # group to deal with transaction type
+        links_transtype["type_routes"] = list(links_transtype_groupby.groups.values())
+        links_transtype_cnt = links_transtype.unstack()["transaction_value"].reset_index().sort_values(by = ["source", "target"]).reset_index()
+        links_transtype_routes = links_transtype.unstack()["type_routes"].reset_index().sort_values(by = ["source", "target"]).reset_index()
+        # add trans type count
+        links_g["offline_count"] = links_transtype_cnt["offline"]
+        links_g["online_count"] = links_transtype_cnt["online"]
+        # add trans type traj id
+        links_g["offline_route"] = links_transtype_routes["offline"]
+        links_g["online_route"] = links_transtype_routes["online"]
+        # generate results
+        links_result = links_g.reset_index(drop = True).drop(columns = ["transaction_value"])
+        
+        # convert array to list
+        links_result["route"] = links_result["route"].apply(lambda x: x.tolist())
+        #fill null list
+        for row in links_result.loc[links_result["offline_route"].isna(), "offline_route"].index:
+            links_result.at[row, "offline_route"] = np.array([])
+        for row in links_result.loc[links_result["online_route"].isna(), "online_route"].index:
+            links_result.at[row, "online_route"] = np.array([])
+        links_result["offline_count"].fillna(0, inplace = True)
+        links_result["online_count"].fillna(0, inplace = True)
+        links_result["offline_route"] = links_result["offline_route"].apply(lambda x: x.tolist())
+        links_result["online_route"] = links_result["online_route"].apply(lambda x: x.tolist())
 
-    links_result_dict = links_result.to_dict('records')
-    nodes_result_dict = nodes_result.to_dict('records')
-    return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes)
+        links_result_dict = links_result.to_dict('records')
+        nodes_result_dict = nodes_result.to_dict('records')
+        return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes)
+    else:
+        nodes_result_dict = nodes_result.to_dict('records')
+        return jsonify(node = nodes_result_dict)
 
 def packQueryListCovert(packLinks, packNodes):
     
@@ -409,7 +415,7 @@ def QueryPacked():
     packNodes = datagetjson['nodes']
     start_time = pd.Timestamp(datagetjson["timeStart"])
     end_time = pd.Timestamp(datagetjson["timeEnd"])
-    time_interval_limit = pd.offsets.Minute(100)
+    time_interval_limit = pd.offsets.Minute(99999)
     last_step_routes = datagetjson['list']
     rank_num = datagetjson['displaynum'] #max display num
     single_seq = datagetjson['sequence']

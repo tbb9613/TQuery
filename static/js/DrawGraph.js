@@ -7,6 +7,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     let graphLeftPlusExist = false;
     let innodePieClickedFlag = false;
 
+    let pieColorScale = d3.scaleOrdinal().domain([0,1])
+    .range(["#F7CE3E", "#1A2930"]);
+
     // get all list
     var allList = new Array()
     // show link density filter
@@ -129,10 +132,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         }
     }
 
-    //add graph
+    //add graph and legend
     if (graphid === "graph-first") {
         d3.select("#addGraph")
-            .on("click", addGraph)
+            .on("click", addGraph);
+        addLegend();
         function addGraph() {
             secondGraphExist = true;
 
@@ -152,7 +156,27 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
             //Display second brush
             d3.selectAll(".brush-child").classed("hide", false)
-        }
+        };
+        function addLegend(){
+            let typeLegend = workSpace.append("g")
+                .attr("class", "node-type-legend hide")
+            typeLegend.append("rect")
+                .attr("x", 60).attr("y", "85%")
+                .attr("height", "10px").attr("width", "20px")
+                .attr("fill", pieColorScale(0));
+            typeLegend.append("text")
+                .attr("x", 85).attr("y", "85%")
+                .attr("class", "legend-text")
+                .text("Online Transaction")
+            typeLegend.append("rect")
+                .attr("x", 60).attr("y", "88%")
+                .attr("height", "10px").attr("width", "20px")
+                .attr("fill", pieColorScale(1));
+            typeLegend.append("text")
+                .attr("x", 85).attr("y", "88%")
+                .attr("class", "legend-text")
+                .text("Offline Transaction");
+        };
     } else if (graphid === "graph-second") {
         // d3.select("#addGraph")
             // .classed("hide", true);
@@ -174,53 +198,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("stroke", "black")
             .attr("stroke-width", "3px");
     }
-    d3.select("#pieView").on("click", togglePieView);
-    function togglePieView(){
-        pieViewFlag = !pieViewFlag;
-        d3.selectAll(".link-trans-type").classed("hide", !d3.selectAll(".link-trans-type").classed("hide"));
-        d3.selectAll(".innode-type-pie").classed("hide", !d3.selectAll(".innode-type-pie").classed("hide"));
-        // mdui.mutation();
-        if (pieViewFlag) { // if the status is show
-            mdui.snackbar({
-                message: 'Pie view of transaction types enbabled'
-            });
-        } else {
-            if (innodePieClickedFlag) {
-                resetAllGraphStyle();
-                resetTypePie();
-            }
-            mdui.snackbar({
-                message: 'Pie view of transaction types disabled'
-            });
-        }
-    }
-    d3.select("#timeIntervalView").on("click", toggleTimeIntervalView);
-    function toggleTimeIntervalView(){
-        timeIntervalFlag = !timeIntervalFlag;
-        d3.selectAll(".horizontal-line").classed("hide", !d3.selectAll(".horizontal-line").classed("hide"));
-        d3.selectAll(".vertical-line").classed("hide", !d3.selectAll(".vertical-line").classed("hide"));
-        d3.selectAll(".horizontal-line-text").classed("hide", !d3.selectAll(".horizontal-line-text").classed("hide"));
-        d3.selectAll(".horizontal-line-text-unit").classed("hide", !d3.selectAll(".horizontal-line-text-unit").classed("hide"));
-        d3.selectAll(".bottom-axis").classed("hide", !d3.selectAll(".bottom-axis").classed("hide"));
-        // mdui.mutation();
-        if (timeIntervalFlag) { // if the status is show
-            mdui.snackbar({
-                message: 'Time interval filter enbabled'
-            });
-        } else {
-            mdui.snackbar({
-                message: 'Time interval filter disabled'
-            });
-        }
-    }
-    function showAllTimeInterval(){
-        d3.selectAll(".horizontal-line").classed("hide", false);
-        d3.selectAll(".vertical-line").classed("hide", false);
-        d3.selectAll(".horizontal-line-text").classed("hide", false);
-        d3.selectAll(".horizontal-line-text-unit").classed("hide", false);
-        d3.selectAll(".bottom-axis").classed("hide", false);
-    }
-
+    
     //Draw Bottom Axis according to time selector data
     var bottomAxisWidth = 0.85 * width;
     let bottomAxisMargin = ({
@@ -327,8 +305,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
                 function drawCenterPie(){
                     innodePieClickedFlag = false;
-                    let pieColorScale = d3.scaleOrdinal().domain([0,1])
-                        .range(["#F7CE3E", "#1A2930"]);
                     let arcSample = d3.arc().outerRadius(30+1).innerRadius(15);
                     // Convert raw data to pie data format
                     function pieData(d){
@@ -752,9 +728,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             
             function drawTypePie(){
                 innodePieClickedFlag = false;
-                let pieColorScale = d3.scaleOrdinal().domain([0,1])
-                    .range(["#F7CE3E", "#1A2930"]);
-                let arcSample = d3.arc().outerRadius(20+1).innerRadius(15);
+
+                let arcFirst = d3.arc().outerRadius(20+1).innerRadius(15);
                 // Convert raw data to pie data format
                 function pieData(d){
                     let data = [{
@@ -779,7 +754,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .enter().append("path")
                     .attr("class", "innode-graph innode-type-pie hide")
                     .attr("fill", (d, i) => pieColorScale(i))
-                    .attr("d", arcSample)
+                    .attr("d", arcFirst)
                     .on("mouseover", InNodePieGraphMouseOver)
                     .on("mousemove", InNodePieGraphMouseMove)
                     .on("mouseleave", InNodePieGraphMouseLeave)
@@ -966,7 +941,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         let thisText = d3.selectAll(`#${thisNodeParent.attr("id")}`)
             .selectAll(".node-text").filter(t => d.target === t.target);
             console.log(thisNodeParent)
-        // console.log(node.selectAll("text"));
         if (d3.event.shiftKey) {
             createQuery(d.target, "single", nodeList, timeStart, timeEnd);
         } else {
@@ -1256,129 +1230,163 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         }
         
         let prevLinkGroup, nodeOffset
-            if (seq > 0) {
-                nodeOffset = 80
-                prevLinkGroup = linkRightplus[seq - 1].selectAll(".link-total");
-            } else {
-                nodeOffset = -80
-                prevLinkGroup = linkLeftplus[-seq - 1].selectAll(".link-total");
-            };
-            let thisLinkGroup = link.append("g")
-                .attr("id", `seq${seq}`);
-            // add total link
-            thisLinkGroup.append("g")
-                .selectAll("line")
-                .data(response.data.link)
-                .enter().append("line")
-                .attr("class", "link link-total")
-                .attr("stroke-width", 0)
-                .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
-                .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + nodeOffset)
-                .attr("y2", 0);
-            
-            thisLinkGroup.append("g") //add type links
-                .selectAll("line")
-                .data(response.data.link)
-                .enter().append("line")
-                .attr("class", "link link-offline-trans link-trans-type hide")
-                .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
-                .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + nodeOffset)
-                .attr("y2", 0);
-            thisLinkGroup.append("g") //add type links
-                .selectAll("line")
-                .data(response.data.link)
-                .enter().append("line")
-                .attr("class", "link link-online-trans link-trans-type hide")
-                .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
-                .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
-                .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + nodeOffset)
-                .attr("y2", 0);       
-            
-            let thisNodeGroup = node.selectAll(`#seq${seq}`)
-                .data(response.data.node)
-                .enter().append("g")
-                .attr("id", `seq${seq}`)
-                .attr("class", "node-group")
-                .attr("transform", (d,i) => "translate("+ thisLinkGroup.selectAll(".link-total").filter(l => l.target == d.target).attr("x2") + ","
-                    + LayoutScaler_Adjust(i, response.data.node.length) +")")
+        if (seq > 0) {
+            nodeOffset = 80
+            prevLinkGroup = linkRightplus[seq - 1].selectAll(".link-total");
+        } else {
+            nodeOffset = -80
+            prevLinkGroup = linkLeftplus[-seq - 1].selectAll(".link-total");
+        };
+        let thisLinkGroup = link.append("g")
+            .attr("id", `seq${seq}`);
+        // add total link
+        thisLinkGroup.append("g")
+            .selectAll("line")
+            .data(response.data.link)
+            .enter().append("line")
+            .attr("class", "link link-total")
+            .attr("stroke-width", 0)
+            .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+            .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+            .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + nodeOffset)
+            .attr("y2", 0);
+        
+        thisLinkGroup.append("g") //add type links
+            .selectAll("line")
+            .data(response.data.link)
+            .enter().append("line")
+            .attr("class", "link link-offline-trans link-trans-type hide")
+            .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+            .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+            .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + nodeOffset)
+            .attr("y2", 0);
+        thisLinkGroup.append("g") //add type links
+            .selectAll("line")
+            .data(response.data.link)
+            .enter().append("line")
+            .attr("class", "link link-online-trans link-trans-type hide")
+            .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
+            .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
+            .attr("x2", d => parseFloat(prevLinkGroup.filter(n => n.target == d.source).attr("x2")) + nodeOffset)
+            .attr("y2", 0);       
+        
+        let thisNodeGroup = node.selectAll(`#seq${seq}`)
+            .data(response.data.node)
+            .enter().append("g")
+            .attr("id", `seq${seq}`)
+            .attr("class", "node-group")
+            .attr("transform", (d,i) => "translate("+ thisLinkGroup.selectAll(".link-total").filter(l => l.target == d.target).attr("x2") + ","
+                + LayoutScaler_Adjust(i, response.data.node.length) +")")
 
-            thisNodeGroup.append("circle")
-                .attr("class", "node")
-                .attr("r", 10)
-                .on("click", clicked)
-                .on("mouseover", NodeMouseOver)
-                .on("mousemove", NodeMouseMove)
-                .on("mouseleave", NodeMouseLeave);
-            // adjust link pos
-            let totalLink = thisLinkGroup.selectAll(".link-total")
-            totalLink
-                .attr("y2", d => getTranslation(thisNodeGroup.filter(n => n.target === d.target).attr("transform"))[1])
-                .transition().duration(300)
-                .attr("stroke-width", d => linkScaler(d.count));
+        thisNodeGroup.append("circle")
+            .attr("class", "node")
+            .attr("r", 10)
+            .on("click", clicked)
+            .on("mouseover", NodeMouseOver)
+            .on("mousemove", NodeMouseMove)
+            .on("mouseleave", NodeMouseLeave);
+        // adjust link pos
+        let totalLink = thisLinkGroup.selectAll(".link-total")
+        totalLink
+            .attr("y2", d => getTranslation(thisNodeGroup.filter(n => n.target === d.target).attr("transform"))[1])
+            .transition().duration(300)
+            .attr("stroke-width", d => linkScaler(d.count));
 
-            thisLinkGroup.selectAll(".link-offline-trans")
-                .attr("y1", d => parseFloat(totalLink.filter(l => l.source === d.source && l.target === d.target).attr("y1")) + linkOffsetCalc(d, totalLink, d.offline_count))
-                .attr("y2", d => parseFloat(totalLink.filter(n => n.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count))
-                .transition().duration(300)
-                .attr("stroke-width", d=> linkScaler(d.offline_count));
-                
-            thisLinkGroup.selectAll(".link-online-trans")
-                .attr("y1", d => parseFloat(totalLink.filter(l => l.source === d.source && l.target === d.target).attr("y1")) - linkOffsetCalc(d, totalLink, d.online_count))
-                .attr("y2", d => parseFloat(totalLink.filter(n => n.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count))
-                .transition().duration(300)
-                .attr("stroke-width", d=> linkScaler(d.online_count));
+        thisLinkGroup.selectAll(".link-offline-trans")
+            .attr("y1", d => parseFloat(totalLink.filter(l => l.source === d.source && l.target === d.target).attr("y1")) + linkOffsetCalc(d, totalLink, d.offline_count))
+            .attr("y2", d => parseFloat(totalLink.filter(n => n.target === d.target).attr("y2")) + linkOffsetCalc(d, totalLink, d.offline_count))
+            .transition().duration(300)
+            .attr("stroke-width", d=> linkScaler(d.offline_count));
             
-            // add link text
-            link.append("g")
-                .attr("id", `seq${seq}`)
-                .selectAll(".link-text-rightplus")
-                .data(response.data.link).enter()
-                .append("text")
-                .attr("class", "link-text link-text-rightplus")
-                .attr("x", d => 0.5 * (
-                    parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
-                    parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
-                .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
-                    parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
-                    parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
-                .text(d => d.count)
-                .classed("text-hide", true)
-            //add node text
-            node.append("g")
-                .attr("id", `seq${seq}`)
-                .selectAll("text")
-                .data(response.data.node)
-                .enter().append("text")
-                .attr("class", "node-text")
-                .attr("x", d => totalLink.filter(l => l.target == d.target).attr("x2"))
-                .attr("y", d => parseFloat(totalLink.filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
-                .text(d => multiWordsFormat(d.target))
-                .on("mouseover", d => showFullName(d.target))
-                .on("mousemove", moveFullName)
-                .on("mouseout", hideFullName);
-                // .classed("text-hide", true)
-            // TODO: keep link visibility settings
-            // changeLinkVisibility();
-            // add vertical line
-            
+        thisLinkGroup.selectAll(".link-online-trans")
+            .attr("y1", d => parseFloat(totalLink.filter(l => l.source === d.source && l.target === d.target).attr("y1")) - linkOffsetCalc(d, totalLink, d.online_count))
+            .attr("y2", d => parseFloat(totalLink.filter(n => n.target === d.target).attr("y2")) - linkOffsetCalc(d, totalLink, d.online_count))
+            .transition().duration(300)
+            .attr("stroke-width", d=> linkScaler(d.online_count));
+        
+        // add link text
+        link.append("g")
+            .attr("id", `seq${seq}`)
+            .selectAll(".link-text-rightplus")
+            .data(response.data.link).enter()
+            .append("text")
+            .attr("class", "link-text link-text-rightplus")
+            .attr("x", d => 0.5 * (
+                parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("x1")) +
+                parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("x2"))))
+            .attr("y", (d, i) => txtOffset / 2 + 0.5 * (
+                parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("y1")) +
+                parseFloat(totalLink.filter(l => l.target == d.target && l.source == d.source).attr("y2"))))
+            .text(d => d.count)
+            .classed("text-hide", true)
+        //add node text
+        node.append("g")
+            .attr("id", `seq${seq}`)
+            .selectAll("text")
+            .data(response.data.node)
+            .enter().append("text")
+            .attr("class", "node-text")
+            .attr("x", d => totalLink.filter(l => l.target == d.target).attr("x2"))
+            .attr("y", d => parseFloat(totalLink.filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
+            .text(d => multiWordsFormat(d.target))
+            .on("mouseover", d => showFullName(d.target))
+            .on("mousemove", moveFullName)
+            .on("mouseout", hideFullName);
+            // .classed("text-hide", true)
+        // TODO: keep link visibility settings
+        // changeLinkVisibility();
+        // add vertical line
+        
+        drawPlusTypePie()
+        function drawPlusTypePie(){
+            innodePieClickedFlag = false;
+            let arcPlus = d3.arc().outerRadius(10+1).innerRadius(0);
+            // Convert raw data to pie data format
+            function pieData(d){
+                let data = [{
+                    "label": "Online",
+                    "value": d.online_count,
+                    "percentage": d.online_count/d.count,
+                    "route": d.online_route
+                },
+                {
+                    "label": "Offline",
+                    "value": d.offline_count,
+                    "percentage": d.offline_count/d.count,
+                    "route": d.offline_route
+                }];
+                return data
+            } 
+            let spConverter = d3.pie().value(d => d.value)
+                .sort(null).sortValues(null);
 
-            if (pieViewFlag) {
-                d3.selectAll(".link-trans-type").classed("hide", false);
-                d3.selectAll(".innode-type-pie").classed("hide", false);
-            }
-            if (seq>0) {
-                linkRightplus[seq] = thisLinkGroup;
-                nodeRightplus[seq] = thisNodeGroup;
-                drawPlusVerticalLine(seq, seq-1, nodeOffset);
-                drawPlusHorizontalLine(seq, seq-1, nodeOffset);
-            } else {
-                linkLeftplus[-seq] = thisLinkGroup;
-                nodeLeftplus[-seq] = thisNodeGroup;
-                drawPlusVerticalLine(seq, seq+1, nodeOffset);
-                drawPlusHorizontalLine(seq, seq+1, nodeOffset);
-            }
+            thisNodeGroup.selectAll("path")
+                .data(d => spConverter(pieData(d)))
+                .enter().append("path")
+                .attr("class", "innode-graph innode-type-pie hide")
+                .attr("fill", (d, i) => pieColorScale(i))
+                .attr("d", arcPlus)
+                .on("mouseover", InNodePieGraphMouseOver)
+                .on("mousemove", InNodePieGraphMouseMove)
+                .on("mouseleave", InNodePieGraphMouseLeave)
+                .on("click", InNodePieGraphClick);
+        }
+        if (pieViewFlag) {
+            d3.selectAll(".link-trans-type").classed("hide", false);
+            d3.selectAll(".innode-type-pie").classed("hide", false);
+        }
+        if (seq>0) {
+            linkRightplus[seq] = thisLinkGroup;
+            nodeRightplus[seq] = thisNodeGroup;
+            drawPlusVerticalLine(seq, seq-1, nodeOffset);
+            drawPlusHorizontalLine(seq, seq-1, nodeOffset);
+        } else {
+            linkLeftplus[-seq] = thisLinkGroup;
+            nodeLeftplus[-seq] = thisNodeGroup;
+            drawPlusVerticalLine(seq, seq+1, nodeOffset);
+            drawPlusHorizontalLine(seq, seq+1, nodeOffset);
+        }
+
     }
     function NodeMouseOver(d) {
         let hoveredNode = d3.select(this);
@@ -1386,13 +1394,14 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         // console.log(hoveredNodeParent);
         if (!innodePieClickedFlag){
             node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
-            node.selectAll("text").filter(d => d.route != undefined).classed("not-this-route", true);
+            node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
             link.selectAll("line").classed("not-this-route", true);
+            node.selectAll(".innode-type-pie").style("opacity", .3)
             // link.selectAll("text").classed("not-this-route", true)
             // console.log(d)
-            d.route.forEach(function (r) {
-                filterRouteByNodeHover(r);
-            })
+            // d.route.forEach(function (r) {
+            filterRouteByNodeHover(d.route);
+            // })
             node.selectAll("circle").filter(n => n.sequence === 0).classed("this-route", true);
         }
         // console.log(node.selectAll("circle").filter(".this-route"))
@@ -1462,23 +1471,25 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         innodePieClickedFlag = true;
         resetAllGraphStyle();
         node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
-        node.selectAll("text").filter(d => d.route != undefined).classed("not-this-route", true);
+        node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
         link.selectAll("line").classed("not-this-route", true)
-        d3.selectAll(".innode-type-pie").style("opacity", .5);
+        node.selectAll(".innode-type-pie").style("opacity", .5);
         d3.select(this).style("opacity", 1)
         if (d.data.label === "Offline") { //if click the offline
             // d3.selectAll(".innode-type-pie")
             //     .filter(d => d.data.label === "Online").style("opacity", 0);
             renderInterSectionPie(d);
-            d.data.route.forEach(function (r) {
-                filterRouteByTypePieClick(r);
-            })
+            filterRouteByTypePieClick(d.data.route);
+            // d.data.route.forEach(function (r) {
+            //     filterRouteByTypePieClick(r);
+            // })
             // console.log(intersection(allPieData[0].data.route, d.data.route))
         } else if (d.data.label === "Online") {
             renderInterSectionPie(d);
-            d.data.route.forEach(function (r) {
-                filterRouteByTypePieClick(r);
-            })
+            filterRouteByTypePieClick(d.data.route);
+            // d.data.route.forEach(function (r) {
+            //     filterRouteByTypePieClick(r);
+            // })
         }
     };
 
@@ -1487,9 +1498,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .classed("this-route-type", n => isInRoute(r, n.route));
         node.selectAll("circle").filter(".this-route-type")
             .classed("not-this-route", !(n => isInRoute(r, n.route)));
-        node.selectAll("text").filter(".not-this-route")
+        node.selectAll(".node-text").filter(".not-this-route")
             .classed("this-route-type", n => isInRoute(r, n.route));
-        node.selectAll("text").filter(".this-route-type")
+        node.selectAll(".node-text").filter(".this-route-type")
             .classed("not-this-route", !(n => isInRoute(r, n.route)));
         
         link.selectAll(".link-online-trans").filter(".not-this-route")
@@ -1502,12 +1513,12 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         link.selectAll(".link-offline-trans").filter(".this-route-offline")
             .classed("not-this-route", !(l => isInRoute(r, l.offline_route)));
     }
-
+    
+    function intersection(a, b) {
+        return a.filter(v => b.includes(v))
+    }
     function renderInterSectionPie(d){
         // find the intersection of clicked segement & all the other segments
-        function intersection(a, b) {
-            return a.filter(v => b.includes(v))
-        }
         function pieDataInter(p, d){ //p as pie data, d as the clicked data
             let onlineRoute = intersection(p.online_route, d.data.route),
                 offlineRoute = intersection(p.offline_route, d.data.route)
@@ -1527,18 +1538,17 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         }
         let spConverter = d3.pie().value(d => d.value)
             .sort(null).sortValues(null);
-        let pieColorScale = d3.scaleOrdinal().domain([0,1])
-            .range(["#F7CE3E", "#1A2930"]);
-        let arcSample = d3.arc().outerRadius(20+1).innerRadius(15);
+        let arcFirst = d3.arc().outerRadius(20+1).innerRadius(15);
         let arcCenter = d3.arc().outerRadius(30+1).innerRadius(15);
+        let arcPlus = d3.arc().outerRadius(10+1).innerRadius(0);
         //redraw the pies
-        d3.selectAll(".innode-type-pie").remove();
+        node.selectAll(".innode-type-pie").remove();
         node.selectAll(".node-group").selectAll(".innode-type-pie")
             .data(p => spConverter(pieDataInter(p, d)))
             .enter().append("path")
             .attr("class", "innode-graph innode-type-pie")
             .attr("fill", (d, i) => pieColorScale(i))
-            .attr("d", arcSample)
+            .attr("d", arcPlus)
             .on("mouseover", InNodePieGraphMouseOver)
             .on("mousemove", InNodePieGraphMouseMove)
             .on("mouseleave", InNodePieGraphMouseLeave)
@@ -1546,18 +1556,21 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         
         node.selectAll("#seq0").selectAll(".innode-type-pie")
             .attr("d", arcCenter);
-    }
 
+        node.selectAll("#seq1, #seq-1").selectAll(".innode-type-pie")
+            .attr("d", arcFirst);
+    }
     function InNodePieGraphMouseOver(d){
         if (!innodePieClickedFlag){
             resetAllGraphStyle();
             node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true)
-            link.selectAll("line").classed("not-this-route", true)
-            d3.selectAll(".innode-type-pie").style("opacity", .5);
+            link.selectAll("line").classed("not-this-route", true);
+            node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
+            node.selectAll(".innode-type-pie").style("opacity", .3);
             d3.select(this).style("opacity", 1);
-            d.data.route.forEach(function (r) {
-                filterRouteByNodeHover(r);
-            });
+            // d.data.route.forEach(function (r) {
+                filterRouteByNodeHover(d.data.route);
+            // });
         }
         inNodeTooltip.style("opacity", 1);
     }
@@ -1588,14 +1601,13 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             resetAllGraphStyle();
         }
     }
-
     function resetTypePie(){
-        d3.selectAll(".innode-type-pie").remove()
+        node.selectAll(".innode-type-pie").remove()
         innodePieClickedFlag = false;
-        let pieColorScale = d3.scaleOrdinal().domain([0,1])
-            .range(["#F7CE3E", "#1A2930"]);
-        let arcSample = d3.arc().outerRadius(20+1).innerRadius(15);
+
+        let arcFirst = d3.arc().outerRadius(20+1).innerRadius(15);
         let arcCenter = d3.arc().outerRadius(30+1).innerRadius(15);
+        let arcPlus = d3.arc().outerRadius(10+1).innerRadius(0);
         // Convert raw data to pie data format
         function pieData(d){
             let data = [{
@@ -1620,7 +1632,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .enter().append("path")
             .attr("class", "innode-graph innode-type-pie hide")
             .attr("fill", (d, i) => pieColorScale(i))
-            .attr("d", arcSample)
+            .attr("d", arcPlus)
             .on("mouseover", InNodePieGraphMouseOver)
             .on("mousemove", InNodePieGraphMouseMove)
             .on("mouseleave", InNodePieGraphMouseLeave)
@@ -1628,8 +1640,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
         node.selectAll("#seq0").selectAll(".innode-type-pie")
             .attr("d", arcCenter);
-    }
+        
+        node.selectAll("#seq1, #seq-1").selectAll(".innode-type-pie")
+            .attr("d", arcFirst);
 
+    }
     function resetAllGraphStyle(){
         //reset style
         d3.selectAll(".innode-type-pie").style("opacity", null)
@@ -1659,23 +1674,24 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         node.selectAll("circle").filter(".this-route")
             .classed("not-this-route", !(n => isInRoute(r, n.route)));
         //node text style
-        node.selectAll("text").filter(".not-this-route")
+        node.selectAll(".node-text").filter(".not-this-route")
             .classed("this-route", n => isInRoute(r, n.route))
-        node.selectAll("text").filter(".this-route")
+        node.selectAll(".node-text").filter(".this-route")
             .classed("not-this-route", !(n => isInRoute(r, n.route)))
         // link style
         link.selectAll("line").filter(".not-this-route")
             .classed("this-route", l => isInRoute(r, l.route))
         link.selectAll("line").filter(".this-route")
             .classed("not-this-route", !(l => isInRoute(r, l.route)))
-        link.selectAll("text").filter(".not-this-route")
-            .classed("this-route", (l => isInRoute(r, l.route)))
-        link.selectAll("text").filter(".this-route")
-            .classed("not-this-route", !(l => isInRoute(r, l.route)))
+        // link.selectAll("text").filter(".not-this-route")
+        //     .classed("this-route", (l => isInRoute(r, l.route)))
+        // link.selectAll("text").filter(".this-route")
+        //     .classed("not-this-route", !(l => isInRoute(r, l.route)))
     }
     
     function isInRoute(single, group) {
-        if (group.indexOf(single) !== -1) {
+        // if two groups have intersection, then we say it's "in route"
+        if (intersection(group, single).length !== 0) {
             return true
         } else {
             // console.log(single, group, false);
@@ -1828,6 +1844,54 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             svg.selectAll("g").remove();
             drawsamplepie(svg, svgWidth, svgHeight);
         }
+    }
+    //set tools
+    d3.select("#pieView").on("click", togglePieView);
+    function togglePieView(){
+        pieViewFlag = !pieViewFlag;
+        d3.selectAll(".node-type-legend").classed("hide", !d3.selectAll(".node-type-legend").classed("hide"));
+        d3.selectAll(".link-trans-type").classed("hide", !d3.selectAll(".link-trans-type").classed("hide"));
+        d3.selectAll(".innode-type-pie").classed("hide", !d3.selectAll(".innode-type-pie").classed("hide"));
+        // mdui.mutation();
+        if (pieViewFlag) { // if the status is show
+            mdui.snackbar({
+                message: 'Pie view of transaction types enbabled'
+            });
+        } else {
+            if (innodePieClickedFlag) {
+                resetAllGraphStyle();
+                resetTypePie();
+            }
+            mdui.snackbar({
+                message: 'Pie view of transaction types disabled'
+            });
+        }
+    }
+    d3.select("#timeIntervalView").on("click", toggleTimeIntervalView);
+    function toggleTimeIntervalView(){
+        timeIntervalFlag = !timeIntervalFlag;
+        d3.selectAll(".horizontal-line").classed("hide", !d3.selectAll(".horizontal-line").classed("hide"));
+        d3.selectAll(".vertical-line").classed("hide", !d3.selectAll(".vertical-line").classed("hide"));
+        d3.selectAll(".horizontal-line-text").classed("hide", !d3.selectAll(".horizontal-line-text").classed("hide"));
+        d3.selectAll(".horizontal-line-text-unit").classed("hide", !d3.selectAll(".horizontal-line-text-unit").classed("hide"));
+        d3.selectAll(".bottom-axis").classed("hide", !d3.selectAll(".bottom-axis").classed("hide"));
+        // mdui.mutation();
+        if (timeIntervalFlag) { // if the status is show
+            mdui.snackbar({
+                message: 'Time interval filter enbabled'
+            });
+        } else {
+            mdui.snackbar({
+                message: 'Time interval filter disabled'
+            });
+        }
+    }
+    function showAllTimeInterval(){
+        d3.selectAll(".horizontal-line").classed("hide", false);
+        d3.selectAll(".vertical-line").classed("hide", false);
+        d3.selectAll(".horizontal-line-text").classed("hide", false);
+        d3.selectAll(".horizontal-line-text-unit").classed("hide", false);
+        d3.selectAll(".bottom-axis").classed("hide", false);
     }
     //all done, set graph exist indicator = true
     graphExist = true;
