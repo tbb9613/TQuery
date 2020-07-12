@@ -47,7 +47,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
         #filter the data by time interval
         filtered_routes = shaped_routes[(shaped_routes["time_interval_to_next"][source_step] < time_interval_limit) & (shaped_routes["time_interval_from_last"][target_step] < time_interval_limit)]
         links = filtered_routes["mcc"][[source_step,target_step]].rename(columns = {source_step:"source", target_step:"target"})
-    elif single_sequence < 0:
+    else:
         source_step = raw_step+1
         target_step = raw_step
         filtered_routes = shaped_routes[(shaped_routes["time_interval_to_next"][target_step] < time_interval_limit) & (shaped_routes["time_interval_from_last"][source_step] < time_interval_limit)]
@@ -67,7 +67,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     # get nodes grouped
     nodes_g = links[columns_transaction_value].groupby(["target"]).count().rename(columns = {"transaction_value":"count"}).reset_index()
     # capture nodes' route
-    nodes_g["route"] = links[columns_transaction_value].groupby(["target"]).groups.values()
+    nodes_g["route"] = list(links[columns_transaction_value].groupby(["target"]).groups.values())
     # filter: node count >0
     nodes_g = nodes_g[nodes_g["count"] > 0].reset_index(drop=True)
     # group to deal with transaction type

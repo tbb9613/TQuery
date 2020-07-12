@@ -208,9 +208,13 @@ button {
   opacity: .9;
 }
 
-.this-route-online, .link-online-trans {
-  stroke: #F7CE3E;
+.link-online-trans {
+  stroke: #FFCE24;
   opacity: .9;
+}
+
+.this-route-online {
+  stroke: #FFBD00;
 }
 
 circle.this-route-online {
@@ -220,6 +224,9 @@ circle.this-route-online {
 
 .this-route-offline, .link-offline-trans {
   stroke: #1A2930;
+}
+.this-route-type {
+  opacity: 1;
 }
 
 circle.this-route-offline {
@@ -800,7 +807,11 @@ line.this-route {
 
 circle.not-this-route{
   /* fill: rgba(162, 178, 194, 0.75); */
-  opacity: 0.6;
+  opacity: 0.5;
+}
+
+text.not-this-route {
+  opacity: 0.1;
 }
 
 line.not-this-route{
