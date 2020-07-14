@@ -3,8 +3,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     packLinkData = copy(packLinks), packNodeData = copy(packNodes);
     // graphLeftData = 
 
-    let graphRightPlusExist = false;
-    let graphLeftPlusExist = false;
     let innodePieClickedFlag = false;
 
     let pieColorScale = d3.scaleOrdinal().domain([0,1])
@@ -161,19 +159,19 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             let typeLegend = workSpace.append("g")
                 .attr("class", "node-type-legend hide")
             typeLegend.append("rect")
-                .attr("x", 60).attr("y", "85%")
+                .attr("x", 60).attr("y", "80%")
                 .attr("height", "10px").attr("width", "20px")
                 .attr("fill", pieColorScale(0));
             typeLegend.append("text")
-                .attr("x", 85).attr("y", "85%")
+                .attr("x", 85).attr("y", "80%")
                 .attr("class", "legend-text")
-                .text("Online Transaction")
+                .text("Online Transaction");
             typeLegend.append("rect")
-                .attr("x", 60).attr("y", "88%")
+                .attr("x", 60).attr("y", "83%")
                 .attr("height", "10px").attr("width", "20px")
                 .attr("fill", pieColorScale(1));
             typeLegend.append("text")
-                .attr("x", 85).attr("y", "88%")
+                .attr("x", 85).attr("y", "83%")
                 .attr("class", "legend-text")
                 .text("Offline Transaction");
         };
@@ -469,6 +467,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
     var txtOffset = -15
     var linkRight, linkLeft ,textRight, textLeft, nodeRight, nodeLeft, leftFirstList, rightFirstList
+    var leftLastList = new Array();
+    var rightLastList = new Array();
     var leftMaxCnt, rightMaxCnt, totalMaxCnt
     var inNodeHistScaler = d3.scaleLinear()
         .range([-0.5 * nodeRadius, 0.5*nodeRadius])
@@ -671,25 +671,29 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 let atvmean = d3.mean(response.data.link, d => d.atv);
                 let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
                 // console.log(digitFormat(atvmean));
-                nodeGroup.append("rect")
+                let ATVBarGroup = nodeGroup.append("g")
+                    // .attr("class", "innode-graph innnode-atv-bar")
+                    
+                ATVBarGroup.append("rect")
                     .attr("width", 0.8 * nodeRadius)
                     .attr("x", -0.4 * nodeRadius)
                     .attr("y", d => (d.atv-atvmean > 0) ? -inNodeHistScaler((d.atv-atvmean)/atvmean) : 0) // if result is postive then the bar should be put over the baseline
                     .attr("height", d => inNodeHistScaler(Math.abs((d.atv-atvmean)/atvmean)))
-                    .attr("class", "innode-graph innnode-atv-bar")
+                    .attr("class", "innode-graph innode-atv-bar")
                     .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#9CC5A5");
                 //baseline
-                nodeGroup.append("line")
+                ATVBarGroup.append("line")
                     .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
-                    .attr("class", "innode-graph innnode-atv-bar");
+                    // .datum(d => d.atv)
+                    .attr("class", "innode-graph innode-atv-bar");
                 //number text with "+" "-"
-                nodeGroup.append("text")
+                ATVBarGroup.append("text")
                     .text(d => digitFormat(d.atv-atvmean))
-                    .attr("class", "innode-graph innnode-atv-bar")
+                    .attr("class", "innode-graph innode-atv-bar")
                     .attr("y", d => (d.atv-atvmean > 0) ? 11 : -3)
                     .attr("fill", d => (d.atv-atvmean > 0) ? "#C59CBD" : "#98AC9D");
                 //add hover events
-                node.selectAll(".innnode-atv-bar")
+                node.selectAll(".innode-atv-bar")
                     .on("mouseover", InNodeGraphMouseOver)
                     .on("mousemove", InNodeGraphMouseMove)
                     .on("mouseleave", InNodeGraphMouseLeave);
@@ -773,15 +777,21 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 linkLeftplus[-seq] = linkGroup;
                 nodeLeftplus[-seq] = nodeGroup;
                 textLeft = linkTextGroup;
-                leftFirstList = response.data.route_list;
-                leftMaxCnt = d3.sum(response.data.node, d => d.count)
+                leftLastList[-seq] = response.data.route_list;
+                leftMaxCnt = d3.sum(response.data.node, d => d.count);
+                if (graphLeftPlusExist) {
+                    drawLeftplus(-2);
+                }
 
             } else if (seq === 1){
                 linkRightplus[seq] = linkGroup;
                 nodeRightplus[seq] = nodeGroup;
                 textRight = linkTextGroup;
-                rightFirstList = response.data.route_list;
-                rightMaxCnt = d3.sum(response.data.node, d => d.count)
+                rightLastList[seq] = response.data.route_list;
+                rightMaxCnt = d3.sum(response.data.node, d => d.count);
+                if (graphRightPlusExist) {
+                    drawRightplus(2);
+                }
             }
 
             totalMaxCnt = Math.max(leftMaxCnt, rightMaxCnt);
@@ -933,10 +943,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 parseFloat(linkGroup.selectAll(".link-total").filter(l => l.target == t.target && l.source == t.source).attr("y1")) +
                 parseFloat(linkGroup.selectAll(".link-total").filter(l => l.target == t.target && l.source == t.source).attr("y2"))))
     }
-
+    let thisClickedNode
     //Click node event
-
     function clicked(d) {
+        thisClickedNode = d;
         let thisNode = d3.select(this), thisNodeParent = d3.select(this.parentNode);
         let thisText = d3.selectAll(`#${thisNodeParent.attr("id")}`)
             .selectAll(".node-text").filter(t => d.target === t.target);
@@ -966,8 +976,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     let nodeRightplus = new Array();
     let linkLeftplus = new Array();
     let nodeLeftplus = new Array();
-    let leftLastList = new Array();
-    let rightLastList = new Array();
+
     //Add steps control
     graphBg.append("g")
         .on("click", afterplus)
@@ -1006,7 +1015,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("x", "55%")
     }
 
-    let rseq = 2, lseq = 2, maxseq = 4;
+
 
     function afterplus() {
         if (rseq <= maxseq) {
@@ -1052,7 +1061,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .domain([-0.3, count-0.7]);
         return scaler(thisID);
     }
-
     function drawPlusVerticalLine(seq, lastseq, gap){
         let verLine = verticalLine.append("g")  
             .attr("id", `seq${seq}`)
@@ -1065,7 +1073,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("y2", verLiney.y2)
             .attr("class", "vertical-line hide");
     }
-
     function drawPlusHorizontalLine(seq, lastseq, gap){
         let horLine = horizontalLine.append("g")
             .attr("id", `seq${seq}`)
@@ -1083,30 +1090,19 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         }
         appendHorLine(horLine, horLineX1pos, horLineX2pos);
     }
-
     function drawRightplus(seq) {
         graphRightPlusExist = true;
         //add vertical line
         var queryData
         if (type === "single"){
-            if (seq === 2){
-                queryData = {
-                    name: queryCenter,
-                    sequence: seq,
-                    list: rightFirstList,
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
-            } else {
-                queryData = {
-                    name: queryCenter,
-                    sequence: seq,
-                    list: rightLastList[seq-1],
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
+            console.log(seq, rightLastList[seq-1])
+            queryData = {
+                name: queryCenter,
+                sequence: seq,
+                list: rightLastList[seq-1],
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
             }
             axios.post('http://127.0.0.1:5000/query_single_new', queryData)
             .catch(function (error) {
@@ -1117,28 +1113,24 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 if (timeIntervalFlag) {
                     showAllTimeInterval();
                 }
+                console.log("nowseq",seq, rseq)
+                if (seq < rseq-1){
+                    console.log(seq, rseq)
+                    drawRightplus(seq+1);
+                }
             });
         } else {
-            if (seq === 2){
-                queryData = {
-                    links: packLinks,
-                    nodes: packNodes,
-                    list: rightFirstList,
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
-            } else {
-                queryData = {
-                    links: packLinks,
-                    nodes: packNodes,
-                    sequence: seq,
-                    list: rightLastList[seq-1],
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
+
+            queryData = {
+                links: packLinks,
+                nodes: packNodes,
+                sequence: seq,
+                list: rightLastList[seq-1],
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
             }
+        
             axios.post('http://127.0.0.1:5000/query_packed', queryData)
             .catch(function (error) {
                 console.log(error);
@@ -1147,6 +1139,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 renderPlusGraph(response, seq);
                 if (timeIntervalFlag) {
                     showAllTimeInterval();
+                }
+                if (seq < rseq-1){
+                    drawRightplus(seq+1);
                 }
             });
 
@@ -1158,25 +1153,15 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         var queryData
         console.log(leftFirstList, rightFirstList);
         if (type === "single") {
-            if (seq === -2){
-                queryData = {
-                    name: queryCenter,
-                    sequence: seq,
-                    list: leftFirstList,
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
-            } else {
-                queryData = {
-                    name: queryCenter,
-                    sequence: seq,
-                    list: leftLastList[-seq-1],
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
+            queryData = {
+                name: queryCenter,
+                sequence: seq,
+                list: leftLastList[-seq-1],
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 6
             }
+            
             axios.post('http://127.0.0.1:5000/query_single_new', queryData)
             .catch(function (error) {
                 console.log(error);
@@ -1186,19 +1171,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 if (timeIntervalFlag) {
                     showAllTimeInterval()
                 }
+                if (-seq < lseq-1){
+                    drawLeftplus(seq-1)
+                }
             })  
         } else {
-            if (seq === -2){
-                queryData = {
-                    links: packLinks,
-                    nodes: packNodes,
-                    sequence: seq,
-                    list: leftFirstList,
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 6
-                }
-            } else {
                 queryData = {
                     links: packLinks,
                     nodes: packNodes,
@@ -1208,7 +1185,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     timeEnd: timeEnd,
                     displaynum: 6
                 }
-            }    
+            
             axios.post('http://127.0.0.1:5000/query_packed', queryData)
             .catch(function (error) {
                 console.log(error);
@@ -1218,11 +1195,14 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 if (timeIntervalFlag) {
                     showAllTimeInterval()
                 }
+                if (seq < lseq-1){
+                    drawLeftplus(seq+1)
+                }
             })          
         }
     }
     function renderPlusGraph(response, seq){
-        console.log(seq, response.node)
+        console.log(seq, response.data.node)
         if (seq>0) {
             rightLastList[seq] = response.data.route_list;
         } else {
@@ -1238,13 +1218,15 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             prevLinkGroup = linkLeftplus[-seq - 1].selectAll(".link-total");
         };
         let thisLinkGroup = link.append("g")
-            .attr("id", `seq${seq}`);
+            .attr("id", `seq${seq}`)
+            .attr("class", "link-group");
         // add total link
         thisLinkGroup.append("g")
             .selectAll("line")
             .data(response.data.link)
             .enter().append("line")
             .attr("class", "link link-total")
+            .attr("id", `seq${seq}`)
             .attr("stroke-width", 0)
             .attr("x1", d => prevLinkGroup.filter(n => n.target == d.source).attr("x2"))
             .attr("y1", d => prevLinkGroup.filter(n => n.target == d.source).attr("y2"))
@@ -1320,14 +1302,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .text(d => d.count)
             .classed("text-hide", true)
         //add node text
-        node.append("g")
-            .attr("id", `seq${seq}`)
-            .selectAll("text")
-            .data(response.data.node)
-            .enter().append("text")
+        thisNodeGroup
+            .append("text")
             .attr("class", "node-text")
-            .attr("x", d => totalLink.filter(l => l.target == d.target).attr("x2"))
-            .attr("y", d => parseFloat(totalLink.filter(l => l.target == d.target).attr("y2")) + nodeTxtOffset * 0.6)
+            // .attr("x", d => totalLink.filter(l => l.target == d.target).attr("x2"))
+            .attr("y", nodeTxtOffset * 0.6)
             .text(d => multiWordsFormat(d.target))
             .on("mouseover", d => showFullName(d.target))
             .on("mousemove", moveFullName)
@@ -1514,9 +1493,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .classed("not-this-route", !(l => isInRoute(r, l.offline_route)));
     }
     
-    function intersection(a, b) {
-        return a.filter(v => b.includes(v))
-    }
+
     function renderInterSectionPie(d){
         // find the intersection of clicked segement & all the other segments
         function pieDataInter(p, d){ //p as pie data, d as the clicked data
@@ -1764,87 +1741,117 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     }
     //draw sample pie chart
     function drawsamplepie(svg, svgWidth, svgHeight) {
-        let fakeData = [{
-                "label": "one",
-                "value": 20
-            },
-            {
-                "label": "two",
-                "value": 50
-            },
-            {
-                "label": "three",
-                "value": 30
-            }
-        ];
+        let clickedNode = d3.selectAll("circle").filter(".clicked").data()[0]
+        let data = {
+            timeStart: timeStart,
+            timeEnd: timeEnd,
+            name: queryNode,
+            route: clickedNode.route,
+            sequence: clickedNode.sequence
+        }
+        axios.post('http://127.0.0.1:5000/query_property', data)
+        .catch(function (error) {
+            console.log(error);
+        })
+        .then(function (response) { 
+            // console.log(response.data);
+            renderPie(response.data);
+        })  
+        function renderPie(data){
 
-        let samplePieColorScale = d3.schemeTableau10;
+            let samplePieColorScale = d3.schemeTableau10;
+            let samplePie = svg.append("g")
+                .attr("class", "samplePie")
+            let arcSample = d3.arc()
+                .outerRadius(75)
+                .innerRadius(0)
 
-        let samplePie = svg.append("g")
-            .attr("class", "samplePie")
-
-        let arcSample = d3.arc()
-            .outerRadius(75)
-            .innerRadius(0)
-
-        let spConverter = d3.pie().value(d => d.value)
-
-        samplePie.selectAll("path")
-            .data(spConverter(fakeData))
-            .enter()
-            .append("path")
-            .attr('transform', `translate(${svgWidth/2}, 
-                ${svgHeight/2})`)
-            .attr("fill", (d, i) => samplePieColorScale[i])
-            .attr("d", arcSample)
-            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
-
-        function dragstarted(d) {
-            let boundingPos = this.getBoundingClientRect();
-            //Draw a same path on drag layer
-            globalDragLayer
-                .attr("height", "100%")
-                .attr("width", "100%")
+            let spConverter = d3.pie().value(d => d.transaction_value)
+            
+            samplePie.selectAll("path")
+                .data(spConverter(data))
+                .enter()
                 .append("path")
-                .attr("fill", d3.select(this).attr("fill"))
-                .attr("d", d3.select(this).attr("d"))
-                .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
-                .attr("stroke", "white")
+                .attr('transform', `translate(${svgWidth/2}, 
+                    ${svgHeight/2})`)
+                .attr("fill", (d, i) => samplePieColorScale[i])
+                .attr("d", arcSample)
+                .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
 
-            d3.select(this)
-                .attr("opacity", 0)
-        }
+            function dragstarted(d) {
+                console.log(d.data.merchant)
+                let boundingPos = this.getBoundingClientRect();
+                //Draw a same path on drag layer
+                globalDragLayer
+                    .attr("height", "100%")
+                    .attr("width", "100%")
+                    .append("path")
+                    .attr("fill", d3.select(this).attr("fill"))
+                    .attr("d", d3.select(this).attr("d"))
+                    .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
+                    .attr("stroke", "white")
 
-        function dragged(d) {
-            d.x = d3.event.x, d.y = d3.event.y;
-            d3.select(this)
-                .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
-            dpx = d3.event.pageX;
-            dpy = d3.event.pageY;
-            globalDragLayer.selectAll("path")
-                .attr("transform", "translate(" + event.pageX + "," + event.pageY + ") scale(1.2)")
-
-        }
-
-        function dragended(d) {
-            let endXPos = event.pageX,
-                endYPos = event.pageY;
-            if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
-                endXPos > conditionBoxPos.x &&
-                endYPos < conditionBoxPos.y + conditionBoxPos.height &&
-                endYPos > conditionBoxPos.y) {
-                conditionCount += 1;
-                conditionBox.select("text").text(`Conditions(${conditionCount})`)
-                    .attr("opacity", 1).attr("fill", "#CACACA");
-                conditionBox.select("rect").attr("opacity", .8)
-                    .attr("fill", "#40496C");
+                d3.select(this)
+                    .attr("opacity", 0)
             }
-            globalDragLayer.selectAll("path").remove();
-            globalDragLayer.attr("width", 0).attr("height", 0);
-            svg.selectAll("g").remove();
-            drawsamplepie(svg, svgWidth, svgHeight);
+
+            function dragged(d) {
+                d.x = d3.event.x, d.y = d3.event.y;
+                d3.select(this)
+                    .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
+                dpx = d3.event.pageX;
+                dpy = d3.event.pageY;
+                globalDragLayer.selectAll("path")
+                    .attr("transform", "translate(" + event.pageX + "," + event.pageY + ") scale(1.2)")
+
+            }
+
+            function dragended(d) {
+                let endXPos = event.pageX,
+                    endYPos = event.pageY;
+                if (endXPos < conditionBoxPos.x + conditionBoxPos.width &&
+                    endXPos > conditionBoxPos.x &&
+                    endYPos < conditionBoxPos.y + conditionBoxPos.height &&
+                    endYPos > conditionBoxPos.y) {
+                    conditionCount += 1;
+                    conditionBox.select("text").text(`Conditions(${conditionCount})`)
+                        .attr("opacity", 1).attr("fill", "#CACACA");
+                    conditionBox.select("rect").attr("opacity", .8)
+                        .attr("fill", "#40496C");
+
+                    //here it only works for *single* condition in one node
+                    let thisSeq = clickedNode.sequence;
+                    let complementRoute
+                    if (thisSeq > 0){
+                        complementRoute = complementSet(d.data.route, rightLastList[thisSeq])
+                        rightLastList[thisSeq] = complementRoute
+                        d3.selectAll(".node-group").filter(d => d.sequence > thisSeq).remove();
+                        // This would create redaudant "g". Change if need.
+                        d3.selectAll(".link").filter(d => d.sequence > thisSeq).remove()
+                        drawRightplus(thisSeq+1)
+                    } else {
+                        complementRoute = complementSet(d.data.route, leftLastList[-thisSeq])
+                        leftLastList[-thisSeq] = complementRoute;
+                        d3.selectAll(".node-group").filter(d => d.sequence < thisSeq).remove();
+                        // This would create redaudant "g". Change if need.
+                        d3.selectAll(".link").filter(d => d.sequence < thisSeq).remove()
+                        drawLeftplus(thisSeq-1)
+                    }
+                    console.log(complementSet(d.data.route,clickedNode.route));
+                }
+                globalDragLayer.selectAll("path").remove();
+                globalDragLayer.attr("width", 0).attr("height", 0);
+                svg.selectAll("g").remove();
+                drawsamplepie(svg, svgWidth, svgHeight);
+
+                //redo graphs after this node
+                
+
+            }
         }
+        
     }
+
     //set tools
     d3.select("#pieView").on("click", togglePieView);
     function togglePieView(){
@@ -1892,6 +1899,55 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         d3.selectAll(".horizontal-line-text").classed("hide", false);
         d3.selectAll(".horizontal-line-text-unit").classed("hide", false);
         d3.selectAll(".bottom-axis").classed("hide", false);
+    }
+    let selectModeFlag = false;
+    d3.select("#selectMode").on("click", toggleSelectMode)
+    function toggleSelectMode(){
+        selectModeFlag = !selectModeFlag;
+        let firstClickFlag, thisRouteList, lastRouteList
+        if (selectModeFlag){
+            firstClickFlag = true;
+            d3.selectAll("circle")
+                .on("click", selectModeClicked)
+                .on("mouseover", null)
+                .on("mousemove", null)
+                .on("mouseleave", null)
+        } else {
+            resetAllGraphStyle();
+            d3.selectAll("circle").on("click", clicked)
+                .on("mouseover", NodeMouseOver)
+                .on("mousemove", NodeMouseMove)
+                .on("mouseleave", NodeMouseLeave);
+        }
+        
+        function selectModeClicked(d) {
+            if (firstClickFlag) {
+                
+                thisRouteList = d.route;
+                firstClickFlag = false;
+            } else {
+                thisRouteList = intersection(d.route, lastRouteList)
+                
+            }
+            let thisNode = d3.select(this), thisNodeParent = d3.select(this.parentNode);
+            node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
+            node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
+            link.selectAll("line").classed("not-this-route", true);
+            node.selectAll(".innode-type-pie").style("opacity", .3);
+            lastRouteList = thisRouteList;
+            filterRouteByNodeHover(thisRouteList);
+            // select all the "total" link in this route
+            let allSelectedLink = d3.selectAll(".link-total").filter(".this-route").nodes()
+            // using ID, judge whether it is a single route without branches
+            let idList = new Array(); //get all the link id (seq *)
+            allSelectedLink.forEach(d => idList.push(d.getAttribute("id")));
+            // get the unique list array from this list and compare the length
+            if (idList.length === uniqueArray(idList).length){
+                console.log("this is a route")
+            } else {
+                console.log("this is not a route")
+            }
+        }
     }
     //all done, set graph exist indicator = true
     graphExist = true;

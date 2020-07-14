@@ -822,7 +822,7 @@ text.this-route {
 
 circle.not-this-route{
   /* fill: rgba(162, 178, 194, 0.75); */
-  opacity: 0.5;
+  opacity: 0.3;
 }
 
 text.not-this-route {
@@ -830,7 +830,7 @@ text.not-this-route {
 }
 
 line.not-this-route{
-  opacity: .1 !important;
+  opacity: .05 !important;
 }
 
 text.this-route{

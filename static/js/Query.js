@@ -3,6 +3,7 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
     d3.select("#staContainer").classed("hide", true);
     // workContainer.selectAll(".tooltip").remove();
     workSpace.selectAll("#graph-first").remove();
+    workSpace.selectAll("#graph-second").remove();
     //if there is no graph then append background
     if (!graphExist) {
         workSpace.append("rect")
@@ -14,11 +15,13 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
     }
     
     // postQuery(d, 4);
-    console.log(d)
+    console.log(d);
+    //reset seq and left/right plus exist
+
+    resetPlusSeq();
     drawGraph("graph-first", type, queryNode, timeStart, timeEnd)
     topSpace.selectAll(".topnodes").remove();
-    drawTopNodes(nodeList)
-    
+    drawTopNodes(nodeList);
     d3.select("#queryTitleContainer").classed("hide", false);
     if (type === "single") {
         titletext.html("Trajectories of people who go to <b>" +queryNode + "(" + MCCDict.filter(m => m.edited_description === queryNode)[0].mcc + ")"+"</b>");
@@ -68,4 +71,8 @@ function packedQuery(d) {
     d3.select("#multiNodeText").classed("hide", true);
 }
 
-
+function resetPlusSeq(){
+    rseq = 2, lseq = 2, maxseq = 4;
+    graphRightPlusExist = false;
+    graphLeftPlusExist = false;
+}

@@ -47,6 +47,10 @@ var timeIntervalFlag = false;
 
 var MCCDict
 // console.log(MCCDict)
+//the right & left plus
+var rseq = 2, lseq = 2, maxseq = 4;
+var graphRightPlusExist = false;
+var graphLeftPlusExist = false;
 
 window.onresize = function () {
     getSize()
@@ -231,7 +235,6 @@ function getTimeData(timeScale) {
             scale: timeScale
         })
         .then(function (response) {
-
             timeTrans = response.data;
             let time2 = response.data;
             // console.log(response.data);
@@ -567,10 +570,13 @@ function drawTimeSelector(data, timeScale, type) {
             timeSelection = d3.event.selection;
             timeSec = (x.invert(timeSelection[1]) - x.invert(timeSelection[0]))/ 1000
             if (graphExist === true && secondGraphExist === false) {
-                // workSpace.selectAll("#graph-first").remove();
-                workContainer.selectAll(".tooltip").remove();
-                graphLeftPlusExist = false;
-                graphRightPlusExist = false;
+                workSpace.selectAll("#graph-first").remove();
+                let timeStart = "2020-04-30 11:00:00", 
+                    timeEnd = "2020-04-30 19:00:00";
+                drawGraph("graph-first", "single", queryNode, timeStart, timeEnd)
+                // workContainer.selectAll(".tooltip").remove();
+                // graphLeftPlusExist = false;
+                // graphRightPlusExist = false;
 
                 const [x0, x1] = timeSelection;
                 console.log(x0, x1);
@@ -797,8 +803,8 @@ function creatQueryFromList(a){
         createQuery(d, "single", nodeList, timeStart, timeEnd);
         } else {
             createQuery(d, "single", nodeList, timeStart, timeEnd);
-            graphLeftPlusExist = false;
-            graphRightPlusExist = false;
+            // graphLeftPlusExist = false;
+            // graphRightPlusExist = false;
         }
     }, 250
     )
@@ -990,8 +996,8 @@ function drawTopNodes(list) {
                     createQuery(d, "single", nodeList, timeStart, timeEnd);
                 } else {
                     createQuery(d, "single", nodeList, timeStart, timeEnd);
-                    graphLeftPlusExist = false;
-                    graphRightPlusExist = false;
+                    // graphLeftPlusExist = false;
+                    // graphRightPlusExist = false;
                 }
             }, 500)
 
@@ -1727,4 +1733,33 @@ function getTranslation(transform) {
     var matrix = g.transform.baseVal.consolidate().matrix;
     // As per definition values e and f are the ones for the translation.
     return [matrix.e, matrix.f];
+}
+function uniqueArray(list) {
+    return Array.from(new Set(list))
+}
+function intersection(a, b) {
+    return a.filter(v => b.includes(v))
+}
+function isIntersect (a, b){
+    if (intersection(a, b).length !== 0) {
+        return true
+    } else {
+        return false
+    }
+}
+function isSubSet(a, b) { // whether b is a's subset
+    let interSection = intersection(b, a);
+    // if intersection is b
+    console.log()
+    if (interSection.length === b.length && interSection.length <= a.length) {
+        return true
+    } else {
+        return false
+    }
+}
+function complementSet(a, b){ //a is subset, b is total set
+    return b.filter(v => !a.includes(v))
+}
+function union(a, b) { // a + b
+    return a.concat(b.filter(v => !a.includes(v)))
 }

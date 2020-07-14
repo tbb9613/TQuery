@@ -22,6 +22,8 @@ record_with_tinterval["time"] =  pd.to_datetime(record_with_tinterval["time"])
 record_with_tinterval["time_interval_to_next"] =  pd.to_timedelta(record_with_tinterval["time_interval_to_next"])
 record_with_tinterval["time_interval_from_last"] =  pd.to_timedelta(record_with_tinterval["time_interval_from_last"])
 
+
+
 def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
     time_range_filtered = record_with_tinterval[(record_with_tinterval["time"] > startTime) & (record_with_tinterval["time"] < endTime)]
     time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
@@ -90,6 +92,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     nodes_result = nodes_g.nlargest(keep_rank_num, "count").reset_index(drop=True)
     # convert array to list - for jsonify
     nodes_result["route"] = nodes_result["route"].apply(lambda x: x.tolist())
+    nodes_result["sequence"] = single_sequence
     for row in nodes_result.loc[nodes_result["offline_route"].isna(), "offline_route"].index:
         nodes_result.at[row, "offline_route"] = np.array([])
     for row in nodes_result.loc[nodes_result["online_route"].isna(), "online_route"].index:
@@ -109,7 +112,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
         # get links grouped into source + target + count format df
         links_g = links.groupby(["source","target"]).count().rename(columns = {"merchant":"count"}).reset_index().dropna()
         # capture links' routes by people's identifier/name
-        links_g["route"] = links.groupby(["source","target"]).groups.values()
+        links_g["route"] = list(links.groupby(["source","target"]).groups.values())
         # add atv column
         links_g["atv"] = links[["source", "target", "transaction_value"]].groupby(["source","target"]).mean().dropna().reset_index()["transaction_value"]
         links_transtype_groupby = links[columns_transaction_type].groupby(by = ["source", "target", "transaction_type"])
@@ -126,7 +129,7 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
         links_g["online_route"] = links_transtype_routes["online"]
         # generate results
         links_result = links_g.reset_index(drop = True).drop(columns = ["transaction_value"])
-        
+        links_result["sequence"] = single_sequence
         # convert array to list
         links_result["route"] = links_result["route"].apply(lambda x: x.tolist())
         #fill null list
@@ -367,6 +370,37 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
     nodes_result_dict = nodes_result.to_dict('records')
     return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes)
 
+def QueryProperty(startTime, endTime, queryMCC, route_list, query_property, single_sequence):
+    time_range_filtered = record_with_tinterval[(record_with_tinterval["time"] > startTime) & (record_with_tinterval["time"] < endTime)]
+    time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
+    #get largest min "max first position" of the queried MCC in the route as the left alignment position
+    data_mcc_query = time_range_filtered.loc[time_range_filtered["mcc"] == queryMCC]
+    grouped_data_query = data_mcc_query.groupby("name")
+    left_alignment_pos = grouped_data_query["step"].min().max()
+    need_alignment = grouped_data_query["step"].min().dropna() < left_alignment_pos
+    #calcu alignment offset
+    alignment_offset = left_alignment_pos - grouped_data_query["step"].min().dropna()
+    data_query_route = time_range_filtered[time_range_filtered["name"].isin(need_alignment.index)]
+    data_query_route.set_index("name", inplace = True)
+    data_query_route["offset"] = alignment_offset
+    data_query_route["step"] = data_query_route["step"] + data_query_route["offset"]
+    shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step")
+    #calculate absolute step pos
+    raw_step = single_sequence + left_alignment_pos
+    query_property_list = [query_property, "transaction_value"]
+    # get merchant&transaction Series with specified route
+    merchant_series = shaped_routes[shaped_routes.index.isin(route_list)].xs((query_property, raw_step), axis = 1)
+    tv_series = shaped_routes[shaped_routes.index.isin(route_list)].xs(("transaction_value", raw_step), axis = 1)
+    # concat to a dataframe
+    merchant_raw = pd.concat([merchant_series, tv_series], axis = 1).droplevel(1, axis=1)
+    # using groupby to get result
+    merchant_groupby = merchant_raw.groupby(["merchant"])
+    merchant_g = merchant_groupby.count().rename(columns = {"transaction_value": "count"})
+    merchant_g["transaction_value"] = merchant_groupby.sum()
+    merchant_g["route"] = list(merchant_groupby.groups.values())
+    merchant_g["route"] = merchant_g["route"].apply(lambda x: x.tolist())
+    merchant_g = merchant_g.reset_index()
+    return merchant_g.to_json(orient = "records")
 
 def Heatmap():
     # heatmap = pd.read_csv("heatmapProbMatrix copy.csv", index_col=0)
@@ -436,6 +470,17 @@ def QuerySingleNew():
     single_seq = datagetjson['sequence']
     # rank_num = datagetjson['maxshow']
     return QuerySingleNode_new(start_time, end_time, mcc_name, single_seq, time_interval_limit, rank_num, last_step_routes)
+
+@app.route('/query_property', methods = ['GET', 'POST'])
+def QueryPty():
+    datagetjson = request.get_json(force=True)
+    start_time = pd.Timestamp(datagetjson["timeStart"])
+    end_time = pd.Timestamp(datagetjson["timeEnd"])
+    mcc_name = datagetjson['name']
+    routes = datagetjson['route']
+    query_property = "merchant"
+    single_sequence = datagetjson['sequence']
+    return QueryProperty(start_time, end_time, mcc_name, routes, query_property, single_sequence)
 
 @app.route('/heatmap', methods = ['GET', 'POST'])
 def postheatmap():
