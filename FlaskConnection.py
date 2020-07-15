@@ -195,7 +195,7 @@ def packQueryListCovert(packLinks, packNodes):
     return querySeries
 
 def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
-    
+    prime_num = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293]
     left_alignment_group = []
     unique_length = pd.DataFrame(columns = ["pack_length"])
     all_index = np.array([])
@@ -210,17 +210,20 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
         queryList = allList[j]
         for i in range(len(queryList)):
             if i == 0:
-                mcc_id_transform = (time_range_filtered_cpy["mcc"]==queryList[i])*(i+1)
+                mcc_id_transform = (time_range_filtered_cpy["mcc"]==queryList[i])*prime_num[i]
             else:
-                mcc_id_transform +=(time_range_filtered_cpy["mcc"]==queryList[i])*(i+1)
-            kernel.append((i+1)*(i+1)) # kernel = id^2
-            id_list.append(i+1)
+                mcc_id_transform +=(time_range_filtered_cpy["mcc"]==queryList[i])*prime_num[i]
+            kernel.append(prime_num[i] * prime_num[i]) # kernel = id^2
+            id_list.append(prime_num[i])
+            # kernel.append((i+1)*(i+1)) # kernel = id^2
+            # id_list.append(i+1)
 
         time_range_filtered_cpy["transform"] = mcc_id_transform
         id_list.reverse()
         kernel.reverse()
-        # so if id = [1,2], kernel = [1,4]
-        # filter all the last step in the querylist by matching convolve result. eg. two mccs -> [1,2] dot [1,4] = 9
+        print(id_list, kernel)
+        # so if id = [2,3], kernel = [4,9], using the square of prime number to make sure the convolution is unique
+        # filter all the last step in the querylist by matching convolve result. eg. two mccs -> [2,3] dot [4,9] = 35
         time_range_filtered_cpy["pattern"] = list(np.convolve(mcc_id_transform, kernel,"full") == np.dot(id_list,kernel))[:-len(queryList)+1] # as using full mode, the convolve return would be longer than the df
         packed_data_query = time_range_filtered_cpy[(time_range_filtered_cpy["pattern"]) & (time_range_filtered_cpy["step"]>len(queryList)-1)] # avoid all the 
         grouped_packed_data_query = packed_data_query.groupby("name")
@@ -319,6 +322,7 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
     nodes_result = nodes_g.nlargest(keep_rank_num, "count").reset_index(drop=True)
     # convert array to list - for jsonify
     nodes_result["route"] = nodes_result["route"].apply(lambda x: x.tolist())
+    nodes_result["sequence"] = single_sequence
     for row in nodes_result.loc[nodes_result["offline_route"].isna(), "offline_route"].index:
         nodes_result.at[row, "offline_route"] = np.array([])
     for row in nodes_result.loc[nodes_result["online_route"].isna(), "online_route"].index:
@@ -356,6 +360,7 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
     
     # convert array to list
     links_result["route"] = links_result["route"].apply(lambda x: x.tolist())
+    links_result["sequence"] = single_sequence
     #fill null list
     for row in links_result.loc[links_result["offline_route"].isna(), "offline_route"].index:
         links_result.at[row, "offline_route"] = np.array([])
@@ -449,7 +454,7 @@ def QueryPacked():
     packNodes = datagetjson['nodes']
     start_time = pd.Timestamp(datagetjson["timeStart"])
     end_time = pd.Timestamp(datagetjson["timeEnd"])
-    time_interval_limit = pd.offsets.Minute(99999)
+    time_interval_limit = pd.offsets.Minute(999)
     last_step_routes = datagetjson['list']
     rank_num = datagetjson['displaynum'] #max display num
     single_seq = datagetjson['sequence']
@@ -463,7 +468,7 @@ def QuerySingleNew():
     datagetjson = request.get_json(force=True)
     start_time = pd.Timestamp(datagetjson["timeStart"])
     end_time = pd.Timestamp(datagetjson["timeEnd"])
-    time_interval_limit = pd.offsets.Minute(100)
+    time_interval_limit = pd.offsets.Minute(999)
     last_step_routes = datagetjson['list']
     rank_num = datagetjson['displaynum'] #max display num
     mcc_name = datagetjson['name'] #querynode

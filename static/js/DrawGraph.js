@@ -1015,8 +1015,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("x", "55%")
     }
 
-
-
     function afterplus() {
         if (rseq <= maxseq) {
             drawRightplus(rseq);
