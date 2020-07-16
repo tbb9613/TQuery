@@ -21,10 +21,16 @@ record_with_tinterval = pd.read_csv("data_example_short_with_type.csv", index_co
 record_with_tinterval["time"] =  pd.to_datetime(record_with_tinterval["time"])
 record_with_tinterval["time_interval_to_next"] =  pd.to_timedelta(record_with_tinterval["time_interval_to_next"])
 record_with_tinterval["time_interval_from_last"] =  pd.to_timedelta(record_with_tinterval["time_interval_from_last"])
+time_range_filtered = None
+shaped_routes = None
+left_alignment_pos = None
 
-
-
-def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
+def QueryTimeFilter(startTime, endTime, queryMCC):
+    global time_range_filtered, shaped_routes, left_alignment_pos
+    #reset vars
+    time_range_filtered = None
+    shaped_routes = None
+    left_alignment_pos = None
     time_range_filtered = record_with_tinterval[(record_with_tinterval["time"] > startTime) & (record_with_tinterval["time"] < endTime)]
     time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
     #get largest min "max first position" of the queried MCC in the route as the left alignment position
@@ -39,7 +45,10 @@ def QuerySingleNode_new(startTime, endTime, queryMCC, single_sequence, time_inte
     data_query_route["offset"] = alignment_offset
     data_query_route["step"] = data_query_route["step"] + data_query_route["offset"]
     shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step")
-    #calculate absolute step pos
+
+
+def QuerySingleNode_new(single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
+
     raw_step = single_sequence + left_alignment_pos
     #last step targets
 
@@ -442,7 +451,6 @@ def NodeList(listNmae):
     else:
         return json.dumps(listdict["MCC"])
 
-
 @app.route('/', methods=['GET','POST'])
 def index():
         return render_template("GraphDemo1.html")
@@ -473,8 +481,12 @@ def QuerySingleNew():
     rank_num = datagetjson['displaynum'] #max display num
     mcc_name = datagetjson['name'] #querynode
     single_seq = datagetjson['sequence']
+    first_flag = datagetjson['firstQuery']
+    
+    if first_flag:
+        QueryTimeFilter(start_time, end_time, mcc_name)
     # rank_num = datagetjson['maxshow']
-    return QuerySingleNode_new(start_time, end_time, mcc_name, single_seq, time_interval_limit, rank_num, last_step_routes)
+    return QuerySingleNode_new(single_seq, time_interval_limit, rank_num, last_step_routes)
 
 @app.route('/query_property', methods = ['GET', 'POST'])
 def QueryPty():

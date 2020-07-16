@@ -268,7 +268,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             list: allList,
             timeStart: timeStart,
             timeEnd: timeEnd,
-            displaynum: 1
+            displaynum: 1,
+            firstQuery: true
             // time: t
             })
             .catch(function (error) {
@@ -557,7 +558,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: allList,
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6
+                displaynum: 6,
+                firstQuery: true
                 // time: t
                 })
                 .catch(function (error) {
@@ -569,7 +571,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 });
         } else {
             console.log(packLinks, packNodes);
-            
             axios.post('http://127.0.0.1:5000/query_packed',{
                 links: packLinks,
                 nodes: packNodes,
@@ -577,7 +578,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: allList,
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6
+                displaynum: 6,
+                firstQuery: true
                 // time: t
                 })
                 .catch(function (error) {
@@ -1102,7 +1104,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: rightLastList[seq-1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6
+                displaynum: 6,
+                firstQuery: false
             }
             axios.post('http://127.0.0.1:5000/query_single_new', queryData)
             .catch(function (error) {
@@ -1128,7 +1131,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: rightLastList[seq-1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6
+                displaynum: 6,
+                firstQuery: false
             }
         
             axios.post('http://127.0.0.1:5000/query_packed', queryData)
@@ -1159,7 +1163,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: leftLastList[-seq-1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6
+                displaynum: 6,
+                firstQuery: false
             }
             
             axios.post('http://127.0.0.1:5000/query_single_new', queryData)
@@ -1183,7 +1188,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     list: leftLastList[-seq-1],
                     timeStart: timeStart,
                     timeEnd: timeEnd,
-                    displaynum: 6
+                    displaynum: 6,
+                    firstQuery: false
                 }
             
             axios.post('http://127.0.0.1:5000/query_packed', queryData)
@@ -1892,6 +1898,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .style("left", dpx + "px")
                     .html("<span><b>" + d.data.merchant+ "</b>: " + moneyFormat(d.data.transaction_value) 
                     + " (" + percentFormat(d.data.transaction_value/sumTTV) + ") </span>");
+                d3.select(this)
+                    .attr("stroke", bgColor)
+                    .attr("stroke-width", 2)
             }
 
             function samplePieMouseMove(d){
@@ -1905,6 +1914,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             function samplePieMouseLeave(d){
                 staTooltip.style("opacity", 0);
                 staTooltip.html(null);
+                d3.select(this).attr("stroke", null).attr("stroke-width", null)
             }
         }
         
@@ -1969,13 +1979,21 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .on("click", selectModeClicked)
                 .on("mouseover", null)
                 .on("mousemove", null)
-                .on("mouseleave", null)
+                .on("mouseleave", null);
+            d3.select("#viewStatusContainer").classed("hide", false);
+            d3.select(".status-name").select("span")
+                .html("Select nodes to filter trajectories");
+            d3.selectAll(".node").style("cursor", "cell");
         } else {
             resetAllGraphStyle();
             d3.selectAll("circle").on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mousemove", NodeMouseMove)
                 .on("mouseleave", NodeMouseLeave);
+            d3.select("#viewStatusContainer").classed("hide", true);
+            d3.select(".status-name").select("span")
+                .html(null);
+            d3.selectAll(".node").style("cursor", null);
         }
         
         function selectModeClicked(d) {
@@ -1999,7 +2017,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             allSelectedLink.forEach(d => idList.push(d.getAttribute("id")));
             // get the unique list array from this list and compare the length
             if (idList.length === uniqueArray(idList).length){
-                console.log("this is a route")
+                console.log("this is a route");
+                console.log(thisRouteList)
             } else {
                 console.log("this is not a route")
             }

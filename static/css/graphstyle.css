@@ -51,13 +51,22 @@ button {
   /* display: inline; */
 }
 
-#staContainer {
+#staContainer{
   position: absolute;
   top: calc(25%+50px);
   left: 50px;
   font-size: 13px;
   max-width: 50%;
 }
+
+#viewStatusContainer {
+  position: absolute;
+  top: calc(25%+50px);
+  left: 50px;
+  font-size: 13px;
+  max-width: 50%;
+}
+
 
 #queryTitleContainer {
   position: absolute;
@@ -183,6 +192,18 @@ button {
 .sta-nodename {
   border-radius: 5px;
   background-color: #D85945;
+  color: #fff;
+  box-shadow: 1px 1px 2px #ccc;
+  margin-top: 5px;
+  padding: 8px;
+  cursor: default;
+  display: table;
+  width: auto;
+}
+
+.status-name {
+  /* border-radius: 5px; */
+  background-color: #5E37A5;
   color: #fff;
   box-shadow: 1px 1px 2px #ccc;
   margin-top: 5px;
