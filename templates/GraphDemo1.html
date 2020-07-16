@@ -217,6 +217,8 @@
             </div>
           </div>
         </div>
+        <div id = "conditionContainer" class="hide">
+        </div>
       </div>
       
       <div id="nodeListContainter" class = "mdui-shadow-1"></div>
@@ -248,6 +250,25 @@
             <div class="mdui-list-item-text">MCC: {{ item.mcc }}</div>
           </div>
           <i class="mdui-list-item-icon mdui-icon material-icons">arrow_forward</i>
+        </li>
+        {{ /each }}
+      </ul>
+    {% endraw %}
+  </script>
+
+  <script id="conditionListTemp" type="text/html">
+    {% raw %}
+      <ul class="mdui-list mdui-list-dense">
+        {{ each list item }}
+        <li class="mdui-list-item">
+          <div class="mdui-list-item-content">
+            <!-- MerchantA -->
+            <div class="mdui-list-item-title">{{ item.merchant }}</div>
+            <div class="mdui-list-item-text mdui-list-item-one-line">
+              <span class="mdui-text-color-theme-text">{{ item.sequence }}</span> {{ item.mcc_name }}
+            </div>
+          </div>
+          <i class="mdui-list-item-icon mdui-icon material-icons">delete</i>
         </li>
         {{ /each }}
       </ul>

@@ -220,14 +220,21 @@ function moveFullName(){
 function hideFullName(d){
     tooltipFullNodeName.classed("hide", true);
 }
+
+var percentFormat = d3.format(".0%"),
+    moneyFormat = d3.format("($.0f");
 //add other tooltips
 var shiftTooltip = workContainer.append("div")
     .attr("class", "tooltip")
-    .style("opacity", 0)
+    .style("opacity", 0);
 
 var inNodeTooltip = workContainer.append("div")
     .attr("class", "tooltip innode-tooltip")
-    .style("opacity", 0)
+    .style("opacity", 0);
+
+var staTooltip = workContainer.append("div")
+    .attr("class", "tooltip sta-tooltip")
+    .style("opacity", 0);
 
 //TIME SELECTOR
 function getTimeData(timeScale) {
@@ -311,7 +318,6 @@ function getTimeData(timeScale) {
 
 document.getElementById("timePeriod").onchange = function () {
     topSpace.selectAll("#timeSelector").remove();
-
     getTimeData(this.options[this.options.selectedIndex].value);
     console.log(secondGraphExist)
     if (secondGraphExist) {
@@ -811,6 +817,10 @@ function creatQueryFromList(a){
 
     fullList.classed("node-list-show", !fullList.classed("node-list-show"));
     collapseButton.closeAll();
+}
+
+function deleteCondition(){
+    
 }
 
 function drawTopNodes(list) {

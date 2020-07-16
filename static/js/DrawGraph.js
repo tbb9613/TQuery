@@ -9,7 +9,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     .range(["#F7CE3E", "#1A2930"]);
 
     // get all list
-    var allList = new Array()
+    var allList = new Array();
+    //initialize condition list
+    var conditionList = new Array();
     // show link density filter
     d3.select("#lineWeightFilter").classed("hide", false);
     d3.select("#linkVisTxt").classed("hide", false);
@@ -704,7 +706,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     let dpx = event.pageX,
                         dpy = event.pageY;
                     let percentFormat = d3.format(".0%"),
-                        numFormat = d3.format(".1f");
+                        moneyFormat = d3.format("($.1f");
             
                     inNodeTooltip
                         .html(inNodeTooltipHtml(d))
@@ -713,13 +715,13 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     
                     function inNodeTooltipHtml(d){
                         if (d.atv-atvmean > 0) {
-                            return "ATV: " + "<span style = 'color:#C94CB0'>" + numFormat(d.atv) + "</span>; <br>" 
-                            + "<span style = 'color:#C94CB0'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
-                            + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+                            return "ATV: " + "<span style = 'color:#C94CB0'>" + moneyFormat(d.atv) + "</span>; <br>" 
+                            + "<span style = 'color:#C94CB0'>" + moneyFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " more than the average ATV " 
+                            + "<span style = 'color:#6C7CAB'>" + moneyFormat(atvmean) + "</span>."
                         } else {
-                            return "ATV: "  + "<span style = 'color:#328347'>" + numFormat(d.atv) + "</span>; <br>" 
-                            + "<span style = 'color:#328347'>" + numFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
-                            + "<span style = 'color:#6C7CAB'>" + numFormat(atvmean) + "</span>."
+                            return "ATV: "  + "<span style = 'color:#328347'>" + moneyFormat(d.atv) + "</span>; <br>" 
+                            + "<span style = 'color:#328347'>" + moneyFormat(Math.abs(d.atv-atvmean)) + "(" +  percentFormat(Math.abs(d.atv-atvmean)/atvmean)+ ")</span>" + " less than the average ATV " 
+                            + "<span style = 'color:#6C7CAB'>" + moneyFormat(atvmean) + "</span>."
                         }
                     }
                 }
@@ -1679,6 +1681,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     let conditionBox = graphBg.append("g")
         .attr("id", "conditionBox")
         .attr("transform", `translate(${0.45 * width}, ${0.9 * workSpaceHeight})`)
+        .style("cursor", "default")
 
     if (graphid === "graph-first") {
         conditionCount = 0;
@@ -1711,7 +1714,19 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         }
     }
 
+    function conditionBoxClicked(){
+        d3.select("#conditionContainer").classed("hide", !d3.select("#conditionContainer").classed("hide"));
+
+    }
+
     initializeConditionBox();
+    function drawConditionBoxList(){
+        mdui.mutation();
+        let inputdata = {list: conditionList};
+        // console.log(inputdata)
+        let html = template("conditionListTemp", inputdata)
+        document.getElementById("conditionContainer").innerHTML=html;
+    }
 
     let conditionBoxPos = conditionBox.node().getBoundingClientRect();
     function StaLabelClick(){
@@ -1756,7 +1771,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             renderPie(response.data);
         })  
         function renderPie(data){
-
             let samplePieColorScale = d3.schemeTableau10;
             let samplePie = svg.append("g")
                 .attr("class", "samplePie")
@@ -1775,7 +1789,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .attr("fill", (d, i) => samplePieColorScale[i])
                 .attr("d", arcSample)
                 .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+                .on("mouseover", samplePieMouseOver)
+                .on("mousemove", samplePieMouseMove)
+                .on("mouseleave", samplePieMouseLeave)
 
+            let sumTTV = d3.sum(data, d => d.transaction_value)
             function dragstarted(d) {
                 console.log(d.data.merchant)
                 let boundingPos = this.getBoundingClientRect();
@@ -1784,24 +1802,25 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .attr("height", "100%")
                     .attr("width", "100%")
                     .append("path")
+                    .datum(d)
                     .attr("fill", d3.select(this).attr("fill"))
                     .attr("d", d3.select(this).attr("d"))
                     .attr("transform", `translate(${event.pageX}, ${event.pageY}) scale(1.2)`)
                     .attr("stroke", "white")
 
                 d3.select(this)
-                    .attr("opacity", 0)
+                    .attr("opacity", 0);
+
             }
 
             function dragged(d) {
-                d.x = d3.event.x, d.y = d3.event.y;
-                d3.select(this)
-                    .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
-                dpx = d3.event.pageX;
-                dpy = d3.event.pageY;
+                // d.x = d3.event.x, d.y = d3.event.y;
+                // d3.select(this)
+                //     .attr('transform', 'translate(' + d.x + ',' + d.y + ') ');
+                dpx = event.pageX;
+                dpy = event.pageY;
                 globalDragLayer.selectAll("path")
-                    .attr("transform", "translate(" + event.pageX + "," + event.pageY + ") scale(1.2)")
-
+                    .attr("transform", "translate(" + dpx + "," + dpy + ") scale(1.2)")
             }
 
             function dragended(d) {
@@ -1812,22 +1831,25 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     endYPos < conditionBoxPos.y + conditionBoxPos.height &&
                     endYPos > conditionBoxPos.y) {
                     conditionCount += 1;
+                    
                     conditionBox.select("text").text(`Conditions(${conditionCount})`)
                         .attr("opacity", 1).attr("fill", "#CACACA");
                     conditionBox.select("rect").attr("opacity", .8)
                         .attr("fill", "#40496C");
-
+                    
+                    d3.selectAll("clicked").classed("conditioned", true);
                     //here it only works for *single* condition in one node
-                    let thisSeq = clickedNode.sequence;
+                    let thisSeq = clickedNode.sequence, thisMCC = clickedNode.target;
                     let complementRoute
-                    if (thisSeq > 0){
+                    if (thisSeq > 0 & graphRightPlusExist){
                         complementRoute = complementSet(d.data.route, rightLastList[thisSeq])
                         rightLastList[thisSeq] = complementRoute
                         d3.selectAll(".node-group").filter(d => d.sequence > thisSeq).remove();
                         // This would create redaudant "g". Change if need.
                         d3.selectAll(".link").filter(d => d.sequence > thisSeq).remove()
-                        drawRightplus(thisSeq+1)
-                    } else {
+                        drawRightplus(thisSeq+1);
+
+                    } else if (thisSeq < 0 & graphLeftPlusExist) {
                         complementRoute = complementSet(d.data.route, leftLastList[-thisSeq])
                         leftLastList[-thisSeq] = complementRoute;
                         d3.selectAll(".node-group").filter(d => d.sequence < thisSeq).remove();
@@ -1835,16 +1857,54 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         d3.selectAll(".link").filter(d => d.sequence < thisSeq).remove()
                         drawLeftplus(thisSeq-1)
                     }
+                    //updata condition list
+                    conditionList.push({"merchant": d.data.merchant,
+                            "sequence": thisSeq,
+                            "mcc_name": thisMCC})
+                    drawConditionBoxList();
                     console.log(complementSet(d.data.route,clickedNode.route));
+                }
+                if (conditionCount>0) {
+                    conditionBox.style("cursor", "pointer")
+                    conditionBox.on("click", conditionBoxClicked)
+                } else {
+                    conditionBox.style("cursor", "default")
+                    conditionBox.on("click", null)
                 }
                 globalDragLayer.selectAll("path").remove();
                 globalDragLayer.attr("width", 0).attr("height", 0);
                 svg.selectAll("g").remove();
                 drawsamplepie(svg, svgWidth, svgHeight);
-
                 //redo graphs after this node
-                
+                staTooltip.style("opacity", 0);
+                staTooltip.html(null);
+            }
 
+            function samplePieMouseOver(d){
+                let percentFormat = d3.format(".0%"),
+                    moneyFormat = d3.format("($.0f");
+                let dpx = event.pageX,
+                    dpy = event.pageY;
+                let bgColor = d3.color(d3.select(this).attr("fill")).darker()
+                staTooltip.style("opacity", 1)
+                    .style("background-color", bgColor)
+                    .style("top", dpy + "px")
+                    .style("left", dpx + "px")
+                    .html("<span><b>" + d.data.merchant+ "</b>: " + moneyFormat(d.data.transaction_value) 
+                    + " (" + percentFormat(d.data.transaction_value/sumTTV) + ") </span>");
+            }
+
+            function samplePieMouseMove(d){
+                let dpx = event.pageX,
+                    dpy = event.pageY;
+                staTooltip
+                    .style("top", dpy + "px")
+                    .style("left", dpx + "px");
+            }
+
+            function samplePieMouseLeave(d){
+                staTooltip.style("opacity", 0);
+                staTooltip.html(null);
             }
         }
         
@@ -1920,12 +1980,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         
         function selectModeClicked(d) {
             if (firstClickFlag) {
-                
                 thisRouteList = d.route;
                 firstClickFlag = false;
             } else {
                 thisRouteList = intersection(d.route, lastRouteList)
-                
             }
             let thisNode = d3.select(this), thisNodeParent = d3.select(this.parentNode);
             node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
