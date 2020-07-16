@@ -46,7 +46,6 @@ def QueryTimeFilter(startTime, endTime, queryMCC):
     data_query_route["step"] = data_query_route["step"] + data_query_route["offset"]
     shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step")
 
-
 def QuerySingleNode_new(single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
 
     raw_step = single_sequence + left_alignment_pos
@@ -416,6 +415,25 @@ def QueryProperty(startTime, endTime, queryMCC, route_list, query_property, sing
     merchant_g = merchant_g.reset_index()
     return merchant_g.to_json(orient = "records")
 
+def SingleRoute(single_route_list, single_sequence_list):
+    # single_route_list = ["people111", "people2006", "people335", "people578"]
+    # single_sequence_list = [-1,0,1]
+
+    raw_sequence_list = list(map(lambda x:x+left_alignment_pos,single_sequence_list))
+    shaped_routes_filtered = shaped_routes[shaped_routes.index.isin(single_route_list)]
+    # for step in single_sequence_list:
+    atv = shaped_routes_filtered["transaction_value"][raw_sequence_list].mean().rename("atv")
+    time_interval = shaped_routes_filtered["time_interval_to_next"][raw_sequence_list].mean().rename("time_interval_to_next")
+    mcc = shaped_routes_filtered["mcc"][raw_sequence_list].T.iloc[:,0]
+    ttv = shaped_routes_filtered["transaction_value"][raw_sequence_list].sum()
+    single_route_analysis = pd.concat([atv, time_interval], axis = 1)
+    single_route_analysis["ttv"] = ttv
+    single_route_analysis["sequence"] = single_sequence_list
+    single_route_analysis["mcc"] = mcc
+
+    single_route_analysis = single_route_analysis.reset_index(drop = True)
+    return single_route_analysis.to_json(orient = "records")
+
 def Heatmap():
     # heatmap = pd.read_csv("heatmapProbMatrix copy.csv", index_col=0)
     record_with_tinterval_cpy = record_with_tinterval.copy()
@@ -498,6 +516,13 @@ def QueryPty():
     query_property = "merchant"
     single_sequence = datagetjson['sequence']
     return QueryProperty(start_time, end_time, mcc_name, routes, query_property, single_sequence)
+
+@app.route('/query_route', methods = ['GET', 'POST'])
+def QuerySingleTraj():
+    datagetjson = request.get_json(force=True)
+    route_list = datagetjson['route_list']
+    sequence_list = datagetjson['sequence_list']
+    return SingleRoute(route_list, sequence_list)
 
 @app.route('/heatmap', methods = ['GET', 'POST'])
 def postheatmap():

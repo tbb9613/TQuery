@@ -52,6 +52,10 @@ var rseq = 2, lseq = 2, maxseq = 4;
 var graphRightPlusExist = false;
 var graphLeftPlusExist = false;
 
+//format
+var percentFormat = d3.format(".0%"),
+    moneyFormat = d3.format("($.1f");
+
 window.onresize = function () {
     getSize()
 }
@@ -1478,7 +1482,7 @@ function drawTopNodes(list) {
 
                 let menuPack = menuContainer
                     .append("button")
-                    .attr("class", "brush-menu")
+                    .attr("class", "brush-menu mdui-btn mdui-btn-raised")
                     .html("PACK")
 
                 // let selectedNodes = d3.selectAll(".selected")

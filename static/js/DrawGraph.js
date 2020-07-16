@@ -1,3 +1,4 @@
+
 // drawGraph();
 function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     packLinkData = copy(packLinks), packNodeData = copy(packNodes);
@@ -707,8 +708,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 function InNodeGraphMouseMove(d) {
                     let dpx = event.pageX,
                         dpy = event.pageY;
-                    let percentFormat = d3.format(".0%"),
-                        moneyFormat = d3.format("($.1f");
+                    
             
                     inNodeTooltip
                         .html(inNodeTooltipHtml(d))
@@ -1155,7 +1155,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     function drawLeftplus(seq) {
         graphLeftPlusExist = true;
         var queryData
-        console.log(leftFirstList, rightFirstList);
         if (type === "single") {
             queryData = {
                 name: queryCenter,
@@ -1887,8 +1886,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             }
 
             function samplePieMouseOver(d){
-                let percentFormat = d3.format(".0%"),
-                    moneyFormat = d3.format("($.0f");
                 let dpx = event.pageX,
                     dpy = event.pageY;
                 let bgColor = d3.color(d3.select(this).attr("fill")).darker()
@@ -1969,9 +1966,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         d3.selectAll(".bottom-axis").classed("hide", false);
     }
     let selectModeFlag = false;
+    let singleRouteFlag = false;
     d3.select("#selectMode").on("click", toggleSelectMode)
     function toggleSelectMode(){
         selectModeFlag = !selectModeFlag;
+        d3.selectAll(".clicked").classed("clicked", false);
         let firstClickFlag, thisRouteList, lastRouteList
         if (selectModeFlag){
             firstClickFlag = true;
@@ -1985,6 +1984,21 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .html("Select nodes to filter trajectories");
             d3.selectAll(".node").style("cursor", "cell");
         } else {
+            if (singleRouteFlag){
+                //resume the main vis
+                d3.select("#lineWeightFilter").classed("hide", false);
+                node.selectAll("circle").filter(".not-this-route").classed("hide", false);
+                node.selectAll(".node-text").filter(".not-this-route").classed("hide", false);
+                link.selectAll(".link-total").classed("hide", false)
+                d3.selectAll(".innode-atv-bar").classed("hide", false);
+                d3.selectAll(".after-controller").classed("hide", false);
+                d3.selectAll(".before-controller").classed("hide", false);
+                let allSelectedCircle = d3.selectAll("circle").filter(".this-route")
+                let allSelectedCirclep = allSelectedCircle.select(function(){ return this.parentNode })
+                allSelectedCirclep.classed("hide", false);
+                d3.selectAll(".single-route").remove();
+                singleRouteFlag = false;
+            }
             resetAllGraphStyle();
             d3.selectAll("circle").on("click", clicked)
                 .on("mouseover", NodeMouseOver)
@@ -2003,9 +2017,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             } else {
                 thisRouteList = intersection(d.route, lastRouteList)
             }
-            let thisNode = d3.select(this), thisNodeParent = d3.select(this.parentNode);
-            node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
-            node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
+            let dpx = event.pageX, dpy = event.pageY
+            node.selectAll("circle").classed("not-this-route", true);
+            node.selectAll(".node-text").classed("not-this-route", true);
             link.selectAll("line").classed("not-this-route", true);
             node.selectAll(".innode-type-pie").style("opacity", .3);
             lastRouteList = thisRouteList;
@@ -2018,10 +2032,167 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             // get the unique list array from this list and compare the length
             if (idList.length === uniqueArray(idList).length){
                 console.log("this is a route");
-                console.log(thisRouteList)
+                console.log(thisRouteList);
+                
+                let menuContainer = workContainer.append("div")
+                    .attr("class", "single-route-menu-container")
+                    .style("position", "absolute")
+                    .style("top", `${dpy - 30}px`)
+                    .style("left", `${dpx}px`)
+
+                let menuSlice = menuContainer
+                    .append("button")
+                    .attr("class", "brush-menu mdui-btn mdui-color-deep-purple-800 mdui-btn-raised mdui-btn-dense")
+                    .html("SLICE")
+                    .on("click", transformSingleRoute)
+
+                // transformSingleRoute();
+
+                
+                // allSelectedCirclep
             } else {
                 console.log("this is not a route")
             }
+        }
+        function transformSingleRoute(){
+            //remove button
+            d3.select(".single-route-menu-container").remove();
+            singleRouteFlag = true;
+            //hide all other vis
+            d3.select("#lineWeightFilter").classed("hide", true);
+            d3.selectAll(".not-this-route").classed("hide", true)
+            link.selectAll(".link").classed("hide", true);
+            d3.selectAll(".innode-graph").classed("hide", true);
+            d3.selectAll(".after-controller").classed("hide", true);
+            d3.selectAll(".before-controller").classed("hide", true);
+            // get all the nodes in the route and clone
+            let allSelectedCircle = d3.selectAll("circle").filter(".this-route")
+            let allSelectedCirclep = allSelectedCircle.select(function(){ return this.parentNode })
+            let singleRouteNode = allSelectedCirclep.clone(true);
+            allSelectedCirclep.classed("hide", true);
+            singleRouteNode.classed("single-route", true);
+            let avgSeq = d3.mean(singleRouteNode.data(), d=> d.sequence);
+            //append a dumb line
+            let linex1 = graphCenter[0] + 100 * (d3.min(singleRouteNode.data(), d => d.sequence)-avgSeq),
+            linex2 = graphCenter[0] + 100 * (d3.max(singleRouteNode.data(), d => d.sequence)-avgSeq);
+            let nodeLinkY = 150
+            node.append("line").attr("class", "link single-route")
+                .attr("x1", linex1).attr("y1", nodeLinkY)
+                .attr("x2", linex2).attr("y2", nodeLinkY);
+            singleRouteNode.raise();
+            //change and transform nodes' position
+            singleRouteNode.selectAll("circle").attr("r", 15)
+                .style("cursor", "default");
+            singleRouteNode.selectAll(".node-text")
+                .attr("y", 30).style("font-size", 11)
+            singleRouteNode.transition().duration(200)
+                .attr("transform", d => "translate(" + (graphCenter[0] + (d.sequence-avgSeq) * 100) + "," + nodeLinkY + ")");
+            let sequenceArray = new Array();
+            singleRouteNode.data().forEach(d => sequenceArray.push(d.sequence));
+            sequenceArray.sort((a, b) => a - b);
+            console.log(sequenceArray)
+            axios.post('http://127.0.0.1:5000/query_route',{
+                    route_list: thisRouteList,
+                    sequence_list: sequenceArray
+                })
+                .catch(function (error) {
+                    console.log(error);
+                })
+                .then(function (response) { // if success then update data
+                    console.log(response.data);
+                    function stackData(data) {
+                        let cumulative = 0
+                        const _data = data.map(d => {
+                            cumulative += d.atv
+                            return {
+                            atv: d.atv,
+                            // want the cumulative to prior value (start of rect)
+                            cumulative: cumulative - d.atv,
+                            mcc: d.mcc,
+                            ttv: d.ttv,
+                            sequence: d.sequence,
+                            time_interval_to_next: d.time_interval_to_next
+                            }
+                        })
+                        return _data
+                    }
+                    function renderStackedBar(data){
+                        console.log(data)
+                        let stackedBarColorScale = d3.schemeTableau10;
+                        let total = d3.sum(data, d=>d.atv)
+                        let barHeight = 40, barWidthOffest = 100, barY = 240
+                        console.log(linex1, linex2, total)
+                        const xScale = d3.scaleLinear()
+                            .domain([0, total])
+                            .range([0, linex2-linex1+2 * barWidthOffest])
+                        let stackBar = node.append("g")
+                            .attr("class", "single-route")
+                        
+                        stackBar.selectAll(".share-wallet-bar")
+                            .data(data).enter()
+                            .append("rect")
+                            .attr("class", "single-route share-wallet-bar")
+                            .attr("x", d => linex1 - barWidthOffest + xScale(d.cumulative)).attr("y", barY)
+                            .attr("height", barHeight).attr("width", d => xScale(d.atv))
+                            .attr("fill", (d,i) => stackedBarColorScale[i]);
+                        stackBar.append("rect")
+                            .attr("class", "single-route share-wallet-bar")
+                            .attr("fill", "#5E37A5");
+
+                        
+                        
+                        stackBar.selectAll(".share-wallet-text-atv")
+                            .data(data).enter()
+                            .append("text")
+                            .attr("class", "share-wallet-text-atv")
+                            .attr("x", d => linex1 - barWidthOffest + xScale(d.cumulative) + (xScale(d.atv) / 2))
+                            .attr("y", barY + barHeight/2)
+                            .text(d =>  moneyFormat(d.atv));
+
+                        stackBar.selectAll(".share-wallet-text-percent")
+                            .data(data).enter()
+                            .append("text")
+                            .attr("class", "share-wallet-text-percent")
+                            .attr("x", d => linex1 - barWidthOffest + xScale(d.cumulative) + (xScale(d.atv) / 2))
+                            .attr("y", barY - 10)
+                            .text(d =>  percentFormat(d.atv/total));
+
+                        stackBar.selectAll(".share-wallet-text-mcc")
+                            .data(data).enter()
+                            .append("text")
+                            .attr("class", "share-wallet-text-mcc")
+                            .attr("x", d => linex1 - barWidthOffest + xScale(d.cumulative) + (xScale(d.atv) / 2))
+                            .attr("y", barY + barHeight + 10)
+                            .text(d => multiWordsFormat(d.mcc))
+                            .attr("fill", (d,i) => stackedBarColorScale[i])
+                            .on("mouseover", d => showFullName(d.mcc))
+                            .on("mousemove", moveFullName)
+                            .on("mouseout", hideFullName);
+
+                        stackBar.append("rect")
+                            .attr("x", linex1 - barWidthOffest).attr("y", barY + barHeight + 30)
+                            .attr("height", barHeight)
+                            .attr("width", xScale(total))
+                            .attr("fill", "#5E37A5")
+                            .datum(total)
+                        
+                        stackBar.append("text").attr("class", "share-wallet-text-total")
+                            .attr("x", linex1 - barWidthOffest + xScale(total)/2)
+                            .attr("y", barY + 1.5 * barHeight + 30)
+                            .text("Average Total Wallet: " + moneyFormat(total) + 
+                                "  ×  " + thisRouteList.length + "  people");
+
+                        stackBar.append("text")
+                            .attr("class", "share-wallet-text-title")
+                            .text("SHARE OF WALLET")
+                            .attr("x", linex1 - barWidthOffest + xScale(total)/2)
+                            .attr("y", barY + 2.5 * barHeight + 30);
+                    }
+                    setTimeout(() => {
+                        renderStackedBar(stackData(response.data));
+                    }, 300)
+                    // renderGraph(response);
+                });
         }
     }
     //all done, set graph exist indicator = true

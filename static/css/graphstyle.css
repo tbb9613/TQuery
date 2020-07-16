@@ -486,7 +486,6 @@ button,
   font-size: 10px;
 }
 
-
 .node-preview-text {
   cursor: default !important;
 }
@@ -533,17 +532,7 @@ text.innode-graph{
   z-index: 11;
 }
 
-.brush-menu {
-  /* position: absolute; */
-  z-index: 2;
-  background-color: rgb(104, 104, 104);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 12px;
-  padding: 10px;
-  display: block;
-}
+
 
 .brush-menu:active {
   background-color: #0C0537;
@@ -715,9 +704,6 @@ input.filter-text-input:focus {
   /* margin-right: 12%; */
 }
 
-/* .multi-nodes, .draw-undirected-line, .draw-directed-line, .select-mode{
-  outline: none;
-} */
 
 .multi-nodes {
   width: 99%;
@@ -916,4 +902,33 @@ text.clicked {
   fill: black;
   alignment-baseline: middle;
   text-anchor: end;
+}
+
+.share-wallet-text-atv, .share-wallet-text-percent,
+.share-wallet-text-mcc, .share-wallet-text-total,
+.share-wallet-text-title {
+  alignment-baseline: middle;
+  text-anchor: middle;
+  font-size: 13px;
+  cursor: default;
+}
+
+.share-wallet-text-atv, .share-wallet-text-total {
+  fill: white;
+  font-weight: 500;
+  
+}
+.share-wallet-text-percent {
+  fill: #333;
+}
+
+.share-wallet-text-total {
+  letter-spacing: 0.1rem;
+}
+
+.share-wallet-text-title {
+  fill: #666;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.3rem;
 }
