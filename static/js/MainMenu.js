@@ -39,6 +39,7 @@ var workSpaceHeight = 0.75 * height;
 var workSpaceWidth = width;
 var staSpaceWidth = 0.3 * width
 
+
 var graphExist = false;
 var secondGraphExist = false;
 var conditionCount = 0;
@@ -54,7 +55,8 @@ var graphLeftPlusExist = false;
 
 //format
 var percentFormat = d3.format(".0%"),
-    moneyFormat = d3.format("($.1f");
+    moneyFormat = d3.format("($.1f"),
+    numFormat = d3.format(".0f");
 
 window.onresize = function () {
     getSize()
@@ -852,7 +854,6 @@ function drawTopNodes(list) {
     d3.select(".multi-nodes").on("click", function () {
         if (!isMultiMode) {
             console.log("multi-mode");
-
             //reset Array
             packLinkList.length = 0;
             packLinks.length = 0;
@@ -860,14 +861,19 @@ function drawTopNodes(list) {
 
             isMultiMode = true;
             graphExist = false;
+
             drawLayer.attr("height", "100%").attr("width", "100%");
             //remove existing vis
             workSpace.selectAll("g").remove();
             d3.selectAll("#queryTitleContainer").classed("hide", true);
+            
             //hide line vis filter
             d3.select("#lineWeightFilter").classed("hide", true);
             d3.select("#lineVisTxt").classed("hide", true);
             node.remove();
+            //remove view selector
+            d3.select("#viewSelector").selectAll("svg").remove();
+            d3.select("#viewSelector").classed("hide", true);
             //redraw top nodes
             drawTopNodes(nodeList);
             d3.select(this).classed("tool-active", true);
@@ -1601,7 +1607,6 @@ function getMCC(d){
     return MCCDict.filter(m => m.edited_description === d)[0].mcc;
 }
 
-
 function drawScatterFilter(){
     var fakeData_scatter = d3.range(100)
         .map(function() { return [Math.random()*2-1, Math.random()*2-1]; });
@@ -1722,6 +1727,7 @@ function drawScatterFilter(){
 }
 
 drawScatterFilter();
+
 //function for deep copy
 function copy (obj) {
     var newobj = obj.constructor === Array ? [] : {};
@@ -1729,7 +1735,7 @@ function copy (obj) {
         return;
     }
     for(var i in obj){
-       newobj[i] = typeof obj[i] === 'object' ? copy(obj[i]) : obj[i];
+        newobj[i] = typeof obj[i] === 'object' ? copy(obj[i]) : obj[i];
     }
     return newobj
 }
@@ -1777,3 +1783,10 @@ function complementSet(a, b){ //a is subset, b is total set
 function union(a, b) { // a + b
     return a.concat(b.filter(v => !a.includes(v)))
 }
+function normalColorScaler(max, d){
+    let scaler = d3.scaleLinear()
+        .domain([0,max])
+        .range([0.2,1])
+    return scaler(d)
+}
+

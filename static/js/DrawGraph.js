@@ -137,10 +137,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     if (graphid === "graph-first") {
         d3.select("#addGraph")
             .on("click", addGraph);
-        addLegend();
+        // addLegend();
         function addGraph() {
             secondGraphExist = true;
-
+            activeBtn(d3.select(this))
             graphBg.attr("width", "50%")
             graphBg.selectAll(".graph-background")
                 .attr("width", "50%");
@@ -230,6 +230,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         xAxisBottom.attr("opacity", .4);
     }
     if (!graphExist){
+        d3.select("#viewSelector").classed("hide", false);
+        appendViewSelector();
         drawBottomAxis();
     };
     
@@ -392,7 +394,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
             previewNodeG.append("circle")
                 .attr("r", 12)
-                .attr("class", "node")
+                .attr("fill", "white")
+                .attr("stroke", "white")
 
             previewNodeG
                 .append("text")
@@ -473,7 +476,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     var linkRight, linkLeft ,textRight, textLeft, nodeRight, nodeLeft, leftFirstList, rightFirstList
     var leftLastList = new Array();
     var rightLastList = new Array();
-    var leftMaxCnt, rightMaxCnt, totalMaxCnt
+    var leftMaxCnt, rightMaxCnt, totalMaxCnt, totalMaxTTV
     var inNodeHistScaler = d3.scaleLinear()
         .range([-0.5 * nodeRadius, 0.5*nodeRadius])
         .domain([-1, 1]).nice();
@@ -659,6 +662,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .append("circle")
                 .attr("class", "node")
                 .attr("r", nodeRadius)
+                .attr("fill", "white")
                 .on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mousemove", NodeMouseMove)
@@ -1268,6 +1272,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         thisNodeGroup.append("circle")
             .attr("class", "node")
             .attr("r", 10)
+            .attr("fill", "white")
             .on("click", clicked)
             .on("mouseover", NodeMouseOver)
             .on("mousemove", NodeMouseMove)
@@ -1406,10 +1411,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .classed("hide", false);
         } else {
             hoveredNode
-                .classed("node", true)
-                .attr("stroke-width", null)
-                .attr("stroke", null)
-                .attr("fill", null);
+                .classed("node", true);
             hoveredNodeParent.select(".recenter-text")
                 .classed("hide", true);
         }
@@ -1430,10 +1432,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .classed("hide", false);
         } else {
             hoveredNode
-                .classed("node", true)
-                .attr("stroke-width", null)
-                .attr("stroke", null)
-                .attr("fill", null);
+                .classed("node", true);
             hoveredNodeParent.select(".recenter-text")
                 .classed("hide", true);
         }
@@ -1441,10 +1440,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
     function NodeMouseLeave(d) {
         //Reset all styles
-        d3.select(this).classed("node", true)
-            .attr("stroke-width", null)
-            .attr("stroke", null)
-            .attr("fill", null);
+        d3.select(this).classed("node", true);
         d3.selectAll(".recenter-text").remove();
         if (!innodePieClickedFlag){
             resetAllGraphStyle();
@@ -1498,7 +1494,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .classed("not-this-route", !(l => isInRoute(r, l.offline_route)));
     }
     
-
     function renderInterSectionPie(d){
         // find the intersection of clicked segement & all the other segments
         function pieDataInter(p, d){ //p as pie data, d as the clicked data
@@ -1559,8 +1554,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     function InNodePieGraphMouseMove(d) {
         let dpx = event.pageX,
             dpy = event.pageY;
-        let percentFormat = d3.format(".0%"),
-            numFormat = d3.format(".0f");
+        
 
         inNodeTooltip
             .html(inNodeTooltipHtml(d))
@@ -1648,6 +1642,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         link.selectAll("line").classed("this-route", false);
         link.selectAll("text").classed("this-route", false);
         link.selectAll("text").classed("not-this-route", false);  
+
     }
 
     function filterRouteByNodeHover(r){
@@ -1836,12 +1831,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     endYPos < conditionBoxPos.y + conditionBoxPos.height &&
                     endYPos > conditionBoxPos.y) {
                     conditionCount += 1;
-                    
                     conditionBox.select("text").text(`Conditions(${conditionCount})`)
                         .attr("opacity", 1).attr("fill", "#CACACA");
                     conditionBox.select("rect").attr("opacity", .8)
                         .attr("fill", "#40496C");
-                    
                     d3.selectAll("clicked").classed("conditioned", true);
                     //here it only works for *single* condition in one node
                     let thisSeq = clickedNode.sequence, thisMCC = clickedNode.target;
@@ -1918,10 +1911,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     }
 
     //set tools
-    d3.select("#pieView").on("click", togglePieView);
+    d3.selectAll("#pieView").on("click", togglePieView);
     function togglePieView(){
-        pieViewFlag = !pieViewFlag;
-        d3.selectAll(".node-type-legend").classed("hide", !d3.selectAll(".node-type-legend").classed("hide"));
+        // pieViewFlag = !pieViewFlag;
+        // d3.selectAll(".node-type-legend").classed("hide", !d3.selectAll(".node-type-legend").classed("hide"));
         d3.selectAll(".link-trans-type").classed("hide", !d3.selectAll(".link-trans-type").classed("hide"));
         d3.selectAll(".innode-type-pie").classed("hide", !d3.selectAll(".innode-type-pie").classed("hide"));
         // mdui.mutation();
@@ -1939,7 +1932,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             });
         }
     }
-    d3.select("#timeIntervalView").on("click", toggleTimeIntervalView);
+    // d3.select("#timeIntervalView").on("click", toggleTimeIntervalView);
     function toggleTimeIntervalView(){
         timeIntervalFlag = !timeIntervalFlag;
         d3.selectAll(".horizontal-line").classed("hide", !d3.selectAll(".horizontal-line").classed("hide"));
@@ -1949,10 +1942,12 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         d3.selectAll(".bottom-axis").classed("hide", !d3.selectAll(".bottom-axis").classed("hide"));
         // mdui.mutation();
         if (timeIntervalFlag) { // if the status is show
+            activeBtn(d3.select(this));
             mdui.snackbar({
                 message: 'Time interval filter enbabled'
             });
         } else {
+            inactiveBtn(d3.select(this));
             mdui.snackbar({
                 message: 'Time interval filter disabled'
             });
@@ -1967,14 +1962,18 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     }
     let selectModeFlag = false;
     let singleRouteFlag = false;
+
     d3.select("#selectMode").on("click", toggleSelectMode)
+
     function toggleSelectMode(){
         selectModeFlag = !selectModeFlag;
         d3.selectAll(".clicked").classed("clicked", false);
+
         let firstClickFlag, thisRouteList, lastRouteList
         if (selectModeFlag){
+            activeBtn(d3.select(this));
             firstClickFlag = true;
-            d3.selectAll("circle")
+            d3.selectAll(".node")
                 .on("click", selectModeClicked)
                 .on("mouseover", null)
                 .on("mousemove", null)
@@ -1984,6 +1983,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .html("Select nodes to filter trajectories");
             d3.selectAll(".node").style("cursor", "cell");
         } else {
+            inactiveBtn(d3.select(this));
             if (singleRouteFlag){
                 //resume the main vis
                 d3.select("#lineWeightFilter").classed("hide", false);
@@ -2000,7 +2000,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 singleRouteFlag = false;
             }
             resetAllGraphStyle();
-            d3.selectAll("circle").on("click", clicked)
+            d3.selectAll(".node").on("click", clicked)
                 .on("mouseover", NodeMouseOver)
                 .on("mousemove", NodeMouseMove)
                 .on("mouseleave", NodeMouseLeave);
@@ -2197,6 +2197,183 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
     }
     //all done, set graph exist indicator = true
     graphExist = true;
+
+    function appendViewSelector(){
+        let svgWidth = 200, svgHeight = 200;
+        let svg = d3.select("#viewSelector").append("svg")
+            .attr("width", svgWidth).attr("height", svgHeight);
+        //append defs
+        appendDefs();
+        function appendDefs(){
+            let defs = svg.append("defs")
+            let countGradient = defs.append("linearGradient")
+                .attr("id", "countGradient")
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "100%").attr("y2", "0%");
+            countGradient.append("stop").attr("offset", "0%")
+                .attr("stop-color",  d3.interpolatePuBu(0.2));
+            countGradient.append("stop").attr("offset", "50%")
+                .attr("stop-color",  d3.interpolatePuBu(0.6));
+            countGradient.append("stop").attr("offset", "100%")
+                .attr("stop-color",  d3.interpolatePuBu(1));
+
+            let atvGradient = defs.append("linearGradient")
+                .attr("id", "atvGradient")
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "100%").attr("y2", "0%")
+            atvGradient.append("stop").attr("offset", "0%")
+                .attr("stop-color",  d3.interpolateYlGn(0.2));
+            atvGradient.append("stop").attr("offset", "50%")
+                .attr("stop-color",  d3.interpolateYlGn(0.6));
+            atvGradient.append("stop").attr("offset", "100%")
+                .attr("stop-color",  d3.interpolateYlGn(1));
+            
+            let ttvGradient = defs.append("linearGradient")
+                .attr("id", "ttvGradient")
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "100%").attr("y2", "0%")
+            ttvGradient.append("stop").attr("offset", "0%")
+                .attr("stop-color",  d3.interpolateRdPu(0.2));
+            ttvGradient.append("stop").attr("offset", "50%")
+                .attr("stop-color",  d3.interpolateRdPu(0.6));
+            ttvGradient.append("stop").attr("offset", "100%")
+                .attr("stop-color",  d3.interpolateRdPu(1));
+        }
+        //draw top buttons
+        let topBtnG = svg.append("g").attr("id", "viewBtnG")
+            .attr("transform", "translate(0,40)")
+        let btnWidth = 0.31 * svgWidth, btnHeight = 20, btnMargin = 0.03 * svgWidth;
+        let timeViewToggle = topBtnG.append("g")
+            .attr("transform", `translate(0,0)`)
+            .on("click", toggleTimeIntervalView);
+        timeViewToggle.append("rect")
+            .attr("width", btnWidth).attr("height", btnHeight)
+            .attr("fill", "white").attr("stroke", "#CCC");
+        timeViewToggle.append("text")
+            .attr("class", "view-toggle-text")
+            .attr("x", btnWidth/2).attr("y", btnHeight/2)
+            .text("TIME");
+        let dblViewToggle = topBtnG.append("g")
+            .attr("transform", `translate(${btnMargin+btnWidth},0)`)
+            .on("click", addGraph);
+        dblViewToggle.append("rect")
+            .attr("width", btnWidth).attr("height", btnHeight)
+            .attr("fill", "white").attr("stroke", "#CCC");
+        dblViewToggle.append("text")
+            .attr("class", "view-toggle-text")
+            .attr("x", btnWidth/2).attr("y", btnHeight/2)
+            .text("DOUBLE");
+        let sliceToggle = topBtnG.append("g")
+            .attr("transform", `translate(${2*btnMargin+2*btnWidth},0)`)
+            .on("click", toggleSelectMode);
+        sliceToggle.append("rect")
+            .attr("width", btnWidth).attr("height", btnHeight)
+            .attr("fill", "white").attr("stroke", "#CCC");
+        sliceToggle.append("text")
+            .attr("class", "view-toggle-text")
+            .attr("x", btnWidth/2).attr("y", btnHeight/2)
+            .text("SLICE");
+    
+        //draw node
+        let viewNodeRadius = 25
+        let nodeG = svg.append("g").attr("id", "viewNodeG")
+            .attr("transform", `translate(${svgWidth/2}, ${svgHeight/2})`)
+        let viewNode = nodeG.append("circle")
+            .attr("class", "view-node")
+            .attr("r", viewNodeRadius).attr("fill", "white")
+            .attr("stroke", "#7B8C9D");
+        //draw pie
+        let pieColorScale = d3.scaleOrdinal().domain([0,1])
+            .range(["#F7CE3E", "#1A2930"]);
+        let sampleTypePieData = [{
+                "label": "Online",
+                "value": 1,
+            },
+            {
+                "label": "Offline",
+                "value": 1,
+            }]
+        let spConverter = d3.pie().value(d => d.value)
+            .sort(null).sortValues(null);
+        let arc = d3.arc().outerRadius(23).innerRadius(18);
+        let typePie = nodeG.selectAll("path")
+            .data(d => spConverter(sampleTypePieData))
+            .enter().append("path")
+            .style("cursor", "pointer")
+            .attr("class", "view-pie")
+            .attr("fill", "#DDD")
+            .attr("transform", (d,i) => `translate(${20*(-i+0.5)},0) scale(1, 1.4)`)
+            .attr("d", arc)
+            .on("click", togglePieClick);
+        // draw sample bar
+        let sampleATVBarG = nodeG.append("g").attr("id", "viewSampleATVBarG")
+        sampleATVBarG.append("line")
+            .attr("x1", -0.6 * viewNodeRadius)
+            .attr("x2", 0.6 * viewNodeRadius)
+            .attr("stroke", "#BBB")
+        sampleATVBarG.append("rect")
+            .attr("width", 0.8 * viewNodeRadius)
+            .attr("x", -0.4 * viewNodeRadius)
+            .attr("y", -9) // if result is postive then the bar should be put over the baseline
+            .attr("height", 8)
+            .attr("fill", "#C59CBD");
+        sampleATVBarG.append("text")
+            .text("+10.0")
+            .attr("class", "innode-graph innode-atv-bar")
+            .attr("y", 11)
+            .attr("fill", "#C59CBD");
+        // add legend rect
+        let glegendG = svg.append("g").attr("id","gradLegendG")
+            .attr("transform", `translate(0, ${0.7*svgHeight})`)
+            .classed("hide", true);
+        let glengendMargin = 40
+        let glengendWidth = svgWidth-2*glengendMargin
+        glegendG.append("rect").attr("class", "gradient-legend")
+            .attr("height", 10).attr("width", glengendWidth)
+            .attr("x", glengendMargin)
+            .attr("fill", "white");
+        glegendG.append("text").attr("class", "legend-text")
+            .style("alignment-baseline", "baseline")
+            .style("fill", "#666")
+            .attr("x", 0.7*glengendMargin).text("0")
+        glegendG.append("text").attr("class", "legend-text")
+            .style("alignment-baseline", "baseline")
+            .style("fill", "#666")
+            .attr("id", "legendMaxText")
+            .attr("x", 1.1*glengendMargin+glengendWidth)
+        function togglePieClick(d){
+            pieViewFlag = !pieViewFlag;
+            let thisSegment = d3.select(this);
+            let activeArc = d3.arc().outerRadius(viewNodeRadius).innerRadius(17);
+            if (pieViewFlag){
+                typePie.transition().duration(300)
+                    .attr("d", activeArc)
+                    .attr("fill", (d, i) => pieColorScale(i))
+                    .attr("transform", "translate(0,0)");
+                //add legend text
+                let legendLineSpace = 6
+                nodeG.append("text").attr("class","legend-text pie-legend")
+                    .text("Online").attr("x", 30).attr("y",-legendLineSpace);
+                nodeG.append("text").attr("class","legend-text pie-legend")
+                    .text("Transaction").attr("x", 30).attr("y",legendLineSpace);
+                nodeG.append("text").attr("class","legend-text pie-legend")
+                    .text("Offline").attr("x", -30).attr("y",-legendLineSpace)
+                    .attr("text-anchor", "end");
+                nodeG.append("text").attr("class","legend-text pie-legend")
+                    .text("Transaction").attr("x", -30).attr("y",legendLineSpace)
+                    .attr("text-anchor", "end");
+            } else {
+                typePie.transition().duration(300)
+                    .attr("d", arc)
+                    .attr("fill", "#CCC")
+                    .attr("transform", (d,i) => `translate(${20*(-i+0.5)},0) scale(1, 1.4)`);
+                nodeG.selectAll(".pie-legend").remove();
+            }
+            togglePieView();
+        }
+    }
+    
+    
 }
 
 function changeLinkVisibility() {
@@ -2209,4 +2386,54 @@ function changeLinkVisibility() {
     allLink.filter(l => l.count > scaler(100-value)).transition().duration(200).style("opacity", .9);
     allLink.filter(l => l.count < scaler(100-value)).transition().duration(200).style("opacity", .05);
     txt.html("count > "+ Math.floor(scaler(100-value)));
+}
+
+function changeAllNodeColor(ele){
+    let type = ele.value;
+    let allNodes = d3.selectAll(".node");
+    let allmaxCount = d3.max(allNodes.data(), d=> d.count);
+    let allmaxATV = d3.max(allNodes.data(), d=> d.atv);
+    let allmaxTTV = d3.max(allNodes.data(), d=> d.count*d.atv);
+    d3.selectAll(".innode-atv-bar").classed("hide", true);
+    if (type === "bar") {
+        d3.selectAll(".node").attr("fill", "white");
+        d3.select(".gradient-legend").attr("fill", "white");
+        d3.select(".view-node").attr("fill", "white");
+        d3.selectAll(".innode-atv-bar").classed("hide", false);
+        d3.select("#gradLegendG").classed("hide", true);
+        d3.select("#viewSampleATVBarG").classed("hide", false);
+    } else {
+        d3.select("#gradLegendG").classed("hide", false);
+        d3.select("#viewSampleATVBarG").classed("hide", true);
+        if (type === "count"){
+            d3.selectAll(".node").attr("fill", d => d3.interpolatePuBu(normalColorScaler(allmaxCount, d.count)));
+            d3.select(".gradient-legend").attr("fill", "url(#countGradient)");
+            d3.select(".view-node").attr("fill", d3.interpolatePuBu(0.6));
+            d3.select("#legendMaxText").text(numFormat(allmaxCount));
+        } else if (type === "atv") {
+            d3.selectAll(".node").attr("fill", d => d3.interpolateYlGn(normalColorScaler(allmaxATV, d.count * d.atv)));
+            d3.select(".gradient-legend").attr("fill", "url(#atvGradient)");
+            d3.select(".view-node").attr("fill", d3.interpolateYlGn(0.6));
+            d3.select("#legendMaxText").text(numFormat(allmaxATV));
+        } else if (type === "ttv") {
+            d3.selectAll(".node").attr("fill", d => d3.interpolateRdPu(normalColorScaler(allmaxTTV, d.count * d.atv)));
+            d3.select(".gradient-legend").attr("fill", "url(#ttvGradient)");
+            d3.select(".view-node").attr("fill", d3.interpolateRdPu(0.6));
+            d3.select("#legendMaxText").text(d3.format(".4s")(allmaxTTV));
+        }
+    }
+}
+
+function resetNodeColor(){
+        d3.selectAll(".node").attr("fill", "white");
+        d3.selectAll(".innode-atv-bar").classed("hide", false);
+}
+
+function activeBtn(selection){
+    selection.selectAll("rect").attr("fill", "#666");
+    selection.selectAll("text").style("fill", "white");
+}
+function inactiveBtn(selection){
+    selection.selectAll("rect").attr("fill", "white");
+    selection.selectAll("text").style("fill", null);
 }

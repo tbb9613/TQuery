@@ -152,6 +152,27 @@ button {
   width: 20%;
 }
 
+#changeInnodeColor {
+  position: absolute;
+  bottom: 10%;
+  left: 5%;
+  /* width: 60px; */
+}
+
+#toggleViewContainer{
+  position: absolute;
+  bottom: 0%;
+  left: 5%;
+}
+
+#viewSelector {
+  position: absolute;
+  bottom: 10%;
+  left: 35px;
+  height: 200px;
+  width: 200px;
+}
+
 #linkVisTxt {
   position: absolute;
   top: 26.5%;
@@ -228,9 +249,8 @@ button {
 .node {
   stroke: rgb(153, 175, 199);
   stroke-width: 2px;
-  fill: white;
-  /* fill: rgb(145, 163, 182);
-  stroke: white; */
+  /* fill: white; */
+  /* fill: blue; */
 }
 
 .link {
@@ -474,7 +494,7 @@ button,
 }
 
 .legend-text {
-  alignment-baseline: baseline;
+  alignment-baseline: middle;
   font-size: 12px;
   fill: #333;
 }
@@ -744,8 +764,6 @@ input.filter-text-input:focus {
   height: 24px !important;
 }
 
-
-
 line.sfilter-axis {
   stroke-width: 1px;
   stroke: black;
@@ -832,6 +850,8 @@ text.sfilter-axis {
 
 circle.this-route{
   fill: #5E37A5;
+  /* stroke: #5E37A5; */
+  stroke-width: 2;
   /* stroke: aliceblue; */
   /* fill: #4A4666; */
 }
@@ -931,4 +951,12 @@ text.clicked {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.3rem;
+}
+
+.view-toggle-text {
+  font-size: 13px;
+  alignment-baseline: middle;
+  fill: #666;
+  text-anchor: middle;
+  cursor: pointer;
 }

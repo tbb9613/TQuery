@@ -27,13 +27,9 @@
     <svg id="globalDrag"></svg>
     <div class="noclick hide">
     </div>
-    <!-- <div id="leftContainer"> -->
-      <!-- <svg id="brushLayer"></svg> -->
-      <div class="mdui-fab-wrapper" id="exampleFab" mdui-fab = "options">
+      <!-- <div class="mdui-fab-wrapper" id="exampleFab" mdui-fab = "options">
         <button class="mdui-fab mdui-ripple">
-          <!-- default icon -->
           <i class="mdui-icon material-icons">add</i>
-          <!-- icon after open -->
           <i class="mdui-icon mdui-fab-opened material-icons">add_circle_outline</i>
         </button>
         <div class="mdui-fab-dial">
@@ -42,8 +38,7 @@
           <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-red" id = "timeIntervalView"><i class="mdui-icon material-icons">access_alarm</i></button>
           <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-indigo-900" id = "pieView"><i class="mdui-icon material-icons">pie_chart_outlined</i></button>
         </div>
-      </div>
-      <!-- <button class="mdui-fab mdui-fab-mini mdui-fab-fixed add-graph"><i class="fas fa-columns"></i></button> -->
+      </div> -->
       <div id="topContainer">
         <div id="timeSelectorDropdown">
           <select class = "mdui-select" mdui-select="options" name="timePeriod" id="timePeriod">
@@ -223,7 +218,20 @@
           <div class="status-name"><span></span></div>
         </div>
 
-
+        <div id = "viewSelector" class="hide">
+          <div id = "changeInnodeColor">
+          <!-- <form > -->
+              <input class="radio-button" type="radio" id="radioCount" name="group1" value="count" onchange="changeAllNodeColor(this)"/>
+              <label for="radioCount"><span class="legend-text">Freq</span></label>
+              <input class="radio-button" type="radio" id="radioATV" name="group1" value="atv" onchange="changeAllNodeColor(this)"/>
+              <label for="radioATV"><span class="legend-text">ATV</span></label>
+              <input class="radio-button" type="radio" id="radioTTV" name="group1" value="ttv" onchange="changeAllNodeColor(this)"/>
+              <label for="radioTTV"><span class="legend-text">TTV</span></label>
+              <input class="radio-button" type="radio" id="radioATVB" name="group1" value="bar" onchange="changeAllNodeColor(this)" checked/>
+              <label for="radioATVB"><span class="legend-text">ATV Bar</span></label>
+          <!-- </form> -->
+          </div>
+        </div>
       </div>
       
       <div id="nodeListContainter" class = "mdui-shadow-1"></div>

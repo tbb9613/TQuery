@@ -500,11 +500,12 @@ def QuerySingleNew():
     mcc_name = datagetjson['name'] #querynode
     single_seq = datagetjson['sequence']
     first_flag = datagetjson['firstQuery']
-    
     if first_flag:
         QueryTimeFilter(start_time, end_time, mcc_name)
+        return QuerySingleNode_new(single_seq, time_interval_limit, rank_num, last_step_routes)
+    else:
     # rank_num = datagetjson['maxshow']
-    return QuerySingleNode_new(single_seq, time_interval_limit, rank_num, last_step_routes)
+        return QuerySingleNode_new(single_seq, time_interval_limit, rank_num, last_step_routes)
 
 @app.route('/query_property', methods = ['GET', 'POST'])
 def QueryPty():
@@ -545,7 +546,6 @@ def getMCCdict():
     MCCdict = MCCdict_get.to_json(orient = "records")
     # print(MCCdict)
     return MCCdict
-
 
 if __name__ == '__main__': 
     app.run() 
