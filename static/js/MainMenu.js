@@ -39,12 +39,12 @@ var workSpaceHeight = 0.75 * height;
 var workSpaceWidth = width;
 var staSpaceWidth = 0.3 * width
 
-
 var graphExist = false;
 var secondGraphExist = false;
 var conditionCount = 0;
 var pieViewFlag = false;
 var timeIntervalFlag = false;
+var nodeViewType = "bar";
 
 var MCCDict
 // console.log(MCCDict)
@@ -226,9 +226,6 @@ function moveFullName(){
 function hideFullName(d){
     tooltipFullNodeName.classed("hide", true);
 }
-
-var percentFormat = d3.format(".0%"),
-    moneyFormat = d3.format("($.0f");
 //add other tooltips
 var shiftTooltip = workContainer.append("div")
     .attr("class", "tooltip")

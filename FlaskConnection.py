@@ -21,16 +21,14 @@ record_with_tinterval = pd.read_csv("data_example_short_with_type.csv", index_co
 record_with_tinterval["time"] =  pd.to_datetime(record_with_tinterval["time"])
 record_with_tinterval["time_interval_to_next"] =  pd.to_timedelta(record_with_tinterval["time_interval_to_next"])
 record_with_tinterval["time_interval_from_last"] =  pd.to_timedelta(record_with_tinterval["time_interval_from_last"])
-time_range_filtered = None
+# time_range_filtered = None
 shaped_routes = None
 left_alignment_pos = None
+# data_query_route = None
+total_sta = None
 
 def QueryTimeFilter(startTime, endTime, queryMCC):
-    global time_range_filtered, shaped_routes, left_alignment_pos
-    #reset vars
-    time_range_filtered = None
-    shaped_routes = None
-    left_alignment_pos = None
+    global shaped_routes, left_alignment_pos, total_sta
     time_range_filtered = record_with_tinterval[(record_with_tinterval["time"] > startTime) & (record_with_tinterval["time"] < endTime)]
     time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
     #get largest min "max first position" of the queried MCC in the route as the left alignment position
@@ -41,10 +39,19 @@ def QueryTimeFilter(startTime, endTime, queryMCC):
     #calcu alignment offset
     alignment_offset = left_alignment_pos - grouped_data_query["step"].min().dropna()
     data_query_route = time_range_filtered[time_range_filtered["name"].isin(need_alignment.index)]
+    
+    #get total_sta
+    total_sta = data_query_route.groupby("mcc").mean().drop(columns = ["step"]).rename({"transaction_value": "avg_atv"}, axis = 1)
+    total_sta["total_ttv"] = data_query_route.groupby("mcc").sum()["transaction_value"]
+    total_sta["offline_total_ttv"] = data_query_route.groupby(["mcc", "transaction_type"]).sum().unstack().xs(("transaction_value", "offline"), axis = 1)
+    total_sta["online_total_ttv"] = data_query_route.groupby(["mcc", "transaction_type"]).sum().unstack().xs(("transaction_value", "online"), axis = 1)
+    total_sta["offline_avg_atv"] = data_query_route.groupby(["mcc", "transaction_type"]).mean().unstack().xs(("transaction_value", "offline"), axis = 1)
+    total_sta["online_avg_atv"] = data_query_route.groupby(["mcc", "transaction_type"]).mean().unstack().xs(("transaction_value", "online"), axis = 1)   
+
     data_query_route.set_index("name", inplace = True)
     data_query_route["offset"] = alignment_offset
     data_query_route["step"] = data_query_route["step"] + data_query_route["offset"]
-    shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step")
+    shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step") 
 
 def QuerySingleNode_new(single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
 
@@ -152,7 +159,11 @@ def QuerySingleNode_new(single_sequence, time_interval_limit, keep_rank_num, las
 
         links_result_dict = links_result.to_dict('records')
         nodes_result_dict = nodes_result.to_dict('records')
-        return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes)
+        if abs(single_sequence) > 1 :
+            return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes)
+        else:
+            total_sta_dict = total_sta.reset_index().to_dict('records')
+            return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes, total_sta = total_sta_dict)
     else:
         nodes_result_dict = nodes_result.to_dict('records')
         return jsonify(node = nodes_result_dict)
@@ -185,7 +196,6 @@ def packQueryListCovert(packLinks, packNodes):
                 thisTypeList.append(multiQueryLinks[multiQueryLinks["source"] == lastTarget]["type"].values[0])
                 lastTarget = multiQueryLinks[multiQueryLinks["source"] == lastTarget]["target"].values[0]
                 thisSeries.append(lastTarget)
-                
                 # thisTypeList.append)
             #get unique values of type list
             thisTypeList = list(set(thisTypeList))
@@ -202,6 +212,7 @@ def packQueryListCovert(packLinks, packNodes):
     print(querySeries)
     return querySeries
 
+#ToDo: optimize this
 def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limit, keep_rank_num, last_step_routes):
     prime_num = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293]
     left_alignment_group = []
@@ -223,14 +234,11 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
                 mcc_id_transform +=(time_range_filtered_cpy["mcc"]==queryList[i])*prime_num[i]
             kernel.append(prime_num[i] * prime_num[i]) # kernel = id^2
             id_list.append(prime_num[i])
-            # kernel.append((i+1)*(i+1)) # kernel = id^2
-            # id_list.append(i+1)
 
         time_range_filtered_cpy["transform"] = mcc_id_transform
         id_list.reverse()
         kernel.reverse()
-        print(id_list, kernel)
-        # so if id = [2,3], kernel = [4,9], using the square of prime number to make sure the convolution is unique
+        # so if id = [2,3], kernel = [4,9], using square of prime numbers to make sure the convolution is unique
         # filter all the last step in the querylist by matching convolve result. eg. two mccs -> [2,3] dot [4,9] = 35
         time_range_filtered_cpy["pattern"] = list(np.convolve(mcc_id_transform, kernel,"full") == np.dot(id_list,kernel))[:-len(queryList)+1] # as using full mode, the convolve return would be longer than the df
         packed_data_query = time_range_filtered_cpy[(time_range_filtered_cpy["pattern"]) & (time_range_filtered_cpy["step"]>len(queryList)-1)] # avoid all the 
@@ -255,7 +263,14 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
             this_index = step_group.index
             all_index.append(this_index)
             packed_data_query_route = packed_data_query_route.append(packed_data_query_route_this)
-        
+    #get total sta
+    data_query_route = packed_data_query_route.reset_index(drop=True)
+    p_total_sta = data_query_route.groupby("mcc").mean().drop(columns = ["step", "offset", "alignment_pos"]).rename({"transaction_value": "avg_atv"}, axis = 1)
+    p_total_sta["total_ttv"] = data_query_route.groupby("mcc").sum()["transaction_value"]
+    p_total_sta["offline_total_ttv"] = data_query_route.groupby(["mcc", "transaction_type"]).sum().unstack().xs(("transaction_value", "offline"), axis = 1)
+    p_total_sta["online_total_ttv"] = data_query_route.groupby(["mcc", "transaction_type"]).sum().unstack().xs(("transaction_value", "online"), axis = 1)
+    p_total_sta["offline_avg_atv"] = data_query_route.groupby(["mcc", "transaction_type"]).mean().unstack().xs(("transaction_value", "offline"), axis = 1)
+    p_total_sta["online_avg_atv"] = data_query_route.groupby(["mcc", "transaction_type"]).mean().unstack().xs(("transaction_value", "online"), axis = 1)   
     # find max alignment position
     max_alignment_pos = packed_data_query_route["alignment_pos"].max()
     packed_data_query_route["alignment_pos_max"] = max_alignment_pos
@@ -381,23 +396,10 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
 
     links_result_dict = links_result.to_dict('records')
     nodes_result_dict = nodes_result.to_dict('records')
-    return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes)
+    p_total_sta_dict = p_total_sta.reset_index().to_dict('records')
+    return jsonify(link = links_result_dict, node = nodes_result_dict, route_list = this_step_routes, total_sta = p_total_sta_dict)
 
 def QueryProperty(startTime, endTime, queryMCC, route_list, query_property, single_sequence):
-    time_range_filtered = record_with_tinterval[(record_with_tinterval["time"] > startTime) & (record_with_tinterval["time"] < endTime)]
-    time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
-    #get largest min "max first position" of the queried MCC in the route as the left alignment position
-    data_mcc_query = time_range_filtered.loc[time_range_filtered["mcc"] == queryMCC]
-    grouped_data_query = data_mcc_query.groupby("name")
-    left_alignment_pos = grouped_data_query["step"].min().max()
-    need_alignment = grouped_data_query["step"].min().dropna() < left_alignment_pos
-    #calcu alignment offset
-    alignment_offset = left_alignment_pos - grouped_data_query["step"].min().dropna()
-    data_query_route = time_range_filtered[time_range_filtered["name"].isin(need_alignment.index)]
-    data_query_route.set_index("name", inplace = True)
-    data_query_route["offset"] = alignment_offset
-    data_query_route["step"] = data_query_route["step"] + data_query_route["offset"]
-    shaped_routes = data_query_route.pivot(index = data_query_route.index, columns =  "step")
     #calculate absolute step pos
     raw_step = single_sequence + left_alignment_pos
     query_property_list = [query_property, "transaction_value"]

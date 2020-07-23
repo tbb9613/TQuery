@@ -960,3 +960,23 @@ text.clicked {
   text-anchor: middle;
   cursor: pointer;
 }
+
+.innode-text-plus {
+  font-size: 10px;
+  fill: white;
+  text-anchor: middle;
+  alignment-baseline: middle;
+  cursor: default;
+}
+
+#shareWalletContainer{
+  bottom: 0px;
+  position: absolute;
+  z-index: 3;
+  width: 0;
+  padding-bottom: 0px;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin: 0;
+  /* background: white; */
+}
