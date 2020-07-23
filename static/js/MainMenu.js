@@ -1786,4 +1786,7 @@ function normalColorScaler(max, d){
         .range([0.2,1])
     return scaler(d)
 }
+function selectParent(){
+    return this.parentNode
+}
 

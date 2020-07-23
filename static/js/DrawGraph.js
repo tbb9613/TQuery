@@ -237,97 +237,101 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         .attr("id", "Nodes");
 
     let nodeRadius = 20,
+        plusNodeRadius = 15,
         nodeTxtOffset = 27,
-        fistNodeDistance = 100,
+        firstNodeDistance = 100,
         coeffTxtOffset = 0.5;
+    if (type === "packed") {
+        firstNodeDistance = 180;
+        coeffTxtOffset = 0.8;
+    }
 
     function drawCenterNode() {
         if (type === "single") {
             axios.post('http://127.0.0.1:5000/query_single_new', {
-                    name: queryCenter,
-                    sequence: 0,
-                    list: allList,
-                    timeStart: timeStart,
-                    timeEnd: timeEnd,
-                    displaynum: 1,
-                    firstQuery: false
-                    // time: t
-                })
-                .catch(function (error) {
-                    console.log(error);
-                })
-                .then(function (response) { // if success then update data
-                    console.log("center", response.data);
-                    let centernode = node.selectAll(`#seq0`)
-                        .data(response.data.node).enter()
-                        .append("g").attr("id", "seq0")
-                        .attr("class", "node-group")
+                name: queryCenter,
+                sequence: 0,
+                list: allList,
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                displaynum: 1,
+                firstQuery: false
+                // time: t
+            })
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { // if success then update data
+                console.log("center", response.data);
+                let centernode = node.selectAll(`#seq0`)
+                    .data(response.data.node).enter()
+                    .append("g").attr("id", "seq0")
+                    .attr("class", "node-group")
 
-                    centernode
-                        .attr("transform", `translate(${graphCenter[0]}, ${graphCenter[1]})`)
-                        .append("circle")
-                        .attr("class", "center-node")
-                        .attr("r", 30)
-                        .on("click", clicked);
+                centernode
+                    .attr("transform", `translate(${graphCenter[0]}, ${graphCenter[1]})`)
+                    .append("circle")
+                    .attr("class", "center-node")
+                    .attr("r", 30)
+                    .on("click", clicked);
 
-                    centernode
-                        .append("text")
-                        .attr("class", "node-text")
-                        .attr("fill", "slategray")
-                        // .attr("x", graphCenter[0])
-                        .attr("y", nodeTxtOffset + 15)
-                        .text(d => multiWordsFormat(d.target))
-                        .style("font-size", "13px")
-                        .on("mouseover", d => showFullName(d.target))
-                        .on("mousemove", moveFullName)
-                        .on("mouseout", hideFullName);
+                centernode
+                    .append("text")
+                    .attr("class", "node-text")
+                    .attr("fill", "slategray")
+                    // .attr("x", graphCenter[0])
+                    .attr("y", nodeTxtOffset + 15)
+                    .text(d => multiWordsFormat(d.target))
+                    .style("font-size", "13px")
+                    .on("mouseover", d => showFullName(d.target))
+                    .on("mousemove", moveFullName)
+                    .on("mouseout", hideFullName);
 
-                    console.log(getTranslation(centernode.attr("transform")))
-                    drawCenterPie();
+                console.log(getTranslation(centernode.attr("transform")))
+                drawCenterPie();
 
-                    function drawCenterPie() {
-                        innodePieClickedFlag = false;
-                        let arcSample = d3.arc().outerRadius(30 + 1).innerRadius(15);
-                        // Convert raw data to pie data format
-                        function pieData(d) {
-                            let data = [{
-                                    "label": "Online",
-                                    "value": d.online_count,
-                                    "percentage": d.online_count / d.count,
-                                    "route": d.online_route
-                                },
-                                {
-                                    "label": "Offline",
-                                    "value": d.offline_count,
-                                    "percentage": d.offline_count / d.count,
-                                    "route": d.offline_route
-                                }
-                            ];
-                            return data
-                        }
-                        let spConverter = d3.pie().value(d => d.value)
-                            .sort(null).sortValues(null);
-
-                        centernode.append("g").selectAll("path")
-                            .data(d => spConverter(pieData(d)))
-                            .enter().append("path")
-                            .attr("class", "innode-graph innode-type-pie hide")
-                            .attr("fill", (d, i) => pieColorScale(i))
-                            .attr("d", arcSample)
-                            .on("mouseover", InNodePieGraphMouseOver)
-                            .on("mousemove", InNodePieGraphMouseMove)
-                            .on("mouseleave", InNodePieGraphMouseLeave)
-                            .on("click", InNodePieGraphClick);
-                        if (pieViewFlag) {
-                            d3.selectAll(".link-trans-type").classed("hide", false);
-                            d3.selectAll(".innode-type-pie").classed("hide", false);
-                        }
+                function drawCenterPie() {
+                    innodePieClickedFlag = false;
+                    let arcSample = d3.arc().outerRadius(30 + 1).innerRadius(15);
+                    // Convert raw data to pie data format
+                    function pieData(d) {
+                        let data = [{
+                                "label": "Online",
+                                "value": d.online_count,
+                                "percentage": d.online_count / d.count,
+                                "route": d.online_route
+                            },
+                            {
+                                "label": "Offline",
+                                "value": d.offline_count,
+                                "percentage": d.offline_count / d.count,
+                                "route": d.offline_route
+                            }
+                        ];
+                        return data
                     }
+                    let spConverter = d3.pie().value(d => d.value)
+                        .sort(null).sortValues(null);
+
+                    centernode.append("g").selectAll("path")
+                        .data(d => spConverter(pieData(d)))
+                        .enter().append("path")
+                        .attr("class", "innode-graph innode-type-pie hide")
+                        .attr("fill", (d, i) => pieColorScale(i))
+                        .attr("d", arcSample)
+                        .on("mouseover", InNodePieGraphMouseOver)
+                        .on("mousemove", InNodePieGraphMouseMove)
+                        .on("mouseleave", InNodePieGraphMouseLeave)
+                        .on("click", InNodePieGraphClick);
+                    if (pieViewFlag) {
+                        d3.selectAll(".link-trans-type").classed("hide", false);
+                        d3.selectAll(".innode-type-pie").classed("hide", false);
+                    }
+                }
                 });
 
         } else {
-            fistNodeDistance = 180;
-            coeffTxtOffset = 0.8;
+            
             let centernode = node.append("g")
                 .attr("id", "queryNode")
                 .selectAll("circle")
@@ -593,7 +597,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .attr("stroke-width", 1)
                 .attr("x1", d => graphCenter[0])
                 .attr("y1", d => graphCenter[1])
-                .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                .attr("x2", d => graphCenter[0] + seq * firstNodeDistance)
                 .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.node.length));
 
             let transTypeLinkGroup = link.append("g")
@@ -608,7 +612,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .attr("stroke-width", 1)
                 .attr("x1", d => graphCenter[0])
                 // .attr("y1", d => graphCenter[1])
-                .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                .attr("x2", d => graphCenter[0] + seq * firstNodeDistance)
             // .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
 
 
@@ -621,7 +625,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .attr("stroke-width", 1)
                 .attr("x1", d => graphCenter[0])
                 // .attr("y1", d => graphCenter[1])
-                .attr("x2", d => graphCenter[0] + seq * fistNodeDistance)
+                .attr("x2", d => graphCenter[0] + seq * firstNodeDistance)
             // .attr("y2", (d, i) => graphCenter[1] + MainLayoutScaler(i, response.data.link.length));
 
             let linkTextGroup = link.append("g") // add text on links
@@ -630,7 +634,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .append("text")
                 .attr("class", "link-text link-text-main")
                 .attr("id", `seq${seq}`)
-                .attr("x", d => graphCenter[0] + coeffTxtOffset * seq * fistNodeDistance)
+                .attr("x", d => graphCenter[0] + coeffTxtOffset * seq * firstNodeDistance)
                 .attr("y", (d, i) => txtOffset + graphCenter[1] + coeffTxtOffset * MainLayoutScaler(i, response.data.node.length))
                 .text(d => d.count)
                 .classed("text-hide", true);
@@ -665,16 +669,28 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 // let meanATV = d3.mean(response.data.link, d => d.atv);
                 let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
                 // console.log(digitFormat(meanATV));
-                let ATVBarGroup = nodeGroup.append("g")
+                function barData(d){
+                    let data = [{
+                        "atv": d.atv,
+                        "avg_atv": meanATV(d),
+                        "percent": (d.atv-meanATV(d))/meanATV(d),
+                        "sequence": d.sequence
+                    }]
+                    return data
+                }
+                let ATVBarGroup = nodeGroup.selectAll(".atv-group")
+                    .data(d => barData(d)).enter()
+                    .append("g")
+                    .attr("class", "atv-group");
                 // .attr("class", "innode-graph innnode-atv-bar")
 
                 ATVBarGroup.append("rect")
                     .attr("width", 0.8 * nodeRadius)
                     .attr("x", -0.4 * nodeRadius)
-                    .attr("y", d => (d.atv - meanATV(d) > 0) ? -inNodeHistScaler((d.atv - meanATV(d)) / meanATV(d)) : 0) // if result is postive then the bar should be put over the baseline
-                    .attr("height", d => inNodeHistScaler(Math.abs((d.atv - meanATV(d)) / meanATV(d))))
+                    .attr("y", d => (d.percent > 0) ? -inNodeHistScaler(d.percent) : 0) // if result is postive then the bar should be put over the baseline
+                    .attr("height", d => inNodeHistScaler(Math.abs(d.percent)))
                     .attr("class", "innode-graph innode-atv-bar")
-                    .attr("fill", d => (d.atv - meanATV(d) > 0) ? atvColors[0] : atvColors[1]);
+                    .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1]);
                 //baseline
                 ATVBarGroup.append("line")
                     .attr("x1", -0.6 * nodeRadius).attr("x2", 0.6 * nodeRadius)
@@ -682,47 +698,17 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     .attr("class", "innode-graph innode-atv-bar");
                 //number text with "+" "-"
                 ATVBarGroup.append("text")
-                    .text(d => digitFormat(d.atv - meanATV(d)))
+                    .text(d => digitFormat(d.atv - d.avg_atv))
                     .attr("class", "innode-graph innode-atv-bar")
-                    .attr("y", d => (d.atv - meanATV(d) > 0) ? 11 : -3)
-                    .attr("fill", d => (d.atv - meanATV(d) > 0) ? atvColors[0] : atvColors[1]);
+                    .attr("y", d => (d.atv - d.avg_atv > 0) ? 11 : -3)
+                    .attr("fill", d => (d.atv - d.avg_atv > 0) ? atvColors[0] : atvColors[1]);
                 //add hover events
                 node.selectAll(".innode-atv-bar")
-                    .on("mouseover", InNodeGraphMouseOver)
-                    .on("mousemove", InNodeGraphMouseMove)
-                    .on("mouseleave", InNodeGraphMouseLeave);
-
-                function InNodeGraphMouseOver(d) {
-                    inNodeTooltip.style("opacity", 1);
-                }
-
-                function InNodeGraphMouseMove(d) {
-                    let dpx = event.pageX,
-                        dpy = event.pageY;
+                    .on("mouseover", InNodeATVGraphMouseOver)
+                    .on("mousemove", InNodeATVGraphMouseMove)
+                    .on("mouseleave", InNodeATVGraphMouseLeave);
 
 
-                    inNodeTooltip
-                        .html(inNodeTooltipHtml(d))
-                        .style("top", dpy + "px")
-                        .style("left", dpx + "px");
-
-                    function inNodeTooltipHtml(d) {
-                        if (d.atv - meanATV(d) > 0) {
-                            return "ATV: " + "<span style = 'color:#C94CB0'>" + moneyFormat(d.atv) + "</span>; <br>" +
-                                "<span style = 'color:#C94CB0'>" + moneyFormat(Math.abs(d.atv - meanATV(d))) + "(" + percentFormat(Math.abs(d.atv - meanATV(d)) / meanATV(d)) + ")</span>" + " more than the average ATV " +
-                                "<span style = 'color:#6C7CAB'>" + moneyFormat(meanATV(d)) + "</span>."
-                        } else {
-                            return "ATV: " + "<span style = 'color:#328347'>" + moneyFormat(d.atv) + "</span>; <br>" +
-                                "<span style = 'color:#328347'>" + moneyFormat(Math.abs(d.atv - meanATV(d))) + "(" + percentFormat(Math.abs(d.atv - meanATV(d)) / meanATV(d)) + ")</span>" + " less than the average ATV " +
-                                "<span style = 'color:#6C7CAB'>" + moneyFormat(meanATV(d)) + "</span>."
-                        }
-                    }
-                }
-
-                function InNodeGraphMouseLeave(d) {
-                    inNodeTooltip
-                        .style("opacity", 0);
-                }
             }
             drawATVBar();
 
@@ -847,10 +833,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
     setTimeout(() => {
         appendVerLine(centerVerline, graphCenter[0]);
-        appendVerLine(leftVerline, graphCenter[0] - fistNodeDistance);
-        appendVerLine(rightVerline, graphCenter[0] + fistNodeDistance);
-        appendHorLine(leftHorline, graphCenter[0] - arrowOffset, graphCenter[0] - fistNodeDistance + arrowOffset);
-        appendHorLine(rightHorline, graphCenter[0] + arrowOffset, graphCenter[0] + fistNodeDistance - arrowOffset);
+        appendVerLine(leftVerline, graphCenter[0] - firstNodeDistance);
+        appendVerLine(rightVerline, graphCenter[0] + firstNodeDistance);
+        appendHorLine(leftHorline, graphCenter[0] - arrowOffset, graphCenter[0] - firstNodeDistance + arrowOffset);
+        appendHorLine(rightHorline, graphCenter[0] + arrowOffset, graphCenter[0] + firstNodeDistance - arrowOffset);
     }, 150)
 
     //drag vertical line event
@@ -860,59 +846,31 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         let dLinex = d3.event.x;
         var thisLine = d3.select(this);
         thisLine.select("line").attr("x1", dLinex).attr("x2", dLinex);
-        if (thisLine.attr("id") === "seq-1") { //left seq 1 node
-            nodeLeft.attr("transform", d => "translate(" + dLinex + "," +
-                linkLeft.filter(l => l.target == d.target).attr("y2") + ")");
-            d3.selectAll("#seq-1").filter("line").attr("x2", dLinex);
-            linkLeft.attr("x2", dLinex);
-            //move left text
-            textLeft.attr("x", d => graphCenter[0] + coeffTxtOffset * (-1) * (graphCenter[0] - dLinex));
-            //move horizontal line
-            horLineMove(-1, -2);
-            //if left plus line is drawn
-            if (linkLeftplus[2] != undefined) {
-                linkLeftplus[2].selectAll("line").attr("x1", dLinex);
-                linkTxtPosMove(-2, linkLeftplus[2]);
-            }
-
-        } else if (thisLine.attr("id") === "seq1") { //right seq 1 node
-            nodeRight.attr("transform", d => "translate(" + dLinex + "," +
-                linkRight.filter(l => l.target == d.target).attr("y2") + ")");
-            d3.selectAll("#seq1").filter("line").attr("x2", dLinex);
-            linkRight.attr("x2", dLinex);
-            //move right line text
-            textRight.attr("x", d => graphCenter[0] + coeffTxtOffset * d.sequence * (dLinex - graphCenter[0]));
-            //move horizontal line
-            horLineMove(1, 2);
-            if (linkRightplus[2] != undefined) {
-                linkRightplus[2].selectAll("line").attr("x1", dLinex);
-                // console.log(linkRightplus[2].selectAll("text"))
-                linkTxtPosMove(2, linkRightplus[2]);
-            }
-        } else {
             var seq = parseFloat(thisLine.attr("id").replace("seq", ""));
             let allgroup = d3.selectAll(`#${thisLine.attr("id")}`);
-            allgroup.selectAll("circle").attr("cx", dLinex);
-            allgroup.selectAll(".node-text").attr("x", dLinex); //node text move
-            allgroup.selectAll("line").attr("x2", dLinex);
             if (seq > 0) {
                 horLineMove(seq, seq + 1);
                 linkTxtPosMove(seq, linkRightplus[seq]);
+                nodeRightplus[seq].attr("transform", d => "translate(" + dLinex + "," +
+                    getTranslation(nodeRightplus[seq].filter(n => n.target == d.target).attr("transform"))[1] + ")");
+                linkRightplus[seq].selectAll("line").attr("x2", dLinex);
                 if (linkRightplus[seq + 1] != undefined) {
                     linkRightplus[seq + 1].selectAll("line").attr("x1", dLinex);
-
                     linkTxtPosMove(seq + 1, linkRightplus[seq + 1]);
                 }
             } else {
                 horLineMove(seq, seq - 1);
+
                 linkTxtPosMove(seq, linkLeftplus[-seq]);
+                nodeLeftplus[-seq].attr("transform", d => "translate(" + dLinex + "," +
+                    getTranslation(nodeLeftplus[-seq].filter(n => n.target == d.target).attr("transform"))[1] + ")");
+                linkLeftplus[-seq].selectAll("line").attr("x2", dLinex);
                 if (linkLeftplus[-seq + 1] != undefined) {
-                    linkLeftplus[-seq + 1].attr("x1", dLinex);
+                    linkLeftplus[-seq + 1].selectAll("line").attr("x1", dLinex);
                     linkTxtPosMove(seq - 1, linkLeftplus[-seq + 1]);
                 }
             }
-        }
-
+        
         function horLineMove(seq, nxtseq) {
             horizontalLine.select(`#seq${seq}`).select(".horizontal-line")
                 .attr("x2", () => (dLinex < graphCenter[0]) ? dLinex + arrowOffset : dLinex - arrowOffset);
@@ -1271,7 +1229,6 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("class", "node-group")
             .attr("transform", (d, i) => "translate(" + thisLinkGroup.selectAll(".link-total").filter(l => l.target == d.target).attr("x2") + "," +
                 LayoutScaler_Adjust(i, response.data.node.length) + ")")
-        let plusNodeRadius = 15
         thisNodeGroup.append("circle") // add circle
             .attr("class", "node")
             .attr("r", plusNodeRadius)
@@ -1336,16 +1293,31 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             // let meanATV = d3.mean(response.data.link, d => d.atv);
             let digitFormat = d3.format("+.1f"); // set format: eg. +0.1/-0.1 
             // console.log(digitFormat(meanATV));
-            let ATVBarGroup = thisNodeGroup.append("g")
             // .attr("class", "innode-graph innnode-atv-bar")
+            function barData(d){
+                let data = [{
+                    "atv": d.atv,
+                    "avg_atv": meanATV(d),
+                    "percent": (d.atv-meanATV(d))/meanATV(d),
+                    "sequence": d.sequence
+                }]
+                return data
+            }
 
+            let ATVBarGroup = thisNodeGroup.selectAll(".atv-group")
+                .data(d => barData(d)).enter()
+                .append("g")
+                .attr("class", "atv-group")
+                .on("mouseover", InNodeATVGraphMouseOver)
+                .on("mousemove", InNodeATVGraphMouseMove)
+                .on("mouseleave", InNodeATVGraphMouseLeave);
             ATVBarGroup.append("rect")
                 .attr("width", 0.8 * plusNodeRadius)
                 .attr("x", -0.4 * plusNodeRadius)
-                .attr("y", d => (d.atv - meanATV(d) > 0) ? -inNodeHistScaler((d.atv - meanATV(d)) / meanATV(d)) : 0) // if result is postive then the bar should be put over the baseline
-                .attr("height", d => inNodeHistScaler(Math.abs((d.atv - meanATV(d)) / meanATV(d))))
+                .attr("y", d => (d.percent > 0) ? -inNodeHistScaler(d.percent) : 0) // if result is postive then the bar should be put over the baseline
+                .attr("height", d => inNodeHistScaler(Math.abs(d.percent)))
                 .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus")
-                .attr("fill", d => (d.atv - meanATV(d) > 0) ? atvColors[0] : atvColors[1]);
+                .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1]);
             //baseline
             ATVBarGroup.append("line")
                 .attr("x1", -0.6 * plusNodeRadius).attr("x2", 0.6 * plusNodeRadius)
@@ -1353,47 +1325,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus");
             //number text with "+" "-"
             ATVBarGroup.append("text")
-                .text(d => digitFormat(d.atv - meanATV(d)))
+                .text(d => digitFormat(d.atv - d.avg_atv))
                 .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus")
-                .attr("y", d => (d.atv - meanATV(d) > 0) ? 8 : -2)
-                .attr("fill", d => (d.atv - meanATV(d) > 0) ? atvColors[0] : atvColors[1])
+                .attr("y", d => (d.percent > 0) ? 8 : -2)
+                .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1])
                 .style("font-size", "9px");
-            //add hover events
-            thisNodeGroup.selectAll(".innode-atv-bar")
-                .on("mouseover", InNodeGraphMouseOver)
-                .on("mousemove", InNodeGraphMouseMove)
-                .on("mouseleave", InNodeGraphMouseLeave);
-
-            function InNodeGraphMouseOver(d) {
-                inNodeTooltip.style("opacity", 1);
-            }
-
-            function InNodeGraphMouseMove(d) {
-                let dpx = event.pageX,
-                    dpy = event.pageY;
-
-                inNodeTooltip
-                    .html(inNodeTooltipHtml(d))
-                    .style("top", dpy + "px")
-                    .style("left", dpx + "px");
-
-                function inNodeTooltipHtml(d) {
-                    if (d.atv - meanATV(d) > 0) {
-                        return "ATV: " + "<span style = 'color:#C94CB0'>" + moneyFormat(d.atv) + "</span>; <br>" +
-                            "<span style = 'color:#C94CB0'>" + moneyFormat(Math.abs(d.atv - meanATV(d))) + "(" + percentFormat(Math.abs(d.atv - meanATV(d)) / meanATV(d)) + ")</span>" + " more than the average ATV " +
-                            "<span style = 'color:#6C7CAB'>" + moneyFormat(meanATV(d)) + "</span>."
-                    } else {
-                        return "ATV: " + "<span style = 'color:#328347'>" + moneyFormat(d.atv) + "</span>; <br>" +
-                            "<span style = 'color:#328347'>" + moneyFormat(Math.abs(d.atv - meanATV(d))) + "(" + percentFormat(Math.abs(d.atv - meanATV(d)) / meanATV(d)) + ")</span>" + " less than the average ATV " +
-                            "<span style = 'color:#6C7CAB'>" + moneyFormat(meanATV(d)) + "</span>."
-                    }
-                }
-            }
-
-            function InNodeGraphMouseLeave(d) {
-                inNodeTooltip
-                    .style("opacity", 0);
-            }
         }
         drawPlusATVBar();
 
@@ -1520,6 +1456,38 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             resetAllGraphStyle();
         }
     }
+
+    function InNodeATVGraphMouseOver(d) {
+        inNodeTooltip.style("opacity", 1);
+    }
+
+    function InNodeATVGraphMouseMove(d) {
+        let dpx = event.pageX,
+            dpy = event.pageY;
+
+        inNodeTooltip
+            .html(inNodeTooltipHtml(d))
+            .style("top", dpy + "px")
+            .style("left", dpx + "px");
+
+        function inNodeTooltipHtml(d) {
+            if (d.percent > 0) {
+                return "ATV: " + "<span style = 'color:#C94CB0'>" + moneyFormat(d.atv) + "</span>; <br>" +
+                    "<span style = 'color:#C94CB0'>" + moneyFormat(Math.abs(d.atv - d.avg_atv)) + "(" + percentFormat(Math.abs(d.percent)) + ")</span>" + " more than the average ATV " +
+                    "<span style = 'color:#6C7CAB'>" + moneyFormat(d.avg_atv) + "</span>."
+            } else {
+                return "ATV: " + "<span style = 'color:#328347'>" + moneyFormat(d.atv) + "</span>; <br>" +
+                    "<span style = 'color:#328347'>" + moneyFormat(Math.abs(d.atv - d.avg_atv)) + "(" + percentFormat(Math.abs(d.percent)) + ")</span>" + " less than the average ATV " +
+                    "<span style = 'color:#6C7CAB'>" + moneyFormat(d.avg_atv) + "</span>."
+            }
+        }
+    }
+
+    function InNodeATVGraphMouseLeave(d) {
+        inNodeTooltip
+            .style("opacity", 0);
+    }
+
     //TODO: change it to update pattern
     function InNodePieGraphClick(d) {
         innodePieClickedFlag = true;
@@ -1528,22 +1496,23 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
         link.selectAll("line").classed("not-this-route", true)
         node.selectAll(".innode-type-pie").style("opacity", .5);
-        d3.select(this).style("opacity", 1)
+        d3.select(this).style("opacity", 1);
+        let thisParent = d3.select(this.parentNode);
         if (d.data.label === "Offline") { //if click the offline
             // d3.selectAll(".innode-type-pie")
             //     .filter(d => d.data.label === "Online").style("opacity", 0);
             renderInterSectionPie(d);
+            
             filterRouteByTypePieClick(d.data.route);
-            // d.data.route.forEach(function (r) {
-            //     filterRouteByTypePieClick(r);
-            // })
-            // console.log(intersection(allPieData[0].data.route, d.data.route))
         } else if (d.data.label === "Online") {
             renderInterSectionPie(d);
             filterRouteByTypePieClick(d.data.route);
             // d.data.route.forEach(function (r) {
             //     filterRouteByTypePieClick(r);
             // })
+        }
+        if (nodeViewType === "bar"){
+            renderRandomATVBar();
         }
     };
 
@@ -1566,6 +1535,71 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .classed("not-this-route", !(l => isInRoute(r, l.online_route)));
         link.selectAll(".link-offline-trans").filter(".this-route-offline")
             .classed("not-this-route", !(l => isInRoute(r, l.offline_route)));
+
+        if (nodeViewType === "bar"){
+            node.selectAll("circle").filter(".not-this-route")
+                .select(selectParent).selectAll(".atv-group").classed("hide", true);
+            node.selectAll("circle").filter(".this-route-type")
+                .select(selectParent).selectAll(".atv-group").classed("hide", false);
+        }
+    }
+
+    function renderRandomATVBar(){
+
+        node.selectAll(".node-group").filter(d => d.sequence != 0)
+            .selectAll(".atv-group").remove();
+        let digitFormat = d3.format("+.1f");
+        function barData(d){
+            let data = [{
+                "atv": d.atv + (Math.random()-0.5)*10,
+                "avg_atv": meanATV(d),
+                "percent": (d.atv+(Math.random()-0.5)*10-meanATV(d))/meanATV(d),
+                "sequence": d.sequence
+            }]
+            return data
+        }
+        let ATVBarGroup = node.selectAll(".node-group").filter(d => d.sequence != 0)
+            .selectAll(".atv-group")
+            .data(d => barData(d)).enter()
+            .append("g")
+            .attr("class", "atv-group")
+            .on("mouseover", InNodeATVGraphMouseOver)
+            .on("mousemove", InNodeATVGraphMouseMove)
+            .on("mouseleave", InNodeATVGraphMouseLeave);
+
+        ATVBarGroup.append("rect")
+            .attr("width", d => (Math.abs(d.sequence) > 1) ? 0.8 * plusNodeRadius : 0.8 * nodeRadius)
+            .attr("x", d => (Math.abs(d.sequence) > 1) ? -0.4 * plusNodeRadius : -0.4 * nodeRadius)
+            .attr("y", d => (d.percent > 0) ? -inNodeHistScaler(d.percent) : 0) // if result is postive then the bar should be put over the baseline
+            .attr("height", d => inNodeHistScaler(Math.abs(d.percent)))
+            .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus")
+            .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1]);
+        //baseline
+        ATVBarGroup.append("line")
+            .attr("x1", d => (Math.abs(d.sequence) > 1) ? -0.6 * plusNodeRadius : -0.6 * nodeRadius)
+            .attr("x2", d => (Math.abs(d.sequence) > 1) ? 0.6 * plusNodeRadius : 0.6 * nodeRadius)
+            // .datum(d => d.atv)
+            .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus");
+        //number text with "+" "-"
+        ATVBarGroup.append("text")
+            .text(d => digitFormat(d.atv - d.avg_atv))
+            .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus")
+            .attr("y", d => textYPos(d))
+            .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1])
+            .style("font-size", d => (Math.abs(d.sequence) > 1) ? "9px" : null);
+        // hide not this route bar
+        node.selectAll("circle").filter(".not-this-route")
+            .select(selectParent).selectAll(".atv-group").classed("hide", true);
+        node.selectAll("circle").filter(".this-route-type")
+            .select(selectParent).selectAll(".atv-group").classed("hide", false);
+        
+            function textYPos(d){
+            if (Math.abs(d.sequence) > 1) {
+                if (d.percent > 0) { return 8 } else { return -2 }
+            } else {
+                if (d.percent > 0) { return 11 } else { return -3 }
+            }
+        }
     }
 
     function renderInterSectionPie(d) {
@@ -1699,7 +1733,56 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
 
         node.selectAll("#seq1, #seq-1").selectAll(".innode-type-pie")
             .attr("d", arcFirst);
+    }
 
+    function resetATVBar(){
+        node.selectAll(".atv-group").remove();
+        let digitFormat = d3.format("+.1f");
+        function barData(d){
+            let data = [{
+                "atv": d.atv,
+                "avg_atv": meanATV(d),
+                "percent": (d.atv-meanATV(d))/meanATV(d),
+                "sequence": d.sequence
+            }]
+            return data
+        }
+        let ATVBarGroup = node.selectAll(".node-group").filter(d => d.sequence != 0)
+            .selectAll(".atv-group")
+            .data(d => barData(d)).enter()
+            .append("g")
+            .attr("class", "atv-group")
+            .on("mouseover", InNodeATVGraphMouseOver)
+            .on("mousemove", InNodeATVGraphMouseMove)
+            .on("mouseleave", InNodeATVGraphMouseLeave);
+
+        ATVBarGroup.append("rect")
+            .attr("width", d => (Math.abs(d.sequence) > 1) ? 0.8 * plusNodeRadius : 0.8 * nodeRadius)
+            .attr("x", d => (Math.abs(d.sequence) > 1) ? -0.4 * plusNodeRadius : -0.4 * nodeRadius)
+            .attr("y", d => (d.percent > 0) ? -inNodeHistScaler(d.percent) : 0) // if result is postive then the bar should be put over the baseline
+            .attr("height", d => inNodeHistScaler(Math.abs(d.percent)))
+            .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus")
+            .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1]);
+        //baseline
+        ATVBarGroup.append("line")
+            .attr("x1", d => (Math.abs(d.sequence) > 1) ? -0.6 * plusNodeRadius : -0.6 * nodeRadius)
+            .attr("x2", d => (Math.abs(d.sequence) > 1) ? 0.6 * plusNodeRadius : 0.6 * nodeRadius)
+            // .datum(d => d.atv)
+            .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus");
+        //number text with "+" "-"
+        ATVBarGroup.append("text")
+            .text(d => digitFormat(d.atv - d.avg_atv))
+            .attr("class", "innode-graph innode-atv-bar innode-atv-bar-plus")
+            .attr("y", d => textYPos(d))
+            .attr("fill", d => (d.percent > 0) ? atvColors[0] : atvColors[1])
+            .style("font-size", d => (Math.abs(d.sequence) > 1) ? "9px" : null);
+        function textYPos(d){
+            if (Math.abs(d.sequence) > 1) {
+                if (d.percent > 0) { return 8 } else { return -2 }
+            } else {
+                if (d.percent > 0) { return 11 } else { return -3 }
+            }
+        }
     }
 
     function resetAllGraphStyle() {
@@ -1724,6 +1807,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         link.selectAll("text").classed("this-route", false);
         link.selectAll("text").classed("not-this-route", false);
 
+        if (nodeViewType === "bar"){
+            node.selectAll(".atv-group").classed("hide", false);
+        }
+
     }
 
     function filterRouteByNodeHover(r) {
@@ -1745,6 +1832,14 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
         //     .classed("this-route", (l => isInRoute(r, l.route)))
         // link.selectAll("text").filter(".this-route")
         //     .classed("not-this-route", !(l => isInRoute(r, l.route)))
+        if (nodeViewType === "bar"){
+            node.selectAll("circle").filter(".not-this-route")
+                .select(selectParent).selectAll(".atv-group").classed("hide", true);
+            node.selectAll("circle").filter(".this-route")
+                .select(selectParent).selectAll(".atv-group").classed("hide", false);
+        }
+        
+
     }
 
     function isInRoute(single, group) {
@@ -2018,6 +2113,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             if (innodePieClickedFlag) {
                 resetAllGraphStyle();
                 resetTypePie();
+                resetATVBar();
             }
             mdui.snackbar({
                 message: 'Pie view of transaction types disabled'
@@ -2089,9 +2185,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 d3.selectAll(".after-controller").classed("hide", false);
                 d3.selectAll(".before-controller").classed("hide", false);
                 let allSelectedCircle = d3.selectAll("circle").filter(".this-route")
-                let allSelectedCirclep = allSelectedCircle.select(function () {
-                    return this.parentNode
-                })
+                let allSelectedCirclep = allSelectedCircle.select(selectParent)
                 allSelectedCirclep.classed("hide", false);
                 d3.selectAll(".single-route").remove();
                 d3.selectAll(".innode-atv-bar-plus").classed("hide", false);
@@ -2173,15 +2267,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                         []
                     ]) {
                     if ((nodeViewType === "bar") || (nodeViewType === "atv")) {
-                        nextStepNodes.select(function () {
-                                return this.parentNode
-                            })
+                        nextStepNodes.select(selectParent)
                             .selectAll(".innode-text-plus")
                             .text(t => percentFormatC((nextStepLinks.filter(l => l.target === t.target).data()[0].atv - meanATV(t)) / meanATV(t)));
                     } else if (nodeViewType === "ttv") {
-                        nextStepNodes.select(function () {
-                                return this.parentNode
-                            })
+                        nextStepNodes.select(selectParent)
                             .selectAll(".innode-text-plus")
                             .text(t => percentFormat((t.atv * intersection(t.route, thisRouteList).length) / totalTTV(t)));
                     }
@@ -2206,9 +2296,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             // get all the nodes in the route and clone
             let allSelectedCircle = d3.selectAll("circle").filter(".this-route")
             //get parent node selection
-            let allSelectedCirclep = allSelectedCircle.select(function () {
-                return this.parentNode
-            })
+            let allSelectedCirclep = allSelectedCircle.select(selectParent)
             // let singleRouteNode = allSelectedCirclep.clone(true);
             // allSelectedCirclep.classed("hide", true);
             // singleRouteNode.classed("single-route", true);
@@ -2235,165 +2323,164 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             sequenceArray.sort((a, b) => a - b);
             console.log(sequenceArray)
             axios.post('http://127.0.0.1:5000/query_route', {
-                    route_list: thisRouteList,
-                    sequence_list: sequenceArray
-                })
-                .catch(function (error) {
-                    console.log(error);
-                })
-                .then(function (response) { // if success then update data
-                    console.log(response.data);
-                    function stackData(data) {
-                        let cumulative = 0
-                        const _data = data.map(d => {
-                            cumulative += d.atv
-                            return {
-                                atv: d.atv,
-                                // want the cumulative to prior value (start of rect)
-                                cumulative: cumulative - d.atv,
-                                mcc: d.mcc,
-                                ttv: d.ttv,
-                                sequence: d.sequence,
-                                time_interval_to_next: d.time_interval_to_next
-                            }
-                        })
-                        return _data
-                    }
+                route_list: thisRouteList,
+                sequence_list: sequenceArray
+            })
+            .catch(function (error) {
+                console.log(error);
+            })
+            .then(function (response) { // if success then update data
+                console.log(response.data);
+                function stackData(data) {
+                    let cumulative = 0
+                    const _data = data.map(d => {
+                        cumulative += d.atv
+                        return {
+                            atv: d.atv,
+                            // want the cumulative to prior value (start of rect)
+                            cumulative: cumulative - d.atv,
+                            mcc: d.mcc,
+                            ttv: d.ttv,
+                            sequence: d.sequence,
+                            time_interval_to_next: d.time_interval_to_next
+                        }
+                    })
+                    return _data
+                }
 
-                    function renderStackedBar(data) {
-                        console.log(data)
-                        let stackedBarColorScale = d3.schemeTableau10;
-                        let total = d3.sum(data, d => d.atv)
-                        let barHeight = 25,
-                            barWidthOffest = 100,
-                            barY = workSpaceHeight-100
-                        console.log(linex1, linex2, total)
-                        const xScale = d3.scaleLinear()
-                            .domain([0, total])
-                            .range([0, linex2 - linex1 + 2 * barWidthOffest]);
-                        let container = d3.select("#shareWalletContainer")
-                        container.style("left", `${linex1 - barWidthOffest}px`)
-                            .style("height", 150)
-                            .style("width", 40+xScale(total))
-                        let stacksvg = container.append("svg")
-                        stacksvg
-                            .style("height", 150)
-                            .style("width", 40+xScale(total))
-                        stacksvg.append("rect").attr("fill", "#fff")
-                                .attr("width", "100%").attr("height", "100%")
-                                .attr("stroke", "#CCC")
-                        let stackBar = stacksvg.append("g")
-                            .attr("class", "single-route")
-                            .raise()
-                        let stackBarG = stackBar.append("g")
-                            .attr("transform", `translate(20, 40)`)
-                        
-                        //add background
-                            // .datum(total)
-                        
-                        stackBarG.selectAll(".share-wallet-bar")
-                            .data(data).enter()
-                            .append("rect")
-                            .attr("class", "single-route share-wallet-bar")
-                            .attr("x", d => xScale(d.cumulative))
-                            // .attr("y", barY)
-                            // .attr("y", d => (d.atv - stackMeanATV(d)) > 0 ? -0.5 * yScale((d.atv - stackMeanATV(d))/stackMeanATV(d)) : 0.5 * yScale(Math.abs(d.atv - stackMeanATV(d))/stackMeanATV(d)))
-                            .attr("height", d => barHeight)
-                            .attr("width", d => xScale(d.atv))
-                            .attr("fill", (d, i) => stackedBarColorScale[i])
-                            .on("mouseover", stackBarMouseOver)
-                            .on("mousemove", stackBarMouseMove)
-                            .on("mouseleave", stackBarMouseLeave);
+                function renderStackedBar(data) {
+                    console.log(data)
+                    let stackedBarColorScale = d3.schemeTableau10;
+                    let total = d3.sum(data, d => d.atv)
+                    let barHeight = 25,
+                        barWidthOffest = 100,
+                        barY = workSpaceHeight-100
+                    console.log(linex1, linex2, total)
+                    const xScale = d3.scaleLinear()
+                        .domain([0, total])
+                        .range([0, linex2 - linex1 + 2 * barWidthOffest]);
+                    let container = d3.select("#shareWalletContainer")
+                    container.style("left", `${linex1 - barWidthOffest}px`)
+                        .style("height", 150)
+                        .style("width", 40+xScale(total))
+                    let stacksvg = container.append("svg")
+                    stacksvg
+                        .style("height", 150)
+                        .style("width", 40+xScale(total))
+                    stacksvg.append("rect").attr("fill", "#fff")
+                            .attr("width", "100%").attr("height", "100%")
+                            .attr("stroke", "#CCC")
+                    let stackBar = stacksvg.append("g")
+                        .attr("class", "single-route")
+                        .raise()
+                    let stackBarG = stackBar.append("g")
+                        .attr("transform", `translate(20, 40)`)
+                    
+                    //add background
+                        // .datum(total)
+                    
+                    stackBarG.selectAll(".share-wallet-bar")
+                        .data(data).enter()
+                        .append("rect")
+                        .attr("class", "single-route share-wallet-bar")
+                        .attr("x", d => xScale(d.cumulative))
+                        // .attr("y", barY)
+                        // .attr("y", d => (d.atv - stackMeanATV(d)) > 0 ? -0.5 * yScale((d.atv - stackMeanATV(d))/stackMeanATV(d)) : 0.5 * yScale(Math.abs(d.atv - stackMeanATV(d))/stackMeanATV(d)))
+                        .attr("height", d => barHeight)
+                        .attr("width", d => xScale(d.atv))
+                        .attr("fill", (d, i) => stackedBarColorScale[i])
+                        .on("mouseover", stackBarMouseOver)
+                        .on("mousemove", stackBarMouseMove)
+                        .on("mouseleave", stackBarMouseLeave);
 
-                            function stackMeanATV(d){
-                                return totalSta.filter(s => s.mcc === d.mcc)[0].avg_atv
-                            }
-                            function stackBarMouseOver(d) {
-                                inNodeTooltip.style("opacity", 1);
-                            }
-                
-                            function stackBarMouseMove(d) {
-                                let dpx = event.pageX,
-                                    dpy = event.pageY;
-                
-                                inNodeTooltip
-                                    .html(inNodeTooltipHtml(d))
-                                    .style("top", dpy + "px")
-                                    .style("left", dpx + "px");
-                
-                                function inNodeTooltipHtml(d) {
-                                    if (d.atv - stackMeanATV(d) > 0) {
-                                        return "ATV: " + "<span style = 'color:#C94CB0'>" + moneyFormat(d.atv) + "</span>; <br>" +
-                                            "<span style = 'color:#C94CB0'>" + moneyFormat(Math.abs(d.atv - stackMeanATV(d))) + "(" + percentFormat(Math.abs(d.atv - stackMeanATV(d)) / stackMeanATV(d)) + ")</span>" + " more than the average ATV " +
-                                            "<span style = 'color:#6C7CAB'>" + moneyFormat(stackMeanATV(d)) + "</span>."
-                                    } else {
-                                        return "ATV: " + "<span style = 'color:#328347'>" + moneyFormat(d.atv) + "</span>; <br>" +
-                                            "<span style = 'color:#328347'>" + moneyFormat(Math.abs(d.atv - stackMeanATV(d))) + "(" + percentFormat(Math.abs(d.atv - stackMeanATV(d)) / stackMeanATV(d)) + ")</span>" + " less than the average ATV " +
-                                            "<span style = 'color:#6C7CAB'>" + moneyFormat(stackMeanATV(d)) + "</span>."
-                                    }
+                        function stackMeanATV(d){
+                            return totalSta.filter(s => s.mcc === d.mcc)[0].avg_atv
+                        }
+                        function stackBarMouseOver(d) {
+                            inNodeTooltip.style("opacity", 1);
+                        }
+            
+                        function stackBarMouseMove(d) {
+                            let dpx = event.pageX,
+                                dpy = event.pageY;
+            
+                            inNodeTooltip
+                                .html(inNodeTooltipHtml(d))
+                                .style("top", dpy + "px")
+                                .style("left", dpx + "px");
+            
+                            function inNodeTooltipHtml(d) {
+                                if (d.atv - stackMeanATV(d) > 0) {
+                                    return "ATV: " + "<span style = 'color:#C94CB0'>" + moneyFormat(d.atv) + "</span>; <br>" +
+                                        "<span style = 'color:#C94CB0'>" + moneyFormat(Math.abs(d.atv - stackMeanATV(d))) + "(" + percentFormat(Math.abs(d.atv - stackMeanATV(d)) / stackMeanATV(d)) + ")</span>" + " more than the average ATV " +
+                                        "<span style = 'color:#6C7CAB'>" + moneyFormat(stackMeanATV(d)) + "</span>."
+                                } else {
+                                    return "ATV: " + "<span style = 'color:#328347'>" + moneyFormat(d.atv) + "</span>; <br>" +
+                                        "<span style = 'color:#328347'>" + moneyFormat(Math.abs(d.atv - stackMeanATV(d))) + "(" + percentFormat(Math.abs(d.atv - stackMeanATV(d)) / stackMeanATV(d)) + ")</span>" + " less than the average ATV " +
+                                        "<span style = 'color:#6C7CAB'>" + moneyFormat(stackMeanATV(d)) + "</span>."
                                 }
-
-                            }
-                
-                            function stackBarMouseLeave(d) {
-                                inNodeTooltip
-                                    .style("opacity", 0);
                             }
 
-                        stackBarG.selectAll(".share-wallet-text-atv")
-                            .data(data).enter()
-                            .append("text")
-                            .attr("class", "share-wallet-text-atv")
-                            .attr("x", d => xScale(d.cumulative) + (xScale(d.atv) / 2))
-                            .attr("y", barHeight / 2)
-                            .text(d => moneyFormat(d.atv));
+                        }
+            
+                        function stackBarMouseLeave(d) {
+                            inNodeTooltip
+                                .style("opacity", 0);
+                        }
 
-                        stackBarG.selectAll(".share-wallet-text-percent")
-                            .data(data).enter()
-                            .append("text")
-                            .attr("class", "share-wallet-text-percent")
-                            .attr("x", d => xScale(d.cumulative) + (xScale(d.atv) / 2))
-                            .attr("y", -10)
-                            .text(d => percentFormat(d.atv / total));
+                    stackBarG.selectAll(".share-wallet-text-atv")
+                        .data(data).enter()
+                        .append("text")
+                        .attr("class", "share-wallet-text-atv")
+                        .attr("x", d => xScale(d.cumulative) + (xScale(d.atv) / 2))
+                        .attr("y", barHeight / 2)
+                        .text(d => moneyFormat(d.atv));
 
-                        stackBarG.selectAll(".share-wallet-text-mcc")
-                            .data(data).enter()
-                            .append("text")
-                            .attr("class", "share-wallet-text-mcc")
-                            .attr("x", d => xScale(d.cumulative) + (xScale(d.atv) / 2))
-                            .attr("y", barHeight + 10)
-                            .text(d => multiWordsFormat(d.mcc))
-                            .attr("fill", (d, i) => stackedBarColorScale[i])
-                            .on("mouseover", d => showFullName(d.mcc))
-                            .on("mousemove", moveFullName)
-                            .on("mouseout", hideFullName);
-                        
-                        stackBarG.append("rect")
-                            .attr("x", 0).attr("y", barHeight + 30)
-                            .attr("height", barHeight)
-                            .attr("width", xScale(total))
-                            .attr("fill", "#5E37A5")
-                            .datum(total)
+                    stackBarG.selectAll(".share-wallet-text-percent")
+                        .data(data).enter()
+                        .append("text")
+                        .attr("class", "share-wallet-text-percent")
+                        .attr("x", d => xScale(d.cumulative) + (xScale(d.atv) / 2))
+                        .attr("y", -10)
+                        .text(d => percentFormat(d.atv / total));
 
-                        stackBarG.append("text").attr("class", "share-wallet-text-total")
-                            .attr("x", xScale(total) / 2)
-                            .attr("y", 1.5 * barHeight + 30)
-                            .text("Average Total Wallet: " + moneyFormat(total) +
-                                "  ×  " + thisRouteList.length + "  people");
+                    stackBarG.selectAll(".share-wallet-text-mcc")
+                        .data(data).enter()
+                        .append("text")
+                        .attr("class", "share-wallet-text-mcc")
+                        .attr("x", d => xScale(d.cumulative) + (xScale(d.atv) / 2))
+                        .attr("y", barHeight + 10)
+                        .text(d => multiWordsFormat(d.mcc))
+                        .attr("fill", (d, i) => stackedBarColorScale[i])
+                        .on("mouseover", d => showFullName(d.mcc))
+                        .on("mousemove", moveFullName)
+                        .on("mouseout", hideFullName);
+                    
+                    stackBarG.append("rect")
+                        .attr("x", 0).attr("y", barHeight + 30)
+                        .attr("height", barHeight)
+                        .attr("width", xScale(total))
+                        .attr("fill", "#5E37A5")
+                        .datum(total)
 
-                        stackBarG.append("text")
-                            .attr("class", "share-wallet-text-title")
-                            .text("SHARE OF WALLET")
-                            .attr("x", xScale(total) / 2)
-                            .attr("y", 2.5 * barHeight + 30);
-                        
-                        
-                    }
-                    setTimeout(() => {
-                        renderStackedBar(stackData(response.data));
-                    }, 300)
-                    // renderGraph(response);
-                });
+                    stackBarG.append("text").attr("class", "share-wallet-text-total")
+                        .attr("x", xScale(total) / 2)
+                        .attr("y", 1.5 * barHeight + 30)
+                        .text("Average Total Wallet: " + moneyFormat(total) +
+                            "  ×  " + thisRouteList.length + "  people");
+
+                    stackBarG.append("text")
+                        .attr("class", "share-wallet-text-title")
+                        .text("SHARE OF WALLET")
+                        .attr("x", xScale(total) / 2)
+                        .attr("y", 2.5 * barHeight + 30);
+                    
+                }
+                setTimeout(() => {
+                    renderStackedBar(stackData(response.data));
+                }, 300)
+                // renderGraph(response);
+            });
         }
     }
     //all done, set graph exist indicator = true
@@ -2458,7 +2545,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             .attr("class", "view-toggle-text")
             .attr("x", btnWidth / 2).attr("y", btnHeight / 2)
             .text("TIME");
-        let dblViewToggle = topBtnG.append("g")
+        let dblViewToggle = topBtnG.append("g").attr("id", "addGraph")
             .attr("transform", `translate(${btnMargin+btnWidth},0)`)
             .on("click", addGraph);
         dblViewToggle.append("rect")
