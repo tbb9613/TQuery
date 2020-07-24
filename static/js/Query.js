@@ -1,5 +1,6 @@
 function createQuery(d, type, nodeList, timeStart, timeEnd) {
     queryNode = d;
+    currentQueryType = type;
     d3.select("#staContainer").classed("hide", true);
     // workContainer.selectAll(".tooltip").remove();
     workSpace.selectAll("#graph-first").remove();
@@ -13,13 +14,10 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
             .attr("width", "100%")
             .attr("height", "100%");
     }
-    
-    // postQuery(d, 4);
     console.log(d);
     //reset seq and left/right plus exist
-
     resetPlusSeq();
-    drawGraph("graph-first", type, queryNode, timeStart, timeEnd)
+    drawGraph("graph-first", type, queryNode, timeStart, timeEnd, maxShowNum);
     topSpace.selectAll(".topnodes").remove();
     drawTopNodes(nodeList);
     d3.select("#queryTitleContainer").classed("hide", false);
@@ -32,14 +30,11 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
 
 //Data exchange
 function packedQuery(d) {
-    // console.log(nodeList);
-    // console.log(linkmapList);
     console.log(packLinks);
     console.log(packNodes);
     let timeStart = "2020-04-30 10:00:00", 
     timeEnd = "2020-04-30 18:00:00";
     createQuery("Bakeries", "packed", nodeList, timeStart, timeEnd);
-
     // setTimeout(drawPreview(),210)
     clearToolState();
     isMultiMode = false;

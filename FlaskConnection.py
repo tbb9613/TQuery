@@ -57,7 +57,6 @@ def QuerySingleNode_new(single_sequence, time_interval_limit, keep_rank_num, las
 
     raw_step = single_sequence + left_alignment_pos
     #last step targets
-
     if single_sequence > 0:
         source_step = raw_step-1
         target_step = raw_step
@@ -443,7 +442,9 @@ def Heatmap():
     record_with_tinterval_cpy["next_station"] = record_with_tinterval_cpy["mcc"].shift(-1)
     # delete every ppl's last "next_station" since it is another one's first one
     record_with_tinterval_cpy.loc[record_with_tinterval_cpy.groupby("name").tail(1).index, "next_station"] = np.nan
-    nxt_station_g = record_with_tinterval_cpy[["mcc", "next_station", "name"]].dropna().groupby(["mcc", "next_station"]).count().reset_index().rename(columns = {"name": "count"})
+    large_index = record_with_tinterval_cpy[["mcc", "next_station", "name"]].dropna().groupby(["mcc"]).count().nlargest(8, "name").index
+    filtered_records = record_with_tinterval_cpy[record_with_tinterval_cpy["mcc"].isin(large_index)]
+    nxt_station_g = filtered_records[["mcc", "next_station", "name"]].dropna().groupby(["mcc", "next_station"]).count().reset_index().rename(columns = {"name": "count"})
     nxt_station_allcnt = nxt_station_g.groupby("mcc").agg({"count":"sum"}).reset_index()
     nxt_station_prob = nxt_station_g.merge(nxt_station_allcnt, how = "outer", on = "mcc")
     nxt_station_prob["prob"] = nxt_station_prob["count_x"]/nxt_station_prob["count_y"]
@@ -463,9 +464,11 @@ def TimeData(timeScale):
     return timeTrans
 
 def NodeList(listNmae):
-    listdict = { "Location": ["Grocery Stores, Supermarkets", "Bakeries", "Fast Food Restaurants", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"],
-                "Industry": ["Grocery Stores, Supermarkets", "Bakeries", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"], 
-                "MCC": ["Grocery Stores, Supermarkets", "Bakeries", "Fast Food Restaurants", "Furniture, Home Furnishings, and Equipment Stores, ExceptAppliances", "Drug Stores and Pharmacies", "Book Stores", "Motor Freight Carriers, Moving and Storage Companies, Trucking – Local/Long Distance, Delivery Services – Local"]}
+    all_mcc_list = list(record_with_tinterval["mcc"].unique())
+    top_mcc_list = list(record_with_tinterval.groupby(["mcc"]).count().nlargest(5, "name").index)
+    listdict = { "Location": all_mcc_list,
+                "Industry": top_mcc_list, 
+                "MCC": all_mcc_list }
     if listdict.__contains__(listNmae):
         return json.dumps(listdict[listNmae])
     else:

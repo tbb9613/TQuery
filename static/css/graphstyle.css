@@ -154,9 +154,15 @@ button {
 
 #changeInnodeColor {
   position: absolute;
-  bottom: 10%;
+  bottom: 60px;
   left: 5%;
   /* width: 60px; */
+}
+
+#changeMaxShowNum {
+  position: absolute;
+  bottom: 30px;
+  left: 5%;
 }
 
 #toggleViewContainer{
@@ -165,11 +171,22 @@ button {
   left: 5%;
 }
 
+#changeNum {
+  width: 15px;
+}
+
+.change-num-button {
+  width: 20px;
+  color: #555;
+  background-color: #fff;
+  border: 1px solid #CCC;
+}
+
 #viewSelector {
   position: absolute;
-  bottom: 10%;
-  left: 35px;
-  height: 200px;
+  bottom: 30px;
+  right: 5%;
+  height: 230px;
   width: 200px;
 }
 

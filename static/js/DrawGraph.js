@@ -1,5 +1,4 @@
-// drawGraph();
-function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
+function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
     packLinkData = copy(packLinks), packNodeData = copy(packNodes);
     // graphLeftData = 
 
@@ -148,7 +147,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
             zoom.scaleBy(graphBg, 0.8, [workSpaceWidth / 4, workSpaceHeight / 2])
             //put graph 1 left and zoom
 
-            drawGraph("graph-second", type, queryNode, timeStart, timeEnd);
+            drawGraph("graph-second", type, queryNode, timeStart, timeEnd, maxNum);
             // callSecondBrush();
             console.log("clicked!")
 
@@ -550,7 +549,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     list: allList,
                     timeStart: timeStart,
                     timeEnd: timeEnd,
-                    displaynum: 6,
+                    displaynum: maxNum,
                     firstQuery: true
                     // time: t
                 })
@@ -571,7 +570,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                     list: allList,
                     timeStart: timeStart,
                     timeEnd: timeEnd,
-                    displaynum: 6,
+                    displaynum: maxNum,
                     firstQuery: true
                     // time: t
                 })
@@ -1067,7 +1066,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: rightLastList[seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6,
+                displaynum: maxNum,
                 firstQuery: false
             }
             axios.post('http://127.0.0.1:5000/query_single_new', queryData)
@@ -1094,7 +1093,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: rightLastList[seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6,
+                displaynum: maxNum,
                 firstQuery: false
             }
 
@@ -1126,7 +1125,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: leftLastList[-seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6,
+                displaynum: maxNum,
                 firstQuery: false
             }
 
@@ -1151,7 +1150,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd) {
                 list: leftLastList[-seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
-                displaynum: 6,
+                displaynum: maxNum,
                 firstQuery: false
             }
 
@@ -2754,4 +2753,46 @@ function activeBtn(selection) {
 function inactiveBtn(selection) {
     selection.selectAll("rect").attr("fill", "white");
     selection.selectAll("text").style("fill", null);
+}
+
+function plusShowNum(){
+    let lastVal = parseFloat(document.getElementById("changeNum").value);
+    if (lastVal < 10){
+        document.getElementById("changeNum").value = lastVal + 1;
+        maxShowNum = lastVal + 1;
+        if (graphExist == true && secondGraphExist === false) {
+            refresehGraph();
+        }
+    }
+}
+
+function minusShowNum(){
+    let lastVal = parseFloat(document.getElementById("changeNum").value);
+    if (lastVal > 3){
+        document.getElementById("changeNum").value = lastVal - 1;
+        maxShowNum = lastVal - 1;
+        if (graphExist == true && secondGraphExist === false) {
+            refresehGraph();
+        }
+    }
+}
+
+function showNumChange(){
+    let val = parseFloat(document.getElementById("changeNum").value);
+    if (val < 3){
+        document.getElementById("changeNum").value = 3;
+    } else if (val > 10) {
+        document.getElementById("changeNum").value = 10;
+    }
+    val = parseFloat(document.getElementById("changeNum").value);
+    maxShowNum = val;
+    if (graphExist == true && secondGraphExist === false) {
+        refresehGraph();
+    }
+}
+
+function refresehGraph(){
+    workSpace.selectAll("#graph-first").remove();
+    // workSpace.selectAll("#graph-second").remove();
+    drawGraph("graph-first", currentQueryType, queryNode, timeStart, timeEnd, maxShowNum);
 }

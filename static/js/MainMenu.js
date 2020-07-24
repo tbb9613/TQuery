@@ -45,6 +45,7 @@ var conditionCount = 0;
 var pieViewFlag = false;
 var timeIntervalFlag = false;
 var nodeViewType = "bar";
+var currentQueryType; //pack or single
 
 var MCCDict
 // console.log(MCCDict)
@@ -52,6 +53,9 @@ var MCCDict
 var rseq = 2, lseq = 2, maxseq = 4;
 var graphRightPlusExist = false;
 var graphLeftPlusExist = false;
+var maxShowNum = 6;
+var timeStart = "2020-04-30 10:00:00", 
+    timeEnd = "2020-04-30 18:00:00";
 
 //format
 var percentFormat = d3.format(".0%"),
@@ -255,7 +259,6 @@ function getTimeData(timeScale) {
             // console.log(timeTrans);
             if (timeScale == "total" || timeScale == "year") {
                 timeTrans.forEach(function (d, i) {
-
                     d.date = parse_d(d.date)
                 })
             } else {
@@ -582,7 +585,7 @@ function drawTimeSelector(data, timeScale, type) {
                 workSpace.selectAll("#graph-first").remove();
                 let timeStart = "2020-04-30 11:00:00", 
                     timeEnd = "2020-04-30 19:00:00";
-                drawGraph("graph-first", "single", queryNode, timeStart, timeEnd)
+                drawGraph("graph-first", "single", queryNode, timeStart, timeEnd, maxShowNum)
                 // workContainer.selectAll(".tooltip").remove();
                 // graphLeftPlusExist = false;
                 // graphRightPlusExist = false;
@@ -840,7 +843,7 @@ function drawTopNodes(list) {
     // console.log(d);
 
     var node = topSpace.selectAll(".topnodes")
-        .data(nodeList)
+        .data(nodeList.slice(0,6))
         .enter().append("g")
         .attr("class", "topnodes")
         .attr("transform", (d,i) => "translate("+ (i * 50 + 40) + "," + nodesyPos+")")

@@ -27,18 +27,6 @@
     <svg id="globalDrag"></svg>
     <div class="noclick hide">
     </div>
-      <!-- <div class="mdui-fab-wrapper" id="exampleFab" mdui-fab = "options">
-        <button class="mdui-fab mdui-ripple">
-          <i class="mdui-icon material-icons">add</i>
-          <i class="mdui-icon mdui-fab-opened material-icons">add_circle_outline</i>
-        </button>
-        <div class="mdui-fab-dial">
-          <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-pink" id = "selectMode"><i class="mdui-icon material-icons">crop_free</i></button>
-          <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-orange" id = "addGraph"><i class="mdui-icon material-icons">compare</i></button>
-          <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-red" id = "timeIntervalView"><i class="mdui-icon material-icons">access_alarm</i></button>
-          <button class="mdui-fab mdui-fab-mini mdui-ripple mdui-color-indigo-900" id = "pieView"><i class="mdui-icon material-icons">pie_chart_outlined</i></button>
-        </div>
-      </div> -->
       <div id="topContainer">
         <div id="timeSelectorDropdown">
           <select class = "mdui-select" mdui-select="options" name="timePeriod" id="timePeriod">
@@ -232,6 +220,12 @@
               <input class="radio-button" type="radio" id="radioATVB" name="group1" value="bar" onchange="changeAllNodeColor(this)" checked/>
               <label for="radioATVB"><span class="legend-text">ATV Bar</span></label>
           <!-- </form> -->
+          </div>
+          <div id = "changeMaxShowNum">
+            <label for="changeNum"><span class="legend-text">Max Nodes per Step: </span></label>
+            <input type="text" id="changeNum" value = "6" onchange="showNumChange()">
+            <button class="change-num-button" id="changeNumMinus" onclick="minusShowNum()">-</button>
+            <button class="change-num-button" id="changeNumPlus" onclick="plusShowNum()">+</button>
           </div>
         </div>
       </div>
