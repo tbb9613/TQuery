@@ -1,5 +1,7 @@
 //axios.<method> will now provide autocomplete and parameter typings
 
+// const { transition } = require("d3")
+
 // define data
 var nodeList //top node list
 var nodeMap //nodemap data
@@ -211,7 +213,6 @@ var brush = d3.brush()
 
 //draw full node name tooltip 
 var tooltipFullNodeName = d3.select("#mainContainer").append("div")
-        // .attr("x", 0).attr("y", 0)
         .attr("class", "tooltip-full-node-name hide");
 function showFullName(d){
     let pgX = event.pageX, pgY = event.pageY;
@@ -1608,8 +1609,15 @@ function getMCC(d){
 }
 
 function drawScatterFilter(){
-    var fakeData_scatter = d3.range(100)
-        .map(function() { return [Math.random()*2-1, Math.random()*2-1]; });
+    var fakeData_scatter = d3.range(80)
+        .map(function() { return [Math.random()*200, Math.random()*80]; });
+    let FreqNormalizer = d3.scaleLinear()
+        .range([-1,1])
+        .domain([d3.min(fakeData_scatter, d => d[0]), d3.max(fakeData_scatter, d => d[0])])
+    let ATVNormalizer = d3.scaleLinear()
+        .range([-1,1])
+        .domain([d3.min(fakeData_scatter, d => d[1]), d3.max(fakeData_scatter, d => d[1])])
+    fakeData_scatter = fakeData_scatter.map(d => [FreqNormalizer(d[0]), ATVNormalizer(d[1]) ]);
     let sfilterHeight = 0.6 * topSpaceHeight, sfilterWidth = 0.6 * topSpaceHeight;
     let sfilterMargin = 0.025 * topSpaceHeight, sfilterTop = 0.4 * topSpaceHeight;
     let xlabelOffset = 6, ylabelOffset = 3;
@@ -1693,23 +1701,50 @@ function drawScatterFilter(){
     let drawPointLayer = scatterFilter.append("g")
         .attr("class", "draw-point")
         
-        // let radius = 2;
-    let selectPoint = drawPointLayer.append("circle")
-        .attr("class", "scfilter-select-point")
-        .attr("cx", (sfilterWidth+sfilterMargin)/2)
-        .attr("cy", (sfilterHeight+sfilterMargin)/2)
-        .attr("r", 3)
-        .attr("fill", "red");
-    
     let scatters = scatterFilter.append("g")
         .selectAll(".scfilter-scatter")
         .data(fakeData_scatter)
         .enter().append("circle")
         .attr("class", "scfilter-scatter")
         .attr("cx", d=> x(d[0])).attr("cy", d=> y(d[1]))
-        .attr("r", 1.5);
+        .attr("r", 2)
+        .on("mouseover", scatterMouseOver)
+        .on("mouseleave", scatterMouseLeave);
+
+    let selectPoint = drawPointLayer.append("circle")
+        .attr("class", "scfilter-select-point")
+        .attr("cx", (sfilterWidth+sfilterMargin)/2)
+        .attr("cy", (sfilterHeight+sfilterMargin)/2)
+        .attr("r", 3.5)
+        .attr("fill", "red")
+        .raise();
+
+    var tooltipScatter = d3.select("#mainContainer").append("div")
+        .attr("class", "tooltip-scatter hide");
     
-    console.log(fakeData_scatter)
+    function scatterMouseOver(d){
+        let pgX = event.pageX, pgY = event.pageY;
+        let freqNor = d[0], ATVNor = d[1]
+        let freq = numFormat(FreqNormalizer.invert(freqNor)),
+            ATV = moneyFormat(ATVNormalizer.invert(ATVNor));
+        tooltipScatter.html(`MCC: Groceries, ATV: ${ATV}, Freq: ${freq}`)
+            .classed("hide", false)
+            .style("left", `${pgX+5}px`)
+            .style("top", `${pgY+5}px`)
+        d3.select(this).style("opacity", 1)
+            .style("fill", "#597CB9")
+            .transition().duration(150)
+            .attr("r", 3);
+    }
+
+    function scatterMouseLeave(d){
+        tooltipScatter.html(null)
+            .classed("hide", true);
+        d3.select(this).style("opacity", null)
+            .style("fill", null)
+            .transition().duration(150)
+            .attr("r", 2);
+    }
         
     
     function changePointPos(d){
@@ -1717,12 +1752,17 @@ function drawScatterFilter(){
         // console.log(xPos, yPos)
         selectPoint
             .attr("cx", xPos).attr("cy", yPos)
+            .transition().duration(50)
+            .attr("r", 5)
     }
 
     function endPoint(){
         let xValue = x.invert(d3.event.x), yValue = y.invert(d3.event.y);
         console.log(xValue, yValue);
         drawTopNodes(nodeList.reverse());
+        selectPoint
+            .transition().duration(150)
+            .attr("r", 3.5)
     }
 }
 

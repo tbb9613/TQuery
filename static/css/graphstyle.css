@@ -367,16 +367,24 @@ circle.this-route-offline {
   padding: 5px;
 }
 
-.tooltip-full-node-name {
+.tooltip-full-node-name, .tooltip-scatter {
   position: absolute;
   text-align: left;
   color: white;
-  background-color: #3C2E93;
+  
   padding: 5px;
   font-size: 11px;
   max-width: 20%;
   display: table;
   z-index: 11;
+}
+
+.tooltip-scatter {
+  background-color: #597CB9;
+}
+
+.tooltip-full-node-name {
+  background-color: #3C2E93;
 }
 
 .hide {
@@ -797,8 +805,10 @@ text.sfilter-axis {
 }
 
 .scfilter-scatter {
-  fill: #3C2E93;
-  opacity: .25;
+  stroke: #597CB9;
+  /* stroke-width: 0.2; */
+  fill: #fff;
+  opacity: .5;
 }
 
 .scfilter-select-point {
