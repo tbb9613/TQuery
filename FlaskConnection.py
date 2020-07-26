@@ -463,16 +463,19 @@ def TimeData(timeScale):
     # print(timeTrans)
     return timeTrans
 
-def NodeList(listNmae):
+def NodeList(listName):
     all_mcc_list = list(record_with_tinterval["mcc"].unique())
     top_mcc_list = list(record_with_tinterval.groupby(["mcc"]).count().nlargest(5, "name").index)
-    listdict = { "Location": all_mcc_list,
-                "Industry": top_mcc_list, 
-                "MCC": all_mcc_list }
-    if listdict.__contains__(listNmae):
-        return json.dumps(listdict[listNmae])
+    cnt = record_with_tinterval.groupby(["mcc"]).count()["name"].rename("count")
+    atv = record_with_tinterval.groupby(["mcc"]).mean()["transaction_value"].rename("atv")
+    all_list = pd.concat([cnt, atv], axis = 1).reset_index()
+    listdict = { "Location": all_list,
+                "Industry": all_list, 
+                "MCC": all_list }
+    if listdict.__contains__(listName):
+        return listdict[listName].to_json(orient = "records")
     else:
-        return json.dumps(listdict["MCC"])
+        return listdict["MCC"].to_json(orient = "records")
 
 @app.route('/', methods=['GET','POST'])
 def index():
