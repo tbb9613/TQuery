@@ -499,7 +499,7 @@ def QuerySingleNew():
     datagetjson = request.get_json(force=True)
     start_time = pd.Timestamp(datagetjson["timeStart"])
     end_time = pd.Timestamp(datagetjson["timeEnd"])
-    time_interval_limit = pd.offsets.Minute(999)
+    time_interval_limit = pd.offsets.Minute(datagetjson["timeInterval"])
     last_step_routes = datagetjson['list']
     rank_num = datagetjson['displaynum'] #max display num
     mcc_name = datagetjson['name'] #querynode

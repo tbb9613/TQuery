@@ -184,8 +184,8 @@ button {
 
 #viewSelector {
   position: absolute;
-  bottom: 30px;
-  right: 5%;
+  bottom: 0%;
+  right: 3%;
   height: 230px;
   width: 200px;
 }
@@ -209,7 +209,7 @@ button {
 
 .node-list-show {
   height: 75% !important;
-  overflow: scroll;
+  overflow-y: scroll !important;
 }
 
 .sta-single{

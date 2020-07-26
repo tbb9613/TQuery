@@ -5,6 +5,7 @@ function createQuery(d, type, nodeList, timeStart, timeEnd) {
     // workContainer.selectAll(".tooltip").remove();
     workSpace.selectAll("#graph-first").remove();
     workSpace.selectAll("#graph-second").remove();
+    workSpace.selectAll(".division-line").remove();
     //if there is no graph then append background
     if (!graphExist) {
         workSpace.append("rect")
@@ -44,7 +45,8 @@ function packedQuery(d) {
     drawLayer.selectAll("rect").remove();
     drawLayer.selectAll("line").remove();
     drawLayer.selectAll("path").remove();
-    workContainer.selectAll("button").remove();
+    workContainer.selectAll(".brush-menu").remove();
+    workSpace.selectAll(".division-line").remove();
     topSpace.selectAll(".topnodes").remove();
     drawTopNodes(nodeList);
     d3.selectAll(".tool-active").classed("tool-active", false);

@@ -640,7 +640,8 @@ function drawTimeSelector(data, timeScale, type) {
                 [0, 0],
                 [selectorWidth, selectorHeight - 30]
             ])
-            .on("start brush end", brushmoved);
+            .on("start brush", brushmoved)
+            .on("end", brushend);
 
         let gBrushSecond = areachart.append("g")
             .attr("class", "brush-child")
@@ -709,6 +710,20 @@ function drawTimeSelector(data, timeScale, type) {
                 handle.attr("display", null).attr("transform", (d, i) => "translate(" + [timeSelectionSecond[i], -(selectorHeight - 30) / 4] + ")");
             }
         };
+
+        function brushend(){
+            timeSelection = d3.event.selection;
+            timeSec = (x.invert(timeSelection[1]) - x.invert(timeSelection[0]))/ 1000;
+            
+            if (graphExist === true && secondGraphExist === true) {
+                workSpace.selectAll("#graph-second").remove();
+                workSpace.selectAll(".division-line").remove();
+                let timeStart = "2020-04-30 13:00:00", 
+                    timeEnd = "2020-04-30 20:00:00";
+                drawGraph("graph-second", "single", queryNode, timeStart, timeEnd, maxShowNum);
+                d3.selectAll(".brush-child").classed("hide", false);
+            }
+        }
 
         function leftHandleOver() {
             let format = d3.timeFormat(timeFormat)
@@ -1727,7 +1742,7 @@ function drawScatterFilter(){
         let freqNor = d[0], ATVNor = d[1]
         let freq = numFormat(FreqNormalizer.invert(freqNor)),
             ATV = moneyFormat(ATVNormalizer.invert(ATVNor));
-        tooltipScatter.html(`MCC: Groceries, ATV: ${ATV}, Freq: ${freq}`)
+        tooltipScatter.html(`MCC: Grocery Stores, Supermarkets ; ATV: ${ATV}, Freq: ${freq}`)
             .classed("hide", false)
             .style("left", `${pgX+5}px`)
             .style("top", `${pgY+5}px`)

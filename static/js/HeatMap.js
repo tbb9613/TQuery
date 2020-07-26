@@ -116,7 +116,7 @@ function drawHeatmap(d) {
             let linkdata = [{"source": d.place1, "target": d.place2, "type": "directed"}]
             packLinks.push(linkdata);
             setTimeout(() => {
-                packedQuery();}, 150);
+                packedQuery();}, 50);
         }
     }, 300);
     isHeatmapActive = true;

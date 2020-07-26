@@ -3,6 +3,15 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
     // graphLeftData = 
 
     var innodePieClickedFlag = false;
+    var firstDefaultInterval = 999, plusDefaultInterval = 999;
+    if (timeIntervalFlag) {
+        if (type === "single"){
+            firstDefaultInterval = 100;
+        } else {
+            firstDefaultInterval = 180;
+        }
+        plusDefaultInterval = 80;
+    }
 
     let pieColorScale = d3.scaleOrdinal().domain([0, 1])
         .range(["#F7CE3E", "#1A2930"]);
@@ -134,30 +143,13 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         d3.select("#addGraph")
             .on("click", addGraph);
         // addLegend();
-        function addGraph() {
-            secondGraphExist = true;
-            activeBtn(d3.select(this))
-            graphBg.attr("width", "50%")
-            graphBg.selectAll(".graph-background")
-                .attr("width", "50%");
-            graphBg.selectAll(".after-controller")
-                .attr("x", "45%")
 
-            zoom.transform(graphBg, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
-            zoom.scaleBy(graphBg, 0.8, [workSpaceWidth / 4, workSpaceHeight / 2])
-            //put graph 1 left and zoom
-
-            drawGraph("graph-second", type, queryNode, timeStart, timeEnd, maxNum);
-            // callSecondBrush();
-            console.log("clicked!")
-
-            //Display second brush
-            d3.selectAll(".brush-child").classed("hide", false)
-        };
 
     } else if (graphid === "graph-second") {
         // d3.select("#addGraph")
         // .classed("hide", true);
+        d3.select("#addGraph")
+            .on("click", removeGraph);
 
         graphBg.attr("width", "50%")
         graphBg.selectAll(".graph-background")
@@ -174,7 +166,48 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
             .attr("x2", graphCenter[0])
             .attr("y2", 0.85 * workSpaceHeight)
             .attr("stroke", "black")
-            .attr("stroke-width", "3px");
+            .attr("stroke-width", "3px")
+            .attr("class", "division-line");
+
+
+    }
+    function addGraph() {
+        secondGraphExist = true;
+        activeBtn(d3.select(this))
+        graphBg.attr("width", "50%")
+        graphBg.selectAll(".graph-background")
+            .attr("width", "50%");
+        graphBg.selectAll(".after-controller")
+            .attr("x", "45%")
+
+        zoom.transform(graphContainer, d3.zoomIdentity.translate(-workSpaceWidth / 4, 0))
+        zoom.scaleBy(graphContainer, 0.8, [workSpaceWidth / 4, workSpaceHeight / 2])
+        //put graph 1 left and zoom
+
+        drawGraph("graph-second", type, queryNode, timeStart, timeEnd, maxNum);
+        // callSecondBrush();
+        console.log("clicked!")
+
+        //Display second brush
+        d3.selectAll(".brush-child").classed("hide", false);
+    };
+    function removeGraph(){
+        inactiveBtn(d3.select(this));
+        workSpace.selectAll("#graph-second").remove();
+        workSpace.selectAll(".division-line").remove();
+        d3.select("#addGraph")
+            .on("click", addGraph);
+        let graphFirst = workSpace.select("#graph-first");
+        console.log(graphFirst)
+        
+        graphFirst.attr("width", "100%")
+        graphFirst.selectAll(".graph-background")
+            .attr("width", "100%");
+        graphFirst.selectAll(".after-controller")
+            .attr("x", "95%")
+        // zoom.transform(graphFirst.select("#graphContainer"), d3.zoomIdentity.translate(0,0).scale(0,0))
+        graphFirst.select("#graphContainer").attr("transform", null);
+        d3.selectAll(".brush-child").classed("hide", true);
     }
 
     //Draw Bottom Axis according to time selector data
@@ -214,10 +247,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
     };
 
     //Draw links & nodes
-    function MainLayoutScaler(subID, subC) {
+    function MainLayoutScaler(subID, count) {
         let scaler = d3.scaleLinear()
-            .range([-workSpaceHeight / 4, workSpaceHeight / 4])
-            .domain([0, subC - 1]);
+            .range([-workSpaceHeight / 6 - count * 10, workSpaceHeight / 6 + count * 10])
+            .domain([0, count - 1]);
         return scaler(subID);
     }
 
@@ -253,6 +286,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 list: allList,
                 timeStart: timeStart,
                 timeEnd: timeEnd,
+                timeInterval: 9999,
                 displaynum: 1,
                 firstQuery: false
                 // time: t
@@ -473,13 +507,11 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
     // })
     // .then(function (response) { // if success then update data
     //     allList = response.data;
-    //     drawFirstSteps(-1);
-    //     drawFirstSteps(1);
     // })
     var linkScaler
 
-    drawFirstSteps(-1);
-    drawFirstSteps(1);
+    drawFirstSteps(-1, firstDefaultInterval);
+    drawFirstSteps(1, firstDefaultInterval);
     //add vertical line    
     var verLiney = ({
         y1: workSpaceHeight - bottomAxisMargin.top - 10,
@@ -541,7 +573,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
 
 
     // get and draw first links 
-    function drawFirstSteps(seq) {
+    function drawFirstSteps(seq, interval) {
         if (type === "single") {
             axios.post('http://127.0.0.1:5000/query_single_new', {
                     name: queryCenter,
@@ -549,6 +581,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                     list: allList,
                     timeStart: timeStart,
                     timeEnd: timeEnd,
+                    timeInterval: interval,
                     displaynum: maxNum,
                     firstQuery: true
                     // time: t
@@ -570,6 +603,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                     list: allList,
                     timeStart: timeStart,
                     timeEnd: timeEnd,
+                    timeInterval: interval,
                     displaynum: maxNum,
                     firstQuery: true
                     // time: t
@@ -763,10 +797,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 leftMaxCnt = d3.sum(response.data.node, d => d.count);
                 drawCenterNode();
                 if (graphLeftPlusExist) {
-                    drawLeftplus(-2);
+                    drawLeftplus(-2, plusDefaultInterval);
                 }
-                console.log(linkLeftplus[-seq])
-
             } else if (seq === 1) {
                 linkRightplus[seq] = linkGroup;
                 nodeRightplus[seq] = nodeGroup;
@@ -774,11 +806,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 rightLastList[seq] = response.data.route_list;
                 rightMaxCnt = d3.sum(response.data.node, d => d.count);
                 if (graphRightPlusExist) {
-                    drawRightplus(2);
+                    drawRightplus(2, plusDefaultInterval);
                 }
-                console.log(linkRightplus[seq])
             }
-
 
             totalMaxCnt = Math.max(leftMaxCnt, rightMaxCnt);
             if (!isNaN(totalMaxCnt)) {
@@ -979,7 +1009,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
 
     function afterplus() {
         if (rseq <= maxseq) {
-            drawRightplus(rseq);
+            drawRightplus(rseq, plusDefaultInterval);
             if (rseq < maxseq + 1) {
                 rseq += 1;
             }
@@ -988,7 +1018,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
 
     function beforeplus() {
         if (lseq <= maxseq) {
-            drawLeftplus(-lseq);
+            drawLeftplus(-lseq, plusDefaultInterval);
             if (lseq < maxseq + 1) {
                 lseq += 1;
             }
@@ -1054,7 +1084,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         appendHorLine(horLine, horLineX1pos, horLineX2pos);
     }
 
-    function drawRightplus(seq) {
+    function drawRightplus(seq, interval) {
         graphRightPlusExist = true;
         //add vertical line
         var queryData
@@ -1066,6 +1096,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 list: rightLastList[seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
+                timeInterval: interval,
                 displaynum: maxNum,
                 firstQuery: false
             }
@@ -1081,7 +1112,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                     console.log("nowseq", seq, rseq)
                     if (seq < rseq - 1) {
                         console.log(seq, rseq)
-                        drawRightplus(seq + 1);
+                        drawRightplus(seq + 1, plusDefaultInterval);
                     }
                 });
         } else {
@@ -1093,6 +1124,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 list: rightLastList[seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
+                timeInterval: interval,
                 displaynum: maxNum,
                 firstQuery: false
             }
@@ -1107,7 +1139,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                         showAllTimeInterval();
                     }
                     if (seq < rseq - 1) {
-                        drawRightplus(seq + 1);
+                        drawRightplus(seq + 1, plusDefaultInterval);
                     }
                 });
 
@@ -1115,7 +1147,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
 
     }
 
-    function drawLeftplus(seq) {
+    function drawLeftplus(seq, interval) {
         graphLeftPlusExist = true;
         var queryData
         if (type === "single") {
@@ -1125,6 +1157,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 list: leftLastList[-seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
+                timeInterval: interval,
                 displaynum: maxNum,
                 firstQuery: false
             }
@@ -1139,7 +1172,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                         showAllTimeInterval()
                     }
                     if (-seq < lseq - 1) {
-                        drawLeftplus(seq - 1)
+                        drawLeftplus(seq - 1, plusDefaultInterval)
                     }
                 })
         } else {
@@ -1150,6 +1183,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 list: leftLastList[-seq - 1],
                 timeStart: timeStart,
                 timeEnd: timeEnd,
+                timeInterval: interval,
                 displaynum: maxNum,
                 firstQuery: false
             }
@@ -1164,7 +1198,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                         showAllTimeInterval()
                     }
                     if (seq < lseq - 1) {
-                        drawLeftplus(seq + 1)
+                        drawLeftplus(seq + 1, plusDefaultInterval)
                     }
                 })
         }
@@ -2028,7 +2062,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                         d3.selectAll(".node-group").filter(d => d.sequence > thisSeq).remove();
                         // This would create redaudant "g". Change if need.
                         d3.selectAll(".link").filter(d => d.sequence > thisSeq).remove()
-                        drawRightplus(thisSeq + 1);
+                        drawRightplus(thisSeq + 1, plusDefaultInterval);
 
                     } else if (thisSeq < 0 & graphLeftPlusExist) {
                         complementRoute = complementSet(d.data.route, leftLastList[-thisSeq])
@@ -2036,7 +2070,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                         d3.selectAll(".node-group").filter(d => d.sequence < thisSeq).remove();
                         // This would create redaudant "g". Change if need.
                         d3.selectAll(".link").filter(d => d.sequence < thisSeq).remove()
-                        drawLeftplus(thisSeq - 1)
+                        drawLeftplus(thisSeq - 1, plusDefaultInterval)
                     }
                     //updata condition list
                     conditionList.push({
@@ -2127,6 +2161,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         d3.selectAll(".horizontal-line-text").classed("hide", !d3.selectAll(".horizontal-line-text").classed("hide"));
         d3.selectAll(".horizontal-line-text-unit").classed("hide", !d3.selectAll(".horizontal-line-text-unit").classed("hide"));
         d3.selectAll(".bottom-axis").classed("hide", !d3.selectAll(".bottom-axis").classed("hide"));
+        refresehGraph();
         // mdui.mutation();
         if (timeIntervalFlag) { // if the status is show
             activeBtn(d3.select(this));
