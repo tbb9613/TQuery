@@ -62,8 +62,12 @@ var timeStart = "2020-04-30 10:00:00",
 
 //format
 var percentFormat = d3.format(".0%"),
-    moneyFormat = d3.format("($.1f"),
-    numFormat = d3.format(".0f");
+    moneyFormat = d3.format(".1f"),
+    kmoneyFormat = d3.format(".3s"),
+    numFormat = d3.format(".0f"),
+    // fixPre = d3.precisionFixed()
+    digitFormat = d3.format("+.1f"),
+    digitFormatMuti = d3.format("+.0f");
 
 window.onresize = function () {
     getSize()
@@ -589,18 +593,13 @@ function drawTimeSelector(data, timeScale, type) {
                 let timeStart = "2020-04-30 11:00:00", 
                     timeEnd = "2020-04-30 19:00:00";
                 drawGraph("graph-first", "single", queryNode, timeStart, timeEnd, maxShowNum)
-                // workContainer.selectAll(".tooltip").remove();
-                // graphLeftPlusExist = false;
-                // graphRightPlusExist = false;
 
                 const [x0, x1] = timeSelection;
                 console.log(x0, x1);
                 var randomConverter = d3.scaleLinear()
                     .range([1, 10])
-                    .domain([0, selectorWidth])
-
+                    .domain([0, selectorWidth]);
                 // createQuery(queryNode, Math.floor(randomConverter(x1)), "single", nodeList);
-
                 console.log(randomConverter(x1));
             }
         }
@@ -1633,7 +1632,13 @@ function drawScatterFilter(data){
         .domain([d3.min(data, d => d.count), d3.max(data, d => d.count)])
     let ATVNormalizer = d3.scaleLinear()
         .range([-1,1])
-        .domain([d3.min(data, d => d.atv), d3.max(data, d => d.atv)])
+        .domain([d3.min(data, d => d.atv), d3.max(data, d => d.atv)]);
+    let TPVNormalizer = d3.scaleLinear()
+        .range([-1,1])
+        .domain([d3.min(data, d => d.count*d.atv), d3.max(data, d => d.count*d.atv)]);
+    let radiusScaler = d3.scaleSqrt()
+        .range([2,8])
+        .domain([d3.min(data, d => d.count*d.atv), d3.max(data, d => d.count*d.atv)])
     // fakeData_scatter = fakeData_scatter.map(d => [FreqNormalizer(d.count), ATVNormalizer(d[1]) ]);
     let sfilterHeight = 0.6 * topSpaceHeight, sfilterWidth = 0.6 * topSpaceHeight;
     let sfilterMargin = 0.025 * topSpaceHeight, sfilterTop = 0.4 * topSpaceHeight;
@@ -1650,10 +1655,10 @@ function drawScatterFilter(data){
         .attr("fill", "#F9F9F9");
 
     let x = d3.scaleLinear()
-        .range([2 * sfilterMargin, sfilterWidth - sfilterMargin])
+        .range([3 * sfilterMargin, sfilterWidth - 2*sfilterMargin])
         .domain([-1,1]);
     let y = d3.scaleLinear()
-        .range([sfilterWidth - sfilterMargin, 2 * sfilterMargin])
+        .range([sfilterWidth - 2*sfilterMargin, 3 * sfilterMargin])
         .domain([-1,1]);
 
     let xAxis = scatterFilter.append("g")
@@ -1668,7 +1673,7 @@ function drawScatterFilter(data){
         .attr("class", "sfilter-axis")
         .attr("x", sfilterWidth-sfilterMargin)
         .attr("y", (sfilterHeight+sfilterMargin)/2 + xlabelOffset)
-        .text("Freq");
+        .text("TV");
 
     xAxis.append("text")
         .attr("class", "sfilter-axis")
@@ -1724,7 +1729,7 @@ function drawScatterFilter(data){
         .enter().append("circle")
         .attr("class", "scfilter-scatter")
         .attr("cx", d=> x(freqNormalizer(d.count))).attr("cy", d => y(ATVNormalizer(d.atv)))
-        .attr("r", 2)
+        .attr("r", d => radiusScaler(d.atv*d.count))
         .on("mouseover", scatterMouseOver)
         .on("mouseleave", scatterMouseLeave);
 
@@ -1742,14 +1747,14 @@ function drawScatterFilter(data){
     function scatterMouseOver(d){
         let pgX = event.pageX, pgY = event.pageY;
         // let freqNor = d[0], ATVNor = d[1]
-        tooltipScatter.html(`MCC: ${d.mcc} ; ATV: ${moneyFormat(d.atv)}, Freq: ${numFormat(d.count)}`)
+        tooltipScatter.html(`MCC: ${d.mcc} - ATV: ${moneyFormat(d.atv)}, TV: ${numFormat(d.count)}, PV ${kmoneyFormat(d.atv * d.count)}`)
             .classed("hide", false)
             .style("left", `${pgX+5}px`)
             .style("top", `${pgY+5}px`)
         d3.select(this).style("opacity", 1)
             .style("fill", "#597CB9")
             .transition().duration(150)
-            .attr("r", 3);
+            .attr("r", parseFloat(d3.select(this).attr("r"))+1);
     }
 
     function scatterMouseLeave(d){
@@ -1758,7 +1763,7 @@ function drawScatterFilter(data){
         d3.select(this).style("opacity", null)
             .style("fill", null)
             .transition().duration(150)
-            .attr("r", 2);
+            .attr("r", d => radiusScaler(d.count * d.atv));
     }
 
     function changePointPos(d){
@@ -1787,11 +1792,7 @@ function drawScatterFilter(data){
             return Math.pow(freqNormalizer(d.count) - xValue, 2) + Math.pow(ATVNormalizer(d.atv) - yValue, 2)
         }
     }
-
-
 }
-
-
 
 //function for deep copy
 function copy (obj) {

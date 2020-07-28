@@ -806,8 +806,9 @@ text.sfilter-axis {
 
 .scfilter-scatter {
   stroke: #597CB9;
+  fill: #597CB9;
   /* stroke-width: 0.2; */
-  fill: #fff;
+  /* fill: #fff; */
   opacity: .5;
 }
 

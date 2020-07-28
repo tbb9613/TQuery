@@ -46,6 +46,7 @@ function packedQuery(d) {
     drawLayer.selectAll("line").remove();
     drawLayer.selectAll("path").remove();
     workContainer.selectAll(".brush-menu").remove();
+    workContainer.selectAll(".build-query-btn").remove();
     workSpace.selectAll(".division-line").remove();
     topSpace.selectAll(".topnodes").remove();
     drawTopNodes(nodeList);

@@ -37,17 +37,17 @@
             <option value="day">Day</option>
           </select>
           <select class = "mdui-select" mdui-select="options" name="data" id="dataType">
-            <option value="TTV">TTV</option>
-            <option value="ATV">ATV</option>
+            <option value="TTV">PV</option>
+            <option value="ATV">TV</option>
           </select>
           <!-- <input type="text" id = "calendar" placeholder="Choose date"> -->
         </div>
         <div id="topNodesTab" class="mdui-btn-group">
-          <button class="toptab mdui-btn">Industry</button>
+          <button class="toptab mdui-btn">MCG</button>
           <button class="toptab mdui-btn toptab-active">MCC</button>
+          <button class="toptab mdui-btn">Merchant</button>
           <button class="toptab mdui-btn">Location</button>
           <button class="toptab mdui-btn">Customize1</button>
-          <button class="toptab mdui-btn">Customize2</button>
           <!-- <button class="toptab mdui-btn">Customize3</button> -->
           <button class="toptab-custom mdui-btn">
             <svg t="1588090942694" class="icon" viewBox="0 0 1026 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +71,7 @@
         <div id="filterContainer">
           <!-- <span style="color: #666;">FILTER</span> -->
             <div class="node-filter" id="TTVFilter">
-              <span >TTV:</span>
+              <span >PV:</span>
               <input class="filter-text-input" type="text" placeholder="From"/>
               <span >--</span>
               <input class="filter-text-input" type="text" placeholder="To"/>
@@ -85,7 +85,7 @@
               <button id="showFilterATV"><i class="far fa-chart-bar"></i></button>
             </div>
             <div class="node-filter" id="SingleTransFilter">
-              <span >Single Transaction Value:</span>
+              <span >Single PV:</span>
               <input class="filter-text-input" type="text" placeholder="From"/>
               <span >--</span>
               <input class="filter-text-input" type="text" placeholder="To"/>
@@ -137,7 +137,7 @@
         </div>
         <div id = "staContainer" class="hide">
           <div class="sta-nodename"><span></span></div>
-          <div class="sta-single"><span>Single Transaction Value</span><br/></div>
+          <div class="sta-single"><span>Single PV</span><br/></div>
           <div class="sta-single"><span>Market Share</span><br/></div>
           <div class="sta-single"><span>Card Holder Address</span><br/></div>
           <div class="sta-single"><span>Bank of Issue</span><br/></div>
@@ -212,11 +212,11 @@
           <div id = "changeInnodeColor">
           <!-- <form > -->
               <input class="radio-button" type="radio" id="radioCount" name="group1" value="count" onchange="changeAllNodeColor(this)"/>
-              <label for="radioCount"><span class="legend-text">Freq</span></label>
+              <label for="radioCount"><span class="legend-text">TV</span></label>
+              <input class="radio-button" type="radio" id="radioTTV" name="group1" value="ttv" onchange="changeAllNodeColor(this)"/>
+              <label for="radioTTV"><span class="legend-text">PV</span></label>
               <input class="radio-button" type="radio" id="radioATV" name="group1" value="atv" onchange="changeAllNodeColor(this)"/>
               <label for="radioATV"><span class="legend-text">ATV</span></label>
-              <input class="radio-button" type="radio" id="radioTTV" name="group1" value="ttv" onchange="changeAllNodeColor(this)"/>
-              <label for="radioTTV"><span class="legend-text">TTV</span></label>
               <input class="radio-button" type="radio" id="radioATVB" name="group1" value="bar" onchange="changeAllNodeColor(this)" checked/>
               <label for="radioATVB"><span class="legend-text">ATV Bar</span></label>
           <!-- </form> -->
@@ -245,7 +245,7 @@
           <input id="linkVis" type="range" step="1" min="0" max="100" value="100" oninput="changeLinkVisibility()"/>
         </label>
       </div>
-      <div id="linkVisTxt" class="hide"><span></span></div>
+      <div id="linkVisTxt" class="hide"><span>Show links that TV > 0</span></div>
   </div>
   <script src="/static/js/template-web.js"></script>
 
