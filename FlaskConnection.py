@@ -208,7 +208,7 @@ def packQueryListCovert(packLinks, packNodes):
                     querySeries.append(thisSeries)
                     # add a reversed list
                     querySeries.append(list(reversed(thisSeries)))
-    print(querySeries)
+    # print(querySeries)
     return querySeries
 
 #ToDo: optimize this
@@ -221,11 +221,13 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
     time_range_filtered["step"] = time_range_filtered.groupby(["name"])["time"].rank().astype(int)
     time_range_filtered_cpy = time_range_filtered.copy()
     for j in range(len(allList)):
+        # print(j)
         time_range_filtered_cpy = time_range_filtered_cpy[~time_range_filtered_cpy.isin(all_index)]
         #define kernel
         kernel = []
         id_list = []
         queryList = allList[j]
+        print(queryList)
         for i in range(len(queryList)):
             if i == 0:
                 mcc_id_transform = (time_range_filtered_cpy["mcc"]==queryList[i])*prime_num[i]
@@ -255,12 +257,14 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
         packed_data_query_route_this["alignment_pos"] = left_alignment_pos_this
         if j == 0:
             unique_length = unique_this
-            all_index = step_group.index
+            all_index = list(step_group.index)
+            # print(j, all_index)
             packed_data_query_route = packed_data_query_route_this
         else:
             unique_length = unique_length.append(unique_this)
-            this_index = step_group.index
-            all_index.append(this_index)
+            this_index = list(step_group.index)
+            all_index += this_index
+            # print(j, this_index, all_index)
             packed_data_query_route = packed_data_query_route.append(packed_data_query_route_this)
     #get total sta
     data_query_route = packed_data_query_route.reset_index(drop=True)
@@ -278,6 +282,7 @@ def PackedQuery(startTime, endTime, allList, single_sequence, time_interval_limi
     # packed_data_query_route.set_index("name", inplace = True)
     packed_data_query_route["step"] += packed_data_query_route["offset"]
     packed_data_query_route.drop(columns = ["offset", "alignment_pos", "alignment_pos_max"], inplace= True)
+    # print(packed_data_query_route.index)
     shaped_routes_packed = packed_data_query_route.pivot(index = packed_data_query_route.index, columns =  "step")
     shaped_routes_packed["pack_length"] = unique_length["pack_length"]
     

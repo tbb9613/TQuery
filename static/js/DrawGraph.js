@@ -514,9 +514,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
     //     allList = response.data;
     // })
     var linkScaler
+        drawFirstSteps(-1, firstDefaultInterval);
+        drawFirstSteps(1, firstDefaultInterval);
 
-    drawFirstSteps(-1, firstDefaultInterval);
-    drawFirstSteps(1, firstDefaultInterval);
     //add vertical line    
     var verLiney = ({
         y1: workSpaceHeight - bottomAxisMargin.top - 10,
@@ -598,6 +598,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                     // console.log(response.data);
                     totalSta = response.data.total_sta;
                     renderGraph(response);
+                    // drawFirstSteps(1, interval)
                 });
         } else {
             console.log(packLinks, packNodes);
@@ -1421,10 +1422,12 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         let hoveredNodeParent = d3.select(this.parentNode);
         // console.log(hoveredNodeParent);
         if (!innodePieClickedFlag) {
+
             node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
             node.selectAll(".node-text").filter(d => d.route != undefined).classed("not-this-route", true);
             link.selectAll("line").classed("not-this-route", true);
             node.selectAll(".innode-type-pie").style("opacity", .3)
+            console.log(d3.selectAll(".not-this-route"))
             // link.selectAll("text").classed("not-this-route", true)
             // console.log(d)
             // d.route.forEach(function (r) {
@@ -1834,6 +1837,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
 
     function resetAllGraphStyle() {
         //reset style
+        let node = d3.selectAll("#Nodes"), link = d3.selectAll("#Links")
         d3.selectAll(".innode-type-pie").style("opacity", null)
         node.selectAll("circle").classed("this-route-online", false);
         node.selectAll("circle").classed("this-route-offline", false);
@@ -1862,31 +1866,32 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
     }
 
     function filterRouteByNodeHover(r) {
-        node.selectAll("circle").filter(".not-this-route")
+        console.log(node)
+
+        d3.selectAll("#Nodes").selectAll("circle").filter(".not-this-route")
             .classed("this-route", n => isInRoute(r, n.route))
-        node.selectAll("circle").filter(".this-route")
+        d3.selectAll("#Nodes").selectAll("circle").filter(".this-route")
             .classed("not-this-route", !(n => isInRoute(r, n.route)));
         //node text style
-        node.selectAll(".node-text").filter(".not-this-route")
+        d3.selectAll("#Nodes").selectAll(".node-text").filter(".not-this-route")
             .classed("this-route", n => isInRoute(r, n.route))
-        node.selectAll(".node-text").filter(".this-route")
+        d3.selectAll("#Nodes").selectAll(".node-text").filter(".this-route")
             .classed("not-this-route", !(n => isInRoute(r, n.route)))
         // link style
-        link.selectAll("line").filter(".not-this-route")
+        d3.selectAll("#Links").selectAll("line").filter(".not-this-route")
             .classed("this-route", l => isInRoute(r, l.route))
-        link.selectAll("line").filter(".this-route")
+        d3.selectAll("#Links").selectAll("line").filter(".this-route")
             .classed("not-this-route", !(l => isInRoute(r, l.route)))
         // link.selectAll("text").filter(".not-this-route")
         //     .classed("this-route", (l => isInRoute(r, l.route)))
         // link.selectAll("text").filter(".this-route")
         //     .classed("not-this-route", !(l => isInRoute(r, l.route)))
         if (nodeViewType === "bar"){
-            node.selectAll("circle").filter(".not-this-route")
+            d3.selectAll("#Nodes").selectAll("circle").filter(".not-this-route")
                 .select(selectParent).selectAll(".atv-group").classed("hide", true);
-            node.selectAll("circle").filter(".this-route")
+            d3.selectAll("#Nodes").selectAll("circle").filter(".this-route")
                 .select(selectParent).selectAll(".atv-group").classed("hide", false);
         }
-        
 
     }
 
@@ -2184,6 +2189,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         d3.selectAll(".horizontal-line-text-unit").classed("hide", !d3.selectAll(".horizontal-line-text-unit").classed("hide"));
         d3.selectAll(".bottom-axis").classed("hide", !d3.selectAll(".bottom-axis").classed("hide"));
         d3.select("#staContainer").classed("hide", true);
+        resetAllGraphStyle();
         refresehGraph();
         // mdui.mutation();
         if (timeIntervalFlag) { // if the status is show
@@ -2207,8 +2213,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         d3.selectAll(".bottom-axis").classed("hide", false);
     }
 
-
-    d3.select("#selectMode").on("click", toggleSelectMode)
+    d3.select("#selectMode").on("click", null);
+    d3.select("#selectMode").on("click", toggleSelectMode);
 
     function toggleSelectMode() {
         selectModeFlag = !selectModeFlag;
@@ -2217,7 +2223,9 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         let firstClickFlag, thisRouteList, lastRouteList
         if (selectModeFlag) {
             activeBtn(d3.select(this));
+            // resetAllGraphStyle();
             firstClickFlag = true;
+            console.log(d3.selectAll("#Nodes"))
             d3.selectAll(".node")
                 .on("click", selectModeClicked)
                 .on("mouseover", null)
@@ -2245,6 +2253,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 allSelectedCirclep.classed("hide", false);
                 d3.selectAll(".single-route").remove();
                 d3.selectAll(".innode-atv-bar-plus").classed("hide", false);
+                // resetAllGraphStyle();
                 singleRouteFlag = false;
             }
             resetAllGraphStyle();
@@ -2266,6 +2275,8 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
         }
 
         function selectModeClicked(d) {
+            // console.log(d) 
+            console.log(firstClickFlag)
             if (firstClickFlag) {
                 thisRouteList = d.route;
                 firstClickFlag = false;
@@ -2274,15 +2285,18 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
             }
             let dpx = event.pageX,
                 dpy = event.pageY
-            node.selectAll("circle").classed("not-this-route", true);
-            node.selectAll(".node-text").classed("not-this-route", true);
-            link.selectAll("line").classed("not-this-route", true);
-            node.selectAll(".innode-type-pie").style("opacity", .3);
+            resetAllGraphStyle();
+            d3.selectAll("#Nodes").selectAll("circle").classed("not-this-route", true);
+            d3.selectAll("#Nodes").selectAll(".node-text").classed("not-this-route", true);
+            d3.selectAll("#Links").selectAll("line").classed("not-this-route", true);
+            d3.selectAll("#Nodes").selectAll(".innode-type-pie").style("opacity", .3);
             lastRouteList = thisRouteList;
+            console.log(node);
+
             filterRouteByNodeHover(thisRouteList);
             // select all the "total" link in this route
             let allSelectedLink = d3.selectAll(".link-total").filter(".this-route").nodes()
-
+            console.log(allSelectedLink)
             let nextStepLinks, nextStepNodes, nextSeq
             if (d.sequence > 0) {
                 nextSeq = d.sequence + 1
@@ -2291,7 +2305,7 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
             }
             nextStepLinks = d3.selectAll(".link-total").filter(l => l.sequence === nextSeq).filter(".this-route");
             nextStepNodes = d3.selectAll(".node").filter(l => l.sequence === nextSeq).filter(".this-route");
-            console.log(nextStepLinks.data())
+            console.log(nextSeq, nextStepLinks.data())
             let percentFormatC = d3.format("+.0%")
             d3.selectAll(".innode-text-plus").text(null);
 
