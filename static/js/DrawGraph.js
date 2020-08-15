@@ -1522,6 +1522,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
 
     //TODO: change it to update pattern
     function InNodePieGraphClick(d) {
+        d3.selectAll(".node")
+                .on("mouseover", null)
+                .on("mousemove", null)
+                .on("mouseleave", null);
         innodePieClickedFlag = true;
         resetAllGraphStyle();
         node.selectAll("circle").filter(d => d.route != undefined).classed("not-this-route", true);
@@ -2167,6 +2171,10 @@ function drawGraph(graphid, type, queryCenter, timeStart, timeEnd, maxNum) {
                 resetAllGraphStyle();
                 resetTypePie();
                 resetATVBar();
+                d3.selectAll(".node")
+                    .on("mouseover", NodeMouseOver)
+                    .on("mousemove", NodeMouseMove)
+                    .on("mouseleave", NodeMouseLeave);
             }
             mdui.snackbar({
                 message: 'Pie view of transaction types disabled'
