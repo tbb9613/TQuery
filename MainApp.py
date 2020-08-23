@@ -1,11 +1,8 @@
-import pandas as pd
 from flask import Flask, render_template, request, jsonify
 from datetime import timedelta
-import json
 import numpy as np
 import pandas as pd
-import random
-import itertools
+
 
 app = Flask(__name__)
 app.jinja_env.auto_reload = True
